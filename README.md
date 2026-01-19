@@ -5,7 +5,7 @@ A Claude Code skill that generates valid Akash Network SDL (Stack Definition Lan
 ## Installation
 
 ```bash
-claude skill add https://github.com/baktun14/akash-sdl
+claude skill add https://github.com/akash-network/akash-sdl-skill
 ```
 
 ## Usage
