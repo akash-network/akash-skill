@@ -4,8 +4,10 @@ A comprehensive Claude Code skill for working with the Akash Network - the decen
 
 ## Installation
 
+using [skills-cli](https://github.com/vercel-labs/skills):
+
 ```bash
-claude skill add https://github.com/akash-network/akash-skill
+npx skills add akash-network/akash-skill
 ```
 
 ## Usage
@@ -169,6 +171,7 @@ For other AI assistants or custom setups, reference the [`rules/`](./rules/) dir
 - [Console](https://console.akash.network) - Web-based deployment interface
 - [Console API](https://console-api.akash.network/v1/swagger) - REST API documentation
 - [chain-sdk](https://github.com/akash-network/chain-sdk) - Official TypeScript SDK
+- [skills-cli](https://skills.sh/) - Vercel Skills CLI tooling 
 
 ## License
 
