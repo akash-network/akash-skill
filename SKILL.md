@@ -120,6 +120,7 @@ deployment:
 - **@sdl/examples/web-app.md** - Simple web deployment
 - **@sdl/examples/wordpress-db.md** - Multi-service with persistent storage
 - **@sdl/examples/gpu-workload.md** - GPU deployment with NVIDIA
+- **@sdl/examples/llm-inference.md** - LLM serving with Ollama and vLLM (OpenAI-compatible)
 - **@sdl/examples/ip-lease.md** - IP endpoint configuration
 
 ### Deployment Methods
