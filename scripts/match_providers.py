@@ -14,6 +14,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
 import re
 import sys
@@ -76,6 +77,15 @@ def fmt_bytes(n: int) -> str:
 # ---------- SDL extraction ----------
 
 @dataclass
+class GPUAlternative:
+    """One acceptable GPU spec from the SDL's vendor.<v>[*] list — matches if any one accepts."""
+    vendor: str
+    model: str | None = None
+    ram: str | None = None  # raw form like "80Gi" — provider's gpuModels[].ram is reported the same way
+    interface: str | None = None  # "pcie" or "sxm"
+
+
+@dataclass
 class ProfileRequirement:
     profile: str
     services: list[str]
@@ -86,11 +96,11 @@ class ProfileRequirement:
     storage_persistent_bytes: int
     storage_classes: list[str]
     gpu_units: int
-    gpu_vendor: str | None
-    gpu_models: list[str]
+    gpu_alternatives: list[GPUAlternative]  # any one being satisfied is enough
     needs_ip_endpoint: bool
     denom: str | None
     price_amount: int | None
+    placement_attributes: dict[str, str]  # required attrs from profiles.placement.<used>.attributes
 
 
 def extract_requirements(sdl: dict) -> list[ProfileRequirement]:
@@ -112,6 +122,7 @@ def extract_requirements(sdl: dict) -> list[ProfileRequirement]:
     # profile -> services using it; deployment maps service -> placement -> {profile, count}
     profile_to_services: dict[str, list[tuple[str, int]]] = {}
     denom_by_profile: dict[str, tuple[str | None, int | None]] = {}
+    placement_attrs_by_profile: dict[str, dict[str, str]] = {}
 
     for svc_name, placements in deployment.items():
         for place_name, spec in (placements or {}).items():
@@ -120,9 +131,17 @@ def extract_requirements(sdl: dict) -> list[ProfileRequirement]:
             if not prof:
                 continue
             profile_to_services.setdefault(prof, []).append((svc_name, count))
-            price = ((placement.get(place_name) or {}).get("pricing") or {}).get(prof)
+            place_block = placement.get(place_name) or {}
+            price = (place_block.get("pricing") or {}).get(prof)
             if price:
                 denom_by_profile[prof] = (price.get("denom"), price.get("amount"))
+            # Placement-level attribute requirements (e.g. region: us-west) are required of any
+            # provider bidding on this profile. Provider matches via subset semantics.
+            place_attrs = place_block.get("attributes") or {}
+            if place_attrs:
+                merged = placement_attrs_by_profile.setdefault(prof, {})
+                for k, v in place_attrs.items():
+                    merged[str(k)] = str(v)
 
     reqs: list[ProfileRequirement] = []
     for prof_name, prof in compute.items():
@@ -151,15 +170,25 @@ def extract_requirements(sdl: dict) -> list[ProfileRequirement]:
 
         gpu_raw = resources.get("gpu") or {}
         gpu_units = int(gpu_raw.get("units", 0) or 0)
-        gpu_vendor = None
-        gpu_models: list[str] = []
+        gpu_alts: list[GPUAlternative] = []
         if gpu_units > 0:
             vendor_attr = (gpu_raw.get("attributes") or {}).get("vendor") or {}
             for v, models in vendor_attr.items():
-                gpu_vendor = v
-                for m in models or []:
-                    if isinstance(m, dict) and m.get("model"):
-                        gpu_models.append(str(m["model"]).lower())
+                if not models:
+                    # `vendor: { nvidia: }` with no list — vendor-only constraint
+                    gpu_alts.append(GPUAlternative(vendor=str(v).lower()))
+                    continue
+                for m in models:
+                    if not isinstance(m, dict):
+                        continue
+                    gpu_alts.append(
+                        GPUAlternative(
+                            vendor=str(v).lower(),
+                            model=str(m["model"]).lower() if m.get("model") else None,
+                            ram=str(m["ram"]) if m.get("ram") else None,
+                            interface=str(m["interface"]).lower() if m.get("interface") else None,
+                        )
+                    )
 
         svc_list = profile_to_services.get(prof_name, [])
         total_count = sum(c for _, c in svc_list) or 1
@@ -177,11 +206,11 @@ def extract_requirements(sdl: dict) -> list[ProfileRequirement]:
                 storage_persistent_bytes=persistent * total_count,
                 storage_classes=sorted(set(classes)),
                 gpu_units=gpu_units * total_count,
-                gpu_vendor=gpu_vendor,
-                gpu_models=sorted(set(gpu_models)),
+                gpu_alternatives=gpu_alts,
                 needs_ip_endpoint=needs_ip,
                 denom=denom,
                 price_amount=amount,
+                placement_attributes=placement_attrs_by_profile.get(prof_name, {}),
             )
         )
     return reqs
@@ -230,15 +259,46 @@ def provider_supports_storage_class(provider: dict, cls: str) -> bool:
     return cls.lower() in provider_persistent_classes(provider)
 
 
-def provider_gpu_models(provider: dict, vendor: str | None) -> set[str]:
-    out: set[str] = set()
-    for g in provider.get("gpuModels") or []:
-        if vendor and (g.get("vendor") or "").lower() != vendor.lower():
-            continue
-        model = (g.get("model") or "").lower()
-        if model:
-            out.add(model)
-    return out
+def provider_gpu_satisfies(provider: dict, alts: list[GPUAlternative]) -> bool:
+    """Mirror provider/cluster/.../inventory.go tryAdjustGPU: any one of the SDL's vendor[*]
+    alternatives is satisfied if at least one entry in the provider's gpuModels[] matches all
+    specified fields (vendor required, model/ram/interface filtered when provided)."""
+    if not alts:
+        return True
+    pmodels = provider.get("gpuModels") or []
+    if not pmodels:
+        return False
+    for alt in alts:
+        for g in pmodels:
+            if alt.vendor and (g.get("vendor") or "").lower() != alt.vendor:
+                continue
+            if alt.model and (g.get("model") or "").lower() != alt.model:
+                continue
+            if alt.ram and str(g.get("ram") or "") != alt.ram:
+                continue
+            if alt.interface and (g.get("interface") or "").lower() != alt.interface:
+                continue
+            return True
+    return False
+
+
+def provider_satisfies_attributes(provider: dict, required: dict[str, str]) -> bool:
+    """Mirror chain-sdk Attributes.SubsetOf: every required key=value must appear in the
+    provider's attributes[], with glob-aware value match (filepath.Match semantics).
+
+    Provider-side wildcards work — e.g. provider declares `region=*` and SDL requires
+    `region=us-west`, that's a match."""
+    if not required:
+        return True
+    pattrs = {a.get("key"): str(a.get("value") or "") for a in (provider.get("attributes") or [])}
+    for k, want in required.items():
+        have = pattrs.get(k)
+        if have is None:
+            return False
+        # Glob match in either direction (provider-side wildcard OR SDL-side wildcard)
+        if not (fnmatch.fnmatchcase(want, have) or fnmatch.fnmatchcase(have, want) or have == want):
+            return False
+    return True
 
 
 def check_provider(provider: dict, req: ProfileRequirement) -> dict[str, bool]:
@@ -251,6 +311,7 @@ def check_provider(provider: dict, req: ProfileRequirement) -> dict[str, bool]:
     gpu_avail = int((stats.get("gpu") or {}).get("available", 0) or 0)
 
     checks = {
+        "placement_attributes": provider_satisfies_attributes(provider, req.placement_attributes),
         "cpu": cpu_avail >= req.cpu_millis,
         "memory": mem_avail >= req.memory_bytes,
         "storage_ephemeral": eph_avail >= req.storage_ephemeral_bytes,
@@ -264,10 +325,7 @@ def check_provider(provider: dict, req: ProfileRequirement) -> dict[str, bool]:
         ),
         "gpu_count": gpu_avail >= req.gpu_units if req.gpu_units > 0 else True,
         "gpu_model": (
-            (not req.gpu_models)
-            or bool(provider_gpu_models(provider, req.gpu_vendor) & set(req.gpu_models))
-            if req.gpu_units > 0
-            else True
+            provider_gpu_satisfies(provider, req.gpu_alternatives) if req.gpu_units > 0 else True
         ),
         "ip_endpoint": bool(provider.get("featEndpointIp")) if req.needs_ip_endpoint else True,
     }
@@ -304,6 +362,7 @@ def summarize(providers: list[dict], reqs: list[ProfileRequirement], top_n: int 
         ]
 
         check_names = [
+            "placement_attributes",
             "cpu",
             "memory",
             "storage_ephemeral",
@@ -356,9 +415,11 @@ def summarize(providers: list[dict], reqs: list[ProfileRequirement], top_n: int 
                     "storage_persistent": fmt_bytes(req.storage_persistent_bytes),
                     "storage_classes": req.storage_classes,
                     "gpu_units": req.gpu_units,
-                    "gpu_vendor": req.gpu_vendor,
-                    "gpu_models": req.gpu_models,
+                    "gpu_alternatives": [
+                        {k: v for k, v in vars(a).items() if v} for a in req.gpu_alternatives
+                    ],
                     "needs_ip_endpoint": req.needs_ip_endpoint,
+                    "placement_attributes": req.placement_attributes,
                     "denom": req.denom,
                     "price_amount": req.price_amount,
                 },
@@ -393,6 +454,8 @@ def _check_applies(name: str, req: ProfileRequirement) -> bool:
         return req.gpu_units > 0
     if name == "ip_endpoint":
         return req.needs_ip_endpoint
+    if name == "placement_attributes":
+        return bool(req.placement_attributes)
     return True
 
 
