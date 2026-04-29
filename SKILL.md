@@ -3,12 +3,14 @@ name: akash
 description: >
   Comprehensive Akash Network skill for deployers, providers, and node operators.
   Covers SDL generation, CLI deployments, Console API, TypeScript/Go SDKs,
-  provider setup, and validator operations. Use for "deploy to Akash",
-  "generate SDL", "Akash provider", "Akash CLI", "Akash SDK", or "Akash validator".
+  provider setup, validator operations, and live bid-matching diagnostics
+  (why an SDL isn't getting bids and how to adapt it). Use for "deploy to Akash",
+  "generate SDL", "Akash provider", "Akash CLI", "Akash SDK", "Akash validator",
+  "why am I not getting bids", "will this SDL get bids", or "adapt my SDL to get bids".
 license: MIT
 metadata:
   author: baktun14
-  version: "2.0.0"
+  version: "2.1.0"
   argument-hint: <task-description>
 ---
 
@@ -27,6 +29,7 @@ This skill covers all aspects of the Akash Network:
 | **Provider Operations** | Set up and manage Akash providers |
 | **Node Operations** | Run full nodes and validators |
 | **SDK Integration** | TypeScript and Go SDK usage |
+| **Bid Matching** | Diagnose why an SDL isn't getting bids and propose an adapted SDL |
 
 ## Critical Rules
 
@@ -146,6 +149,11 @@ deployment:
 - **@node/overview.md** - Running Akash nodes
 - **@node/full-node/** - Full node setup and state sync
 - **@node/validator/** - Validator operations and security
+
+### Bid Matching
+- **@bid-matching/overview.md** - When to use, how to run the matcher, how to present results
+- **@bid-matching/adaptation-rules.md** - Priority order for SDL changes (count before model, never touch pricing)
+- **@bid-matching/matching-rules.md** - SDL ↔ provider field mapping, unit conversions, edge cases
 
 ### Reference
 - **@reference/storage-classes.md** - beta2, beta3, ram storage

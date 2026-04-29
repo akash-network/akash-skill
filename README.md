@@ -1,6 +1,6 @@
 # Akash Network Skill for Claude Code
 
-A comprehensive Claude Code skill for working with the Akash Network - the decentralized cloud computing marketplace. Covers SDL generation, deployments, provider operations, node management, and SDK integration.
+A comprehensive Claude Code skill for working with the Akash Network - the decentralized cloud computing marketplace. Covers SDL generation, deployments, provider operations, node management, SDK integration, and live bid-matching diagnostics.
 
 ## Installation
 
@@ -36,6 +36,13 @@ Once installed, Claude will automatically use this skill when you ask it to:
 - "How do I become an Akash provider?"
 - "Set up an Akash validator..."
 - "Run an Akash full node..."
+
+**Bid Matching:**
+
+- "Why am I not getting bids on my SDL?"
+- "Will this SDL get bids on Akash?"
+- "Which providers can run this deployment?"
+- "Adapt my SDL to get more bids"
 
 ### Examples
 
@@ -142,6 +149,14 @@ For other AI assistants or custom setups, reference the [`rules/`](./rules/) dir
 - **overview.md** - Running Akash nodes
 - **full-node/** - Full node setup and state sync
 - **validator/** - Validator operations and security
+
+### Bid Matching (`rules/bid-matching/`)
+
+- **overview.md** - When to use, how to run the matcher script, how to present results
+- **adaptation-rules.md** - Priority order for SDL changes (count before model, never touch pricing)
+- **matching-rules.md** - SDL ↔ provider field mapping, unit conversions, edge cases
+
+Bundled `scripts/match_providers.py` fetches the live audited+online provider set from `console-api.akash.network/v1/providers` and runs a constraint funnel against the SDL. Requires Python 3 + `pyyaml`.
 
 ### Reference (`rules/reference/`)
 
