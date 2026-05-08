@@ -78,7 +78,7 @@ profiles:
     dcloud:
       pricing:
         web:
-          denom: uakt
+          denom: uact
           amount: 1000
 deployment:
   web:
@@ -149,12 +149,12 @@ Secures the Akash blockchain:
 
 ## Payment Terms
 
-### uakt
+### uact
 
 Micro-AKT, the smallest denomination:
 
 ```
-1 AKT = 1,000,000 uakt
+1 AKT = 1,000,000 uact
 ```
 
 ### Escrow
@@ -171,7 +171,7 @@ Amount provider charges per block:
 ```yaml
 pricing:
   web:
-    denom: uakt
+    denom: uact
     amount: 1000  # per block (~6 seconds)
 ```
 
@@ -179,7 +179,7 @@ Monthly cost calculation:
 ```
 blocks_per_month = 438,000 (approx)
 monthly_cost = amount × blocks_per_month
-1000 uakt × 438,000 = 438,000,000 uakt = 438 AKT
+1000 uact × 438,000 = 438,000,000 uact = 438 AKT
 ```
 
 ## Provider Terms

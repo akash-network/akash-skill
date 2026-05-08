@@ -255,7 +255,7 @@ Not all providers have all GPU models. Check availability:
 
 GPU pricing varies by model and market conditions:
 
-| GPU Tier | Examples | uakt/block Range |
+| GPU Tier | Examples | uact/block Range |
 |----------|----------|------------------|
 | Entry | T4, RTX 3060 | 5,000 - 15,000 |
 | Mid | RTX 3080/3090, A10 | 15,000 - 30,000 |

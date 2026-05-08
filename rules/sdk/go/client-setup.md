@@ -312,7 +312,7 @@ func main() {
 
     // Create deployment
     dseq := uint64(time.Now().Unix())
-    deposit := sdk.NewCoin("uakt", sdk.NewInt(5000000))
+    deposit := sdk.NewCoin("uact", sdk.NewInt(5000000))
 
     txRes, err := client.CreateDeployment(ctx, dseq, groups, version, deposit)
     if err != nil {

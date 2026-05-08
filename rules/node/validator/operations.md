@@ -154,7 +154,7 @@ akash query distribution commission \
 akash tx staking redelegate \
   source_validator_operator_address \
   destination_validator_operator_address \
-  1000000uakt \
+  1000000uact \
   --chain-id=akashnet-2 \
   --gas="auto" \
   --gas-adjustment=1.5 \

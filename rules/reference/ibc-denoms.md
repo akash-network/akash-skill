@@ -4,20 +4,20 @@ Payment denominations available on Akash Network via Inter-Blockchain Communicat
 
 ## Native Token
 
-### AKT (uakt)
+### AKT (uact)
 
 The native Akash token:
 
 ```yaml
 pricing:
   web:
-    denom: uakt
+    denom: uact
     amount: 1000
 ```
 
 **Conversion:**
 ```
-1 AKT = 1,000,000 uakt
+1 AKT = 1,000,000 uact
 ```
 
 ## IBC Tokens
@@ -49,7 +49,7 @@ ibc/170C677610AC31DF0904FFE09CD3B5C657492170E7E52372E48756B71E56F2F1
 
 | Token | Denom | Decimals | Source |
 |-------|-------|----------|--------|
-| AKT | `uakt` | 6 | Native |
+| AKT | `uact` | 6 | Native |
 | USDC | `ibc/170C677610AC31DF0904FFE09CD3B5C657492170E7E52372E48756B71E56F2F1` | 6 | Noble |
 
 ## Using IBC Tokens
@@ -113,7 +113,7 @@ monthly_cost = 10 × 438,000 = 4,380,000 uusdc = $4.38
 
 ### AKT vs USDC Comparison
 
-| Metric | uakt | USDC |
+| Metric | uact | USDC |
 |--------|------|------|
 | Price Stability | Volatile | Stable |
 | Availability | High | Moderate |
@@ -122,7 +122,7 @@ monthly_cost = 10 × 438,000 = 4,380,000 uusdc = $4.38
 
 ## Choosing Payment Token
 
-### Use AKT (uakt) When:
+### Use AKT (uact) When:
 
 - AKT price is low relative to compute value
 - You hold AKT and want to use it
@@ -148,7 +148,7 @@ akash query bank balances <your-address>
 ```yaml
 balances:
 - amount: "1000000000"
-  denom: uakt
+  denom: uact
 - amount: "500000000"
   denom: ibc/170C677610AC31DF0904FFE09CD3B5C657492170E7E52372E48756B71E56F2F1
 ```
@@ -169,7 +169,7 @@ profiles:
     primary:
       pricing:
         web:
-          denom: uakt
+          denom: uact
           amount: 1000
 
     backup:
@@ -191,7 +191,7 @@ The Akash Network may support additional IBC tokens in the future. Check the off
 
 ```yaml
 # VALID - Native AKT
-denom: uakt
+denom: uact
 
 # VALID - IBC token
 denom: ibc/170C677610AC31DF0904FFE09CD3B5C657492170E7E52372E48756B71E56F2F1
@@ -199,7 +199,7 @@ denom: ibc/170C677610AC31DF0904FFE09CD3B5C657492170E7E52372E48756B71E56F2F1
 # INVALID - Wrong format
 denom: usdc        # Must use ibc/... format
 denom: USD         # Not a valid denom
-denom: akt         # Must be uakt (micro-denomination)
+denom: akt         # Must be uact (micro-denomination)
 ```
 
 ### Amount Must Be Positive Integer

@@ -54,7 +54,7 @@ profiles:
     dcloud:
       pricing:
         web:
-          denom: uakt
+          denom: uact
           amount: 1000
 
 deployment:
@@ -117,7 +117,7 @@ profiles:
     dcloud:
       pricing:
         gameserver:
-          denom: uakt
+          denom: uact
           amount: 5000
 
 deployment:
@@ -173,7 +173,7 @@ profiles:
     dcloud:
       pricing:
         dev:
-          denom: uakt
+          denom: uact
           amount: 3000
 
 deployment:
@@ -243,10 +243,10 @@ profiles:
     dcloud:
       pricing:
         frontend:
-          denom: uakt
+          denom: uact
           amount: 500
         api:
-          denom: uakt
+          denom: uact
           amount: 2000
 
 deployment:
@@ -325,7 +325,7 @@ profiles:
     dcloud:
       pricing:
         mail:
-          denom: uakt
+          denom: uact
           amount: 4000
 
 deployment:
@@ -378,7 +378,7 @@ profiles:
     dcloud:
       pricing:
         web:
-          denom: uakt
+          denom: uact
           amount: 1500
 
 deployment:

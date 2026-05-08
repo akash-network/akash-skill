@@ -93,7 +93,7 @@ profiles:
     dcloud:
       pricing:
         web:
-          denom: uakt
+          denom: uact
           amount: 1000
 
 deployment:
@@ -108,13 +108,13 @@ deployment:
 ### Core Concepts
 - **@overview.md** - Akash Network introduction and architecture
 - **@terminology.md** - Key terms (lease, bid, dseq, gseq, oseq)
-- **@pricing.md** - Payment with uakt, USDC, IBC denoms
+- **@pricing.md** - Payment with uact, USDC, IBC denoms
 
 ### SDL Configuration
 - **@sdl/schema-overview.md** - Version requirements and SDL structure
 - **@sdl/services.md** - Service configuration (image, expose, env, credentials)
 - **@sdl/compute-resources.md** - CPU, memory, storage, and GPU specifications
-- **@sdl/placement-pricing.md** - Provider selection and pricing (uakt/USDC)
+- **@sdl/placement-pricing.md** - Provider selection and pricing (uact/USDC)
 - **@sdl/deployment.md** - Service-to-profile mapping
 - **@sdl/endpoints.md** - IP endpoint configuration (v2.1)
 - **@sdl/validation-rules.md** - All constraints and validation rules
@@ -200,7 +200,7 @@ profiles:
 ```
 
 ### Payment Options
-- **uakt**: Native Akash Token (e.g., `amount: 1000`)
+- **uact**: Native Akash Token (e.g., `amount: 1000`)
 - **USDC**: Via IBC denom (e.g., `denom: ibc/170C677610AC31DF0904FFE09CD3B5C657492170E7E52372E48756B71E56F2F1`)
 
 ## Additional Resources

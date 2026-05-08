@@ -214,7 +214,7 @@ function DeployButton() {
           id: { owner: address, dseq: BigInt(Date.now()) },
           groups: [],  // Add your groups
           version: new Uint8Array(),
-          deposit: { denom: "uakt", amount: "5000000" },
+          deposit: { denom: "uact", amount: "5000000" },
           depositor: address
         }
       };
@@ -269,7 +269,7 @@ export function useDeployment() {
             id: { owner: address, dseq: BigInt(dseq) },
             groups: [],  // Parse from SDL
             version: new Uint8Array(),
-            deposit: { denom: "uakt", amount: deposit },
+            deposit: { denom: "uact", amount: deposit },
             depositor: address
           }
         };

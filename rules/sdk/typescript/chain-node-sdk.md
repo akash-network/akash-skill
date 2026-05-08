@@ -38,8 +38,8 @@ async function createClient(mnemonic: string) {
 
 ```typescript
 async function getBalance(client: SigningStargateClient, address: string) {
-  const balance = await client.getBalance(address, "uakt");
-  console.log(`Balance: ${balance.amount} uakt`);
+  const balance = await client.getBalance(address, "uact");
+  console.log(`Balance: ${balance.amount} uact`);
   return balance;
 }
 ```
@@ -112,7 +112,7 @@ async function createDeployment(
     groups,
     version: await sdl.manifestVersion(),
     deposit: {
-      denom: "uakt",
+      denom: "uact",
       amount: deposit
     },
     depositor: address
@@ -213,7 +213,7 @@ async function depositToDeployment(
       dseq: BigInt(dseq)
     },
     amount: {
-      denom: "uakt",
+      denom: "uact",
       amount
     },
     depositor: address
@@ -271,7 +271,7 @@ async function deployToAkash(mnemonic: string, sdlContent: string) {
       id: { owner: address, dseq: BigInt(dseq) },
       groups,
       version: await sdl.manifestVersion(),
-      deposit: { denom: "uakt", amount: "5000000" },
+      deposit: { denom: "uact", amount: "5000000" },
       depositor: address
     }
   };

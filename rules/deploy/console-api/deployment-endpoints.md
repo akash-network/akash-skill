@@ -22,7 +22,7 @@ POST /deployment
 ```json
 {
   "sdl": "version: \"2.0\"\nservices:\n  web:\n    image: nginx:1.25.3...",
-  "deposit": "5000000uakt",
+  "deposit": "5000000uact",
   "walletId": "wallet-123"
 }
 ```
@@ -30,7 +30,7 @@ POST /deployment
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `sdl` | string | Yes | SDL configuration (YAML as string) |
-| `deposit` | string | Yes | Initial escrow deposit (e.g., "5000000uakt") |
+| `deposit` | string | Yes | Initial escrow deposit (e.g., "5000000uact") |
 | `walletId` | string | No | Managed wallet ID (uses default if omitted) |
 
 **Response:**
@@ -42,7 +42,7 @@ POST /deployment
     "owner": "akash1abc...",
     "state": "open",
     "deposit": {
-      "denom": "uakt",
+      "denom": "uact",
       "amount": "5000000"
     },
     "createdAt": "2024-01-15T10:00:00Z",
@@ -57,8 +57,8 @@ curl -X POST https://console-api.akash.network/v1/deployment \
   -H "Authorization: Bearer <api-key>" \
   -H "Content-Type: application/json" \
   -d '{
-    "sdl": "version: \"2.0\"\nservices:\n  web:\n    image: nginx:1.25.3\n    expose:\n      - port: 80\n        to:\n          - global: true\nprofiles:\n  compute:\n    web:\n      resources:\n        cpu:\n          units: 0.5\n        memory:\n          size: 512Mi\n        storage:\n          size: 1Gi\n  placement:\n    dcloud:\n      pricing:\n        web:\n          denom: uakt\n          amount: 1000\ndeployment:\n  web:\n    dcloud:\n      profile: web\n      count: 1",
-    "deposit": "5000000uakt"
+    "sdl": "version: \"2.0\"\nservices:\n  web:\n    image: nginx:1.25.3\n    expose:\n      - port: 80\n        to:\n          - global: true\nprofiles:\n  compute:\n    web:\n      resources:\n        cpu:\n          units: 0.5\n        memory:\n          size: 512Mi\n        storage:\n          size: 1Gi\n  placement:\n    dcloud:\n      pricing:\n        web:\n          denom: uact\n          amount: 1000\ndeployment:\n  web:\n    dcloud:\n      profile: web\n      count: 1",
+    "deposit": "5000000uact"
   }'
 ```
 
@@ -84,11 +84,11 @@ GET /deployment/{dseq}
     "owner": "akash1abc...",
     "state": "active",
     "deposit": {
-      "denom": "uakt",
+      "denom": "uact",
       "amount": "4500000"
     },
     "escrowBalance": {
-      "denom": "uakt",
+      "denom": "uact",
       "amount": "4000000"
     },
     "createdAt": "2024-01-15T10:00:00Z",
@@ -99,7 +99,7 @@ GET /deployment/{dseq}
         "provider": "akash1prov...",
         "state": "active",
         "price": {
-          "denom": "uakt",
+          "denom": "uact",
           "amount": "950"
         }
       }
@@ -160,7 +160,7 @@ DELETE /deployment/{dseq}
     "dseq": "12345678",
     "state": "closed",
     "refundedAmount": {
-      "denom": "uakt",
+      "denom": "uact",
       "amount": "3500000"
     },
     "txHash": "DEF456..."
@@ -179,7 +179,7 @@ POST /deployment/{dseq}/deposit
 **Request Body:**
 ```json
 {
-  "amount": "5000000uakt"
+  "amount": "5000000uact"
 }
 ```
 
@@ -190,7 +190,7 @@ POST /deployment/{dseq}/deposit
   "data": {
     "dseq": "12345678",
     "newBalance": {
-      "denom": "uakt",
+      "denom": "uact",
       "amount": "9000000"
     },
     "txHash": "GHI789..."
@@ -248,7 +248,7 @@ GET /bids/{dseq}
     {
       "provider": "akash1prov1...",
       "price": {
-        "denom": "uakt",
+        "denom": "uact",
         "amount": "950"
       },
       "state": "open",
@@ -261,7 +261,7 @@ GET /bids/{dseq}
     {
       "provider": "akash1prov2...",
       "price": {
-        "denom": "uakt",
+        "denom": "uact",
         "amount": "1100"
       },
       "state": "open",
@@ -306,7 +306,7 @@ POST /lease
     "provider": "akash1prov...",
     "state": "active",
     "price": {
-      "denom": "uakt",
+      "denom": "uact",
       "amount": "950"
     },
     "txHash": "MNO345..."
@@ -333,7 +333,7 @@ GET /lease/{dseq}/{gseq}/{oseq}
     "provider": "akash1prov...",
     "state": "active",
     "price": {
-      "denom": "uakt",
+      "denom": "uact",
       "amount": "950"
     },
     "services": {

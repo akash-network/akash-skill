@@ -48,7 +48,7 @@ profiles:
     dcloud:
       pricing:
         ml:
-          denom: uakt
+          denom: uact
           amount: 10000
 
 deployment:
@@ -107,7 +107,7 @@ profiles:
     dcloud:
       pricing:
         training:
-          denom: uakt
+          denom: uact
           amount: 50000
 
 deployment:
@@ -152,7 +152,7 @@ profiles:
     dcloud:
       pricing:
         training:
-          denom: uakt
+          denom: uact
           amount: 20000
 
 deployment:
@@ -204,7 +204,7 @@ profiles:
     dcloud:
       pricing:
         inference:
-          denom: uakt
+          denom: uact
           amount: 15000
 
 deployment:
@@ -253,7 +253,7 @@ profiles:
     dcloud:
       pricing:
         distributed-training:
-          denom: uakt
+          denom: uact
           amount: 200000
 
 deployment:
@@ -309,7 +309,7 @@ profiles:
     dcloud:
       pricing:
         llm:
-          denom: uakt
+          denom: uact
           amount: 40000
 
 deployment:
@@ -354,7 +354,7 @@ profiles:
     dcloud:
       pricing:
         sd:
-          denom: uakt
+          denom: uact
           amount: 20000
 
 deployment:
@@ -366,7 +366,7 @@ deployment:
 
 ## GPU Resource Guidelines
 
-| GPU Model | VRAM | Typical Use Case | Price Range (uakt) |
+| GPU Model | VRAM | Typical Use Case | Price Range (uact) |
 |-----------|------|------------------|-------------------|
 | T4 | 16GB | Inference | 10000-20000 |
 | RTX 3080 | 10GB | Light training, inference | 15000-25000 |

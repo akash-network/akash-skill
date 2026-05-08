@@ -58,7 +58,7 @@ profiles:
     dcloud:
       pricing:
         web:
-          denom: uakt
+          denom: uact
           amount: 1000
 
 deployment:
@@ -98,7 +98,7 @@ akash query deployment list --owner $(akash keys show wallet -a)
 ### With Explicit Deposit
 
 ```bash
-akash tx deployment create deploy.yaml --deposit 10000000uakt --from wallet
+akash tx deployment create deploy.yaml --deposit 10000000uact --from wallet
 ```
 
 ## Step 4: Wait for Bids
@@ -125,7 +125,7 @@ Example output:
           "provider": "akash1provider..."
         },
         "price": {
-          "denom": "uakt",
+          "denom": "uact",
           "amount": "950"
         },
         "state": "open"
@@ -248,7 +248,7 @@ akash query deployment get --owner $(akash keys show wallet -a) --dseq <DSEQ>
 ### Add Funds
 
 ```bash
-akash tx deployment deposit 5000000uakt --dseq <DSEQ> --from wallet
+akash tx deployment deposit 5000000uact --dseq <DSEQ> --from wallet
 ```
 
 ### Update Deployment
@@ -377,5 +377,5 @@ akash provider lease-logs --dseq <DSEQ> ...
 akash query deployment get --dseq <DSEQ> --owner $(akash keys show wallet -a)
 
 # Deposit more funds
-akash tx deployment deposit 5000000uakt --dseq <DSEQ> --from wallet
+akash tx deployment deposit 5000000uact --dseq <DSEQ> --from wallet
 ```

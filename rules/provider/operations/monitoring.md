@@ -162,7 +162,7 @@ akash query market lease list \
   --output json | jq '[.leases[].lease.price.amount | tonumber] | add'
 
 # Estimate monthly revenue
-# monthly_uakt = total_per_block * 438000
+# monthly_uact = total_per_block * 438000
 ```
 
 ## Provider Logs

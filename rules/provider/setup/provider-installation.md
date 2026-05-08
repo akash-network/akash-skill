@@ -121,7 +121,7 @@ bidpricescript: |
   storage=$(echo "$data_in" | jq -r '.storage')
   gpu=$(echo "$data_in" | jq -r '.gpu')
 
-  # Calculate price in uakt per block
+  # Calculate price in uact per block
   cpu_price=$(echo "scale=6; $cpu * 1.5" | bc)
   memory_price=$(echo "scale=6; $memory / 1073741824 * 0.8" | bc)
   storage_price=$(echo "scale=6; $storage / 1073741824 * 0.02" | bc)

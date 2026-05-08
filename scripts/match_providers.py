@@ -459,7 +459,7 @@ def _check_applies(name: str, req: ProfileRequirement) -> bool:
     return True
 
 
-KNOWN_DENOMS = {"uakt", "uact"}
+KNOWN_DENOMS = {"uact"}
 
 
 def _denom_note(denom: str | None) -> str | None:
@@ -470,7 +470,7 @@ def _denom_note(denom: str | None) -> str | None:
     if IBC_DENOM_RE.match(denom):
         return None
     return (
-        f"denom '{denom}' is not a recognized Akash denom (uakt, uact) or ibc/… — "
+        f"denom '{denom}' is not a recognized Akash denom (uact) or ibc/… — "
         "providers endpoint does not expose accepted denoms; verify support separately."
     )
 

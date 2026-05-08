@@ -153,7 +153,7 @@ Revenue = Sum(lease_price × blocks_active) for all active leases
 ```
 
 - Providers earn per-block payments from each active lease
-- Payments are in uakt or USDC (IBC) depending on tenant choice
+- Payments are in uact or USDC (IBC) depending on tenant choice
 - Providers can withdraw accumulated earnings periodically
 
 ### Cost Considerations

@@ -264,7 +264,7 @@ profiles:
         capabilities/storage/2/class: beta3  # Require beta3 support
       pricing:
         web:
-          denom: uakt
+          denom: uact
           amount: 2000
 ```
 

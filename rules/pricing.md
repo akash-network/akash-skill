@@ -4,20 +4,20 @@ Understanding payment options, pricing calculations, and cost optimization on Ak
 
 ## Payment Denominations
 
-### uakt (Native AKT)
+### uact (Native AKT)
 
 The native Akash token in micro-denomination:
 
 ```yaml
 pricing:
   web:
-    denom: uakt
+    denom: uact
     amount: 1000
 ```
 
 **Conversion:**
 ```
-1 AKT = 1,000,000 uakt
+1 AKT = 1,000,000 uact
 ```
 
 ### USDC via IBC
@@ -60,14 +60,14 @@ Blocks per month: ~438,000
 Monthly Cost = bid_amount × blocks_per_month
 ```
 
-**Example with uakt:**
+**Example with uact:**
 ```yaml
 pricing:
   web:
-    denom: uakt
+    denom: uact
     amount: 1000
 
-# Monthly cost: 1000 × 438,000 = 438,000,000 uakt = 438 AKT
+# Monthly cost: 1000 × 438,000 = 438,000,000 uact = 438 AKT
 ```
 
 **Example with USDC:**
@@ -84,7 +84,7 @@ pricing:
 
 ### By Workload Type
 
-| Workload | CPU | Memory | Storage | uakt/block | ~Monthly AKT |
+| Workload | CPU | Memory | Storage | uact/block | ~Monthly AKT |
 |----------|-----|--------|---------|------------|--------------|
 | Static Site | 0.25 | 256Mi | 512Mi | 300-500 | 130-220 |
 | Web App | 0.5 | 512Mi | 1Gi | 500-1000 | 220-438 |
@@ -94,7 +94,7 @@ pricing:
 
 ### GPU Pricing
 
-| GPU Model | VRAM | uakt/block | ~Monthly AKT |
+| GPU Model | VRAM | uact/block | ~Monthly AKT |
 |-----------|------|------------|--------------|
 | T4 | 16GB | 10000-20000 | 4380-8760 |
 | RTX 3080 | 10GB | 15000-25000 | 6570-10950 |
@@ -120,9 +120,9 @@ Recommended escrow for deployment stability:
 Minimum Escrow = bid_amount × blocks_per_day × 7
 ```
 
-For a 1000 uakt/block deployment:
+For a 1000 uact/block deployment:
 ```
-1000 × 14400 × 7 = 100,800,000 uakt = 100.8 AKT
+1000 × 14400 × 7 = 100,800,000 uact = 100.8 AKT
 ```
 
 ### Escrow Monitoring
@@ -136,7 +136,7 @@ akash query deployment get --owner <address> --dseq <dseq>
 Add funds before depletion:
 
 ```bash
-akash tx deployment deposit <amount>uakt --owner <address> --dseq <dseq>
+akash tx deployment deposit <amount>uact --owner <address> --dseq <dseq>
 ```
 
 ## Cost Optimization
@@ -166,7 +166,7 @@ Set a maximum price and let providers compete:
 ```yaml
 pricing:
   web:
-    denom: uakt
+    denom: uact
     amount: 2000  # Max you're willing to pay
 ```
 
@@ -174,7 +174,7 @@ Providers will bid at or below this amount.
 
 ### Choose Payment Currency Wisely
 
-- **uakt** - Best when AKT price is low relative to compute value
+- **uact** - Best when AKT price is low relative to compute value
 - **USDC** - Best for predictable costs, hedges AKT volatility
 
 ### Persistent vs Ephemeral Storage

@@ -168,7 +168,7 @@ import { deploymentCreate } from "@akashnetwork/akashjs/build/stargate";
 const tx = await deploymentCreate(client, {
   owner: address,
   sdl: parsedSdl,
-  deposit: { denom: "uakt", amount: "5000000" }
+  deposit: { denom: "uact", amount: "5000000" }
 });
 ```
 

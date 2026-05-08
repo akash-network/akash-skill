@@ -93,7 +93,7 @@ curl -X POST https://console-api.akash.network/v1/sdl/validate \
   -H "Authorization: Bearer <api-key>" \
   -H "Content-Type: application/json" \
   -d '{
-    "sdl": "version: \"2.0\"\nservices:\n  web:\n    image: nginx:1.25.3\n    expose:\n      - port: 80\n        to:\n          - global: true\nprofiles:\n  compute:\n    web:\n      resources:\n        cpu:\n          units: 0.5\n        memory:\n          size: 512Mi\n        storage:\n          size: 1Gi\n  placement:\n    dcloud:\n      pricing:\n        web:\n          denom: uakt\n          amount: 1000\ndeployment:\n  web:\n    dcloud:\n      profile: web\n      count: 1"
+    "sdl": "version: \"2.0\"\nservices:\n  web:\n    image: nginx:1.25.3\n    expose:\n      - port: 80\n        to:\n          - global: true\nprofiles:\n  compute:\n    web:\n      resources:\n        cpu:\n          units: 0.5\n        memory:\n          size: 512Mi\n        storage:\n          size: 1Gi\n  placement:\n    dcloud:\n      pricing:\n        web:\n          denom: uact\n          amount: 1000\ndeployment:\n  web:\n    dcloud:\n      profile: web\n      count: 1"
   }'
 ```
 
@@ -105,7 +105,7 @@ curl -X POST https://console-api.akash.network/v1/deployment \
   -H "Content-Type: application/json" \
   -d '{
     "sdl": "<your-sdl>",
-    "deposit": "5000000uakt"
+    "deposit": "5000000uact"
   }'
 ```
 
@@ -192,7 +192,7 @@ async function deployToAkash(sdl) {
       'Authorization': `Bearer ${API_KEY}`,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ sdl, deposit: '5000000uakt' })
+    body: JSON.stringify({ sdl, deposit: '5000000uact' })
   });
 
   const { data: { dseq } } = await deployment.json();
