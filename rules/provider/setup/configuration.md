@@ -104,7 +104,7 @@ akash query bank balances $(akash keys show provider-wallet -a) \
   --node https://rpc.akashnet.net:443
 
 # Send funds to provider wallet
-akash tx bank send <SOURCE_WALLET> <PROVIDER_ADDRESS> 10000000uakt \
+akash tx bank send <SOURCE_WALLET> <PROVIDER_ADDRESS> 10000000uact \
   --from <SOURCE_WALLET> \
   --chain-id akashnet-2 \
   --node https://rpc.akashnet.net:443
@@ -116,7 +116,7 @@ The bid pricing script determines how much the provider charges for resources.
 
 ### Script Format
 
-The script receives JSON input on stdin and outputs a price in uakt per block:
+The script receives JSON input on stdin and outputs a price in uact per block:
 
 ```bash
 #!/bin/bash
@@ -130,7 +130,7 @@ storage=$(echo "$data_in" | jq -r '.storage')   # bytes
 gpu=$(echo "$data_in" | jq -r '.gpu')           # GPU count
 gpu_model=$(echo "$data_in" | jq -r '.gpu_model // empty')
 
-# Calculate price components (uakt per block)
+# Calculate price components (uact per block)
 cpu_price=$(echo "scale=6; $cpu / 1000 * 1.5" | bc)
 memory_price=$(echo "scale=6; $memory / 1073741824 * 0.8" | bc)
 storage_price=$(echo "scale=6; $storage / 1073741824 * 0.02" | bc)

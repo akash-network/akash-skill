@@ -73,7 +73,7 @@ The [Console API](https://console-api.akash.network/v1/swagger) provides REST en
 |----------|-------|
 | Chain ID | `akashnet-2` |
 | Native Token | AKT |
-| Denomination | uakt (1 AKT = 1,000,000 uakt) |
+| Denomination | uact (1 AKT = 1,000,000 uact) |
 | Block Time | ~6 seconds |
 | Consensus | Tendermint BFT |
 

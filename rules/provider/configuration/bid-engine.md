@@ -49,7 +49,7 @@ bidWaitDuration: 5s
 bidTimeout: 5m
 
 # Minimum deposit required in the order's escrow
-bidMinDeposit: 5000000  # 5 AKT in uakt
+bidMinDeposit: 5000000  # 5 AKT in uact
 
 # Filter orders by maximum resource request
 bidMaxCPU: 256000       # 256 cores in millicpu
@@ -70,7 +70,7 @@ bidpricescript: |
 | `bidMaxConcurrent` | int | 10 | Maximum simultaneous bids |
 | `bidWaitDuration` | duration | 5s | Delay before submitting bid |
 | `bidTimeout` | duration | 5m | Bid acceptance timeout |
-| `bidMinDeposit` | int | 5000000 | Minimum escrow deposit (uakt) |
+| `bidMinDeposit` | int | 5000000 | Minimum escrow deposit (uact) |
 | `bidMaxCPU` | int | - | Max CPU per order (millicpu) |
 | `bidMaxMemory` | int | - | Max memory per order (bytes) |
 | `bidMaxStorage` | int | - | Max storage per order (bytes) |
@@ -121,7 +121,7 @@ Reject orders with insufficient escrow deposits:
 
 ```yaml
 # Require at least 5 AKT deposit
-bidMinDeposit: 5000000  # uakt
+bidMinDeposit: 5000000  # uact
 ```
 
 This protects against orders that would run out of funds quickly.
@@ -294,7 +294,7 @@ Track these metrics to optimize bidding:
 | Bid Win Rate | % of bids accepted by tenants | 20-40% |
 | Time to Bid | Seconds from order to bid submission | < 10s |
 | Active Leases | Number of running deployments | Provider capacity |
-| Revenue per Block | Total uakt earned per block | Business goal |
+| Revenue per Block | Total uact earned per block | Business goal |
 
 ## Troubleshooting Bids
 

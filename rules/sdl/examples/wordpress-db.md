@@ -86,10 +86,10 @@ profiles:
     dcloud:
       pricing:
         wordpress:
-          denom: uakt
+          denom: uact
           amount: 2000
         db:
-          denom: uakt
+          denom: uact
           amount: 3000
 
 deployment:
@@ -232,13 +232,13 @@ profiles:
     dcloud:
       pricing:
         wordpress:
-          denom: uakt
+          denom: uact
           amount: 2000
         db:
-          denom: uakt
+          denom: uact
           amount: 3000
         redis:
-          denom: uakt
+          denom: uact
           amount: 1000
 
 deployment:
@@ -317,10 +317,10 @@ profiles:
     dcloud:
       pricing:
         app:
-          denom: uakt
+          denom: uact
           amount: 2000
         db:
-          denom: uakt
+          denom: uact
           amount: 4000
 
 deployment:

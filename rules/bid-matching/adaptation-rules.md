@@ -7,7 +7,7 @@ When adapting an SDL to widen the bid pool, follow this priority order. The orde
 **Never modify `pricing.<profile>.amount` or `pricing.<profile>.denom`.**
 
 - The Akash chain enforces a max bid price. Raising `amount` can trip a *"Unit price exceeds the maximum allowed by the network"* error and the deployment is rejected outright before any bid window opens.
-- The providers endpoint does **not** expose which denoms a provider accepts, so denom changes are guesswork. `uact` is the post-BME default; do not reach for `uakt` to "fix" bids.
+- The providers endpoint does **not** expose which denoms a provider accepts, so denom changes are guesswork. Leave `denom` alone.
 - Pricing is a deployer choice, not a bid-matching lever. The matcher's job is to align compute requirements (CPU/memory/storage/GPU/feature flags) with provider supply.
 
 If capability matches are tiny and workload-relaxation options are exhausted, recommend out-of-band actions (direct provider DMs on Akash Discord, smaller-model functional test, pre-arranged capacity) — don't reach for the price knob.

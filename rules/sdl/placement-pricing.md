@@ -10,7 +10,7 @@ profiles:
     <placement-name>:
       pricing:
         <profile-name>:
-          denom: uakt
+          denom: uact
           amount: 1000
 ```
 
@@ -26,10 +26,10 @@ profiles:
     dcloud:
       pricing:
         web:
-          denom: uakt
+          denom: uact
           amount: 1000
         api:
-          denom: uakt
+          denom: uact
           amount: 2000
 ```
 
@@ -46,7 +46,7 @@ profiles:
         host: akash
       pricing:
         web:
-          denom: uakt
+          denom: uact
           amount: 1000
 ```
 
@@ -69,7 +69,7 @@ profiles:
           - akash18qa2a2ltfyvkyj0ggj3hkvuj6twzyumuaru9s4
       pricing:
         web:
-          denom: uakt
+          denom: uact
           amount: 1000
 ```
 
@@ -91,14 +91,14 @@ signedBy:
 
 ## Payment Denominations
 
-### uakt (Native AKT)
+### uact (Native AKT)
 
 The native Akash token in micro-denomination:
 
 ```yaml
 pricing:
   web:
-    denom: uakt
+    denom: uact
     amount: 1000      # 0.001 AKT per block
 ```
 
@@ -117,7 +117,7 @@ pricing:
 
 - Prices are per block (approximately every 6 seconds)
 - Monthly cost ≈ amount × 438,000 blocks/month
-- Example: `amount: 1000` uakt ≈ 438,000,000 uakt/month ≈ 438 AKT/month
+- Example: `amount: 1000` uact ≈ 438,000,000 uact/month ≈ 438 AKT/month
 
 ## Multiple Placements
 
@@ -134,7 +134,7 @@ profiles:
           - akash1auditor...
       pricing:
         web:
-          denom: uakt
+          denom: uact
           amount: 1000
 
     eu-west:
@@ -142,7 +142,7 @@ profiles:
         region: eu-west
       pricing:
         web:
-          denom: uakt
+          denom: uact
           amount: 1200
 ```
 
@@ -178,10 +178,10 @@ profiles:
           - akash1365yvmc4s7awdyj3n2sav7xfx76adc6dnmlx63
       pricing:
         web:
-          denom: uakt
+          denom: uact
           amount: 1000
         api:
-          denom: uakt
+          denom: uact
           amount: 2000
 
     backup:
@@ -198,7 +198,7 @@ profiles:
 
 ## Pricing Guidelines
 
-| Workload Type | Suggested uakt/block | Notes |
+| Workload Type | Suggested uact/block | Notes |
 |---------------|---------------------|-------|
 | Small web app | 500-1000 | 0.5 CPU, 512Mi RAM |
 | API server | 1000-2000 | 1-2 CPU, 1-2Gi RAM |

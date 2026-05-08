@@ -101,14 +101,14 @@ For other AI assistants or custom setups, reference the [`rules/`](./rules/) dir
 
 - **overview.md** - Akash Network introduction and architecture
 - **terminology.md** - Key terms (lease, bid, dseq, gseq, oseq)
-- **pricing.md** - Payment with uakt, USDC, IBC denoms
+- **pricing.md** - Payment with uact, USDC, IBC denoms
 
 ### SDL Configuration (`rules/sdl/`)
 
 - **schema-overview.md** - SDL structure and version requirements
 - **services.md** - Service configuration (image, expose, env, credentials)
 - **compute-resources.md** - CPU, memory, storage, and GPU specifications
-- **placement-pricing.md** - Provider selection and pricing (uakt/USDC)
+- **placement-pricing.md** - Provider selection and pricing (uact/USDC)
 - **deployment.md** - Service-to-profile mapping
 - **endpoints.md** - IP endpoint configuration (v2.1)
 - **validation-rules.md** - All constraints and validation rules
@@ -169,7 +169,7 @@ Bundled `scripts/match_providers.py` fetches the live audited+online provider se
 
 - **SDL v2.0 and v2.1** support (IP endpoints)
 - **All resource types**: CPU, memory, storage classes, GPUs
-- **Payment options**: uakt (native AKT) and USDC via IBC
+- **Payment options**: uact (native AKT) and USDC via IBC
 - **Persistent storage** with beta2/beta3/ram classes
 - **GPU models**: A100, T4, RTX 3090, and more
 - **IP lease endpoints** for custom domains

@@ -47,7 +47,7 @@ akash keys export wallet > wallet.key
 akash query bank balances <ADDRESS>
 
 # Send tokens
-akash tx bank send <FROM_ADDRESS> <TO_ADDRESS> 1000000uakt --from wallet
+akash tx bank send <FROM_ADDRESS> <TO_ADDRESS> 1000000uact --from wallet
 ```
 
 ## Certificates
@@ -70,7 +70,7 @@ akash tx cert revoke --from wallet
 akash tx deployment create deploy.yaml --from wallet
 
 # Create with deposit
-akash tx deployment create deploy.yaml --deposit 10000000uakt --from wallet
+akash tx deployment create deploy.yaml --deposit 10000000uact --from wallet
 
 # List deployments
 akash query deployment list --owner <ADDRESS>
@@ -82,7 +82,7 @@ akash query deployment get --owner <ADDRESS> --dseq <DSEQ>
 akash tx deployment update deploy.yaml --dseq <DSEQ> --from wallet
 
 # Deposit funds
-akash tx deployment deposit 5000000uakt --dseq <DSEQ> --from wallet
+akash tx deployment deposit 5000000uact --dseq <DSEQ> --from wallet
 
 # Close deployment
 akash tx deployment close --dseq <DSEQ> --from wallet

@@ -56,7 +56,7 @@ curl https://console-api.akash.network/v1/wallet/balance \
     "address": "akash1abc...",
     "balances": [
       {
-        "denom": "uakt",
+        "denom": "uact",
         "amount": "10000000"
       },
       {
@@ -77,7 +77,7 @@ curl -X POST https://console-api.akash.network/v1/wallet/deposit \
   -H "Authorization: Bearer <api-key>" \
   -H "Content-Type: application/json" \
   -d '{
-    "denom": "uakt"
+    "denom": "uact"
   }'
 ```
 
@@ -89,7 +89,7 @@ curl -X POST https://console-api.akash.network/v1/wallet/deposit \
     "address": "akash1abc...",
     "memo": "deposit-12345",
     "minimumDeposit": "1000000",
-    "denom": "uakt"
+    "denom": "uact"
   }
 }
 ```
@@ -169,7 +169,7 @@ Send from your personal wallet:
 akash tx bank send \
   <your-address> \
   <managed-wallet-address> \
-  10000000uakt \
+  10000000uact \
   --from wallet
 ```
 
@@ -183,7 +183,7 @@ curl -X POST https://console-api.akash.network/v1/deployment \
   -H "Content-Type: application/json" \
   -d '{
     "sdl": "<your-sdl>",
-    "deposit": "5000000uakt",
+    "deposit": "5000000uact",
     "walletId": "wallet-123"
   }'
 ```
@@ -216,7 +216,7 @@ curl -X POST https://console-api.akash.network/v1/deployment/<dseq>/deposit \
   -H "Authorization: Bearer <api-key>" \
   -H "Content-Type: application/json" \
   -d '{
-    "amount": "5000000uakt",
+    "amount": "5000000uact",
     "walletId": "wallet-123"
   }'
 ```
@@ -236,7 +236,7 @@ async function deployWithManagedWallet(sdl: string) {
   });
   const { data: { balances } } = await balanceRes.json();
 
-  const aktBalance = balances.find(b => b.denom === 'uakt')?.amount || '0';
+  const aktBalance = balances.find(b => b.denom === 'uact')?.amount || '0';
   if (BigInt(aktBalance) < BigInt('5000000')) {
     throw new Error('Insufficient balance');
   }
@@ -250,7 +250,7 @@ async function deployWithManagedWallet(sdl: string) {
     },
     body: JSON.stringify({
       sdl,
-      deposit: '5000000uakt'
+      deposit: '5000000uact'
     })
   });
   const { data: { dseq } } = await deployRes.json();

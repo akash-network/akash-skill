@@ -190,7 +190,7 @@ profiles:
           - us-west
       pricing:
         web:
-          denom: uakt
+          denom: uact
           amount: 1000
 ```
 
@@ -210,7 +210,7 @@ profiles:
           - akash1365ez...   # Akash Network auditor
       pricing:
         web:
-          denom: uakt
+          denom: uact
           amount: 1000
 ```
 
@@ -228,7 +228,7 @@ profiles:
           - akash1365ez...
       pricing:
         ml:
-          denom: uakt
+          denom: uact
           amount: 50000
 ```
 

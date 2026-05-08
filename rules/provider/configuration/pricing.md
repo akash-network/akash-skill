@@ -4,12 +4,12 @@ Configuring how your Akash provider calculates bid prices for deployment orders.
 
 ## Pricing Model Overview
 
-Akash providers use a **bid pricing script** to dynamically calculate prices for each deployment order. The script receives resource requirements as JSON input and outputs a price in uakt per block.
+Akash providers use a **bid pricing script** to dynamically calculate prices for each deployment order. The script receives resource requirements as JSON input and outputs a price in uact per block.
 
 ```
 ┌────────────────┐     JSON      ┌──────────────────┐     Price     ┌──────────┐
 │ Deployment     │ ────────────► │ Bid Pricing      │ ────────────► │ Bid      │
-│ Order          │  (resources)  │ Script           │  (uakt/block) │ Submitted│
+│ Order          │  (resources)  │ Script           │  (uact/block) │ Submitted│
 │ (from chain)   │               │ (on provider)    │               │          │
 └────────────────┘               └──────────────────┘               └──────────┘
 ```
@@ -48,7 +48,7 @@ Example input:
 
 ## Pricing Script Output
 
-The script must output a single number: the total price in uakt per block.
+The script must output a single number: the total price in uact per block.
 
 ```
 15.5
@@ -59,7 +59,7 @@ The script must output a single number: the total price in uakt per block.
 ### Converting to Monthly Cost
 
 ```
-Monthly Cost (uakt) = price_per_block * 438,000
+Monthly Cost (uact) = price_per_block * 438,000
 Monthly Cost (AKT)  = price_per_block * 438,000 / 1,000,000
 ```
 
@@ -82,7 +82,7 @@ Use these as guidelines for setting competitive prices:
 
 ### Price per Block Formulas
 
-Converting monthly target to per-block price (in uakt):
+Converting monthly target to per-block price (in uact):
 
 ```
 price_per_block = (monthly_usd_target / akt_price_usd) * 1000000 / 438000
@@ -91,7 +91,7 @@ price_per_block = (monthly_usd_target / akt_price_usd) * 1000000 / 438000
 Example: Target $10/month per CPU core, AKT at $3.50:
 
 ```
-price_per_block = ($10 / $3.50) * 1000000 / 438000 = 6.52 uakt/block per core
+price_per_block = ($10 / $3.50) * 1000000 / 438000 = 6.52 uact/block per core
 ```
 
 ## Example Pricing Scripts
@@ -109,7 +109,7 @@ memory=$(echo "$data_in" | jq -r '.memory')
 storage=$(echo "$data_in" | jq -r '.storage')
 gpu=$(echo "$data_in" | jq -r '.gpu // 0')
 
-# Prices in uakt per block
+# Prices in uact per block
 # CPU: ~$5/month per core at AKT=$3.50
 cpu_price=$(echo "scale=6; $cpu / 1000 * 3.3" | bc)
 
@@ -149,19 +149,19 @@ gpu_model=$(echo "$data_in" | jq -r '.gpu_model // "unknown"')
 persistent_storage=$(echo "$data_in" | jq -r '.persistent_storage // 0')
 ip_lease=$(echo "$data_in" | jq -r '.ip_lease // 0')
 
-# CPU pricing (uakt/block per millicpu)
+# CPU pricing (uact/block per millicpu)
 cpu_price=$(echo "scale=6; $cpu / 1000 * 3.3" | bc)
 
-# Memory pricing (uakt/block per byte)
+# Memory pricing (uact/block per byte)
 memory_price=$(echo "scale=6; $memory / 1073741824 * 2.0" | bc)
 
-# Ephemeral storage pricing (uakt/block per byte)
+# Ephemeral storage pricing (uact/block per byte)
 storage_price=$(echo "scale=6; $storage / 1073741824 * 0.03" | bc)
 
-# Persistent storage pricing (uakt/block per byte)
+# Persistent storage pricing (uact/block per byte)
 persistent_price=$(echo "scale=6; $persistent_storage / 1073741824 * 0.15" | bc)
 
-# GPU pricing by model (uakt/block per GPU)
+# GPU pricing by model (uact/block per GPU)
 gpu_price=0
 if [ "$gpu" -gt 0 ]; then
   case "$gpu_model" in
@@ -199,7 +199,7 @@ if [ "$gpu" -gt 0 ]; then
   gpu_price=$(echo "scale=6; $gpu * $gpu_unit_price" | bc)
 fi
 
-# IP lease pricing (uakt/block per IP)
+# IP lease pricing (uact/block per IP)
 ip_price=$(echo "scale=6; $ip_lease * 3.3" | bc)
 
 # Total price
@@ -229,7 +229,7 @@ gpu=$(echo "$data_in" | jq -r '.gpu // 0')
 gpu_model=$(echo "$data_in" | jq -r '.gpu_model // "unknown"')
 
 # Pricing in USD terms (per month)
-# Then convert to uakt per block using AKT price
+# Then convert to uact per block using AKT price
 # Update AKT_PRICE regularly or fetch dynamically
 AKT_PRICE=3.50
 
@@ -239,15 +239,15 @@ memory_monthly_usd=2.5   # per GB
 storage_monthly_usd=0.05 # per GB
 gpu_monthly_usd=300.0    # per GPU (default)
 
-# Convert monthly USD to uakt per block
+# Convert monthly USD to uact per block
 # formula: (monthly_usd / akt_price) * 1000000 / 438000
-usd_to_uakt_block() {
+usd_to_uact_block() {
   echo "scale=6; ($1 / $AKT_PRICE) * 1000000 / 438000" | bc
 }
 
-cpu_rate=$(usd_to_uakt_block $cpu_monthly_usd)
-memory_rate=$(usd_to_uakt_block $memory_monthly_usd)
-storage_rate=$(usd_to_uakt_block $storage_monthly_usd)
+cpu_rate=$(usd_to_uact_block $cpu_monthly_usd)
+memory_rate=$(usd_to_uact_block $memory_monthly_usd)
+storage_rate=$(usd_to_uact_block $storage_monthly_usd)
 
 cpu_price=$(echo "scale=6; $cpu / 1000 * $cpu_rate" | bc)
 memory_price=$(echo "scale=6; $memory / 1073741824 * $memory_rate" | bc)
@@ -262,13 +262,13 @@ if [ "$gpu" -gt 0 ]; then
     "rtx3090") gpu_monthly_usd=200 ;;
     *) gpu_monthly_usd=300 ;;
   esac
-  gpu_rate=$(usd_to_uakt_block $gpu_monthly_usd)
+  gpu_rate=$(usd_to_uact_block $gpu_monthly_usd)
   gpu_price=$(echo "scale=6; $gpu * $gpu_rate" | bc)
 fi
 
 total=$(echo "scale=6; $cpu_price + $memory_price + $storage_price + $gpu_price" | bc)
 
-# Minimum 1 uakt/block
+# Minimum 1 uact/block
 if (( $(echo "$total < 1" | bc -l) )); then
   total=1
 fi

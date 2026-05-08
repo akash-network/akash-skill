@@ -58,7 +58,7 @@ profiles:
     <placement-name>:
       pricing:
         <profile-name>:
-          denom: uakt
+          denom: uact
           amount: <price>
 
 deployment:

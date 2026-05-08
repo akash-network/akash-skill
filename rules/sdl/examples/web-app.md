@@ -37,7 +37,7 @@ profiles:
     dcloud:
       pricing:
         web:
-          denom: uakt
+          denom: uact
           amount: 1000
 
 deployment:
@@ -83,7 +83,7 @@ profiles:
     dcloud:
       pricing:
         app:
-          denom: uakt
+          denom: uact
           amount: 1500
 
 deployment:
@@ -130,7 +130,7 @@ profiles:
     dcloud:
       pricing:
         api:
-          denom: uakt
+          denom: uact
           amount: 1000
 
 deployment:
@@ -178,7 +178,7 @@ profiles:
     dcloud:
       pricing:
         myapp:
-          denom: uakt
+          denom: uact
           amount: 2000
 
 deployment:

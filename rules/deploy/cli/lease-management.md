@@ -138,7 +138,7 @@ akash query deployment get \
 ### Deposit More Funds
 
 ```bash
-akash tx deployment deposit 5000000uakt --dseq <DSEQ> --from wallet
+akash tx deployment deposit 5000000uact --dseq <DSEQ> --from wallet
 ```
 
 ### Check Remaining Time
@@ -207,7 +207,7 @@ akash provider lease-logs --dseq <DSEQ> ... --tail 50
 
 ```bash
 # Deposit immediately
-akash tx deployment deposit 10000000uakt --dseq <DSEQ> --from wallet
+akash tx deployment deposit 10000000uact --dseq <DSEQ> --from wallet
 
 # If deployment closed, create new one
 akash tx deployment create deploy.yaml --from wallet

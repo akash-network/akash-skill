@@ -83,7 +83,7 @@ profiles:
     dcloud:
       pricing:
         web:
-          denom: uakt
+          denom: uact
           amount: 1000
 
 deployment:
@@ -159,13 +159,13 @@ profiles:
     dcloud:
       pricing:
         frontend-profile:
-          denom: uakt
+          denom: uact
           amount: 500
         backend-profile:
-          denom: uakt
+          denom: uact
           amount: 1000
         db-profile:
-          denom: uakt
+          denom: uact
           amount: 2000
 
 deployment:
@@ -197,7 +197,7 @@ profiles:
         region: us-west
       pricing:
         web:
-          denom: uakt
+          denom: uact
           amount: 1000
 
     eu-region:
@@ -205,7 +205,7 @@ profiles:
         region: eu-central
       pricing:
         web:
-          denom: uakt
+          denom: uact
           amount: 1200
 
 deployment:

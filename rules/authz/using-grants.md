@@ -66,7 +66,7 @@ async function executeAsGrantee(
     },
     groups: sdl.groups(),
     version: await sdl.manifestVersion(),
-    deposit: { denom: "uakt", amount: "5000000" },
+    deposit: { denom: "uact", amount: "5000000" },
     depositor: granterAddress
   });
 
@@ -160,7 +160,7 @@ class AkashAutomation {
       id: { owner: this.granterAddress, dseq: BigInt(dseq) },
       groups: sdl.groups(),
       version: await sdl.manifestVersion(),
-      deposit: { denom: "uakt", amount: "5000000" },
+      deposit: { denom: "uact", amount: "5000000" },
       depositor: this.granterAddress
     });
 

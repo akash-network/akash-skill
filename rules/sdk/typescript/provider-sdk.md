@@ -331,7 +331,7 @@ class AkashDeployment {
         id: { owner: this.address, dseq: BigInt(dseq) },
         groups: sdl.groups(),
         version: await sdl.manifestVersion(),
-        deposit: { denom: "uakt", amount: "5000000" },
+        deposit: { denom: "uact", amount: "5000000" },
         depositor: this.address
       }
     };
