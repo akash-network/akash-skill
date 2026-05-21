@@ -16,7 +16,7 @@ There is no fifth path. There is no "Console API + my own wallet." A Console acc
 ## Console has two web UIs — disambiguate
 
 - **Standard Console** (`console.akash.network`) — managed wallet. The Console API in this skill drives this product.
-- **Console Air** (`console-air.akash.network`) — self-custody UI for Keplr / Leap / hardware wallets. ([github.com/akash-network/console-air](https://github.com/akash-network/console-air).) It is a **UI**, not an API. This skill does not cover it; programmatic self-custody users go CLI or SDK.
+- **Console Air** ([github.com/akash-network/console-air](https://github.com/akash-network/console-air)) — self-custody UI for Keplr / Leap / hardware wallets. **Self-hosted** — there is no hosted URL at `console-air.akash.network`; users clone the repo and run it locally. It is a **UI**, not an API. This skill does not cover it; programmatic self-custody users go CLI or SDK.
 
 ## The four methods at a glance
 

@@ -59,7 +59,7 @@ If a user has a self-custody wallet (Keplr, Leap, Ledger) and wants to deploy fr
 ### Console has two flavors — disambiguate
 
 - **Standard Console** at `console.akash.network` — managed wallet. This is what the Console API in this skill operates on.
-- **Console Air** at `console-air.akash.network` ([github.com/akash-network/console-air](https://github.com/akash-network/console-air)) — self-custody UI for Keplr / Leap / hardware wallets. **Out of scope for this skill** (it is a UI, not an API). If a user wants a UI with self-custody, point them there and stop; programmatic self-custody users go CLI or SDK.
+- **Console Air** ([github.com/akash-network/console-air](https://github.com/akash-network/console-air)) — self-custody UI for Keplr / Leap / hardware wallets. **Self-hosted** — there is no official hosted URL at `console-air.akash.network`; users clone the repo and run it locally or on their own infrastructure. **Out of scope for this skill** (it is a UI, not an API). If a user wants a UI with self-custody, point them at the repo and stop; programmatic self-custody users go CLI or SDK.
 
 ### Recognize strong cues — skip the question when they are clear
 
@@ -73,9 +73,27 @@ If a user has a self-custody wallet (Keplr, Leap, Ledger) and wants to deploy fr
 
 If the user is silent on the method, ask. Phrase it as a short menu, not an open-ended question.
 
+### When on the Console API path — ask which language
+
+Once the user commits to Console API, **ask which language** the integration will be written in before producing code. Don't default to curl + Bash unless the user has clearly indicated they want shell — e.g. `"curl"`, `"bash"`, `"shell script"`, `"$AKASH_API_KEY"` in a `.sh` context, or `"CI/CD"` for a generic step. Otherwise the answer should match the runtime they're actually targeting.
+
+Recognize cues; otherwise ask:
+
+| Cue | Language to use |
+|---|---|
+| `"curl"`, `"bash"`, `"shell"`, `"GitHub Actions"` step | curl + Bash |
+| `"Node"`, `"Next.js"`, `"Express"`, `package.json`, `.ts` file | TypeScript / Node `fetch` |
+| `"Python"`, `requirements.txt`, `.py` file, `"FastAPI"`, `"Django"` | Python `requests` or `httpx` |
+| `"Go"`, `go.mod`, `.go` file | Go `net/http` |
+| `"Rust"`, `Cargo.toml` | Rust `reqwest` |
+
+If the user is silent on the language, ask: *"What's your integration written in? I can give you curl, Node/TS, Python, or Go — same flow, different syntax."* Then commit.
+
+This is a separate gate from the deployment-method selection — they happen in sequence. Method first, language second. Once both are chosen, **stay on both** for the rest of the conversation.
+
 ### Once committed, stay there
 
-- On the **Console API** path: don't suggest `akash keys add`, don't suggest mTLS certs (deprecated for Console API — see `rules/deploy/certificates/mtls-legacy.md`), don't suggest `akash query market bid list` — every read is a curl or fetch with `x-api-key`.
+- On the **Console API** path: don't suggest `akash keys add`, don't suggest mTLS certs (deprecated for Console API — see `rules/deploy/certificates/mtls-legacy.md`), don't suggest `akash query market bid list` — every read is an HTTP call with `x-api-key` in whatever language the user picked.
 - On the **CLI** path: don't suggest `/v1/deployments` HTTP calls. Don't suggest API keys. Stay on `akash tx ...` / `akash query ...`.
 - On the **SDK** paths: don't reach for curl examples or CLI commands; the user wants code.
 
@@ -236,6 +254,6 @@ profiles:
 - **[awesome-akash](https://github.com/akash-network/awesome-akash)** — 100+ production-ready SDL templates
 - **[Akash Network Docs](https://akash.network/docs/)** — Official documentation
 - **[Console (managed wallet)](https://console.akash.network)** — Web UI; managed-wallet equivalent of this skill's Console API path
-- **[Console Air (self-custody)](https://console-air.akash.network)** — Web UI for Keplr / Leap / hardware wallets
+- **[Console Air (self-custody, self-hosted)](https://github.com/akash-network/console-air)** — Web UI for Keplr / Leap / hardware wallets; clone and run locally
 - **[Console API Swagger](https://console-api.akash.network/v1/doc)** — Full OpenAPI spec (this skill curates the deployment-management subset; the full spec also contains Console-UI internals like Stripe, alerts, user signup)
 - **[@akashnetwork/chain-sdk](https://www.npmjs.com/package/@akashnetwork/chain-sdk)** — TypeScript SDK (self-custody JWT signing, chain messages)

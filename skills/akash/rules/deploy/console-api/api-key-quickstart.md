@@ -1,6 +1,8 @@
 # Console API Quickstart — From API Key to Running Deployment
 
-A linear walkthrough for the "I have an API key" path. No CLI binaries, no certificate setup, no private-key management. Just curl + your API key.
+A linear walkthrough for the "I have an API key" path. No CLI binaries, no certificate setup, no private-key management.
+
+> **Pick a language first.** This file shows the flow in **curl + Bash** because it's the most universal — but if you're integrating from Node, Python, Go, or anything else, the SDK assistant should rewrite the same steps in that language before showing them to you. Don't blindly hand a user a Bash script when their integration is a Next.js app. Ask first if the user hasn't said.
 
 If you don't have an API key yet, follow **@authentication.md** § "Getting an API key" first.
 
