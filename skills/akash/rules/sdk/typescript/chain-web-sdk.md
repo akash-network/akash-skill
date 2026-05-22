@@ -1,6 +1,6 @@
 # Chain SDK — Browser
 
-Using `@akashnetwork/chain-sdk/web` from a browser application, signing transactions with a wallet extension (Keplr, Leap).
+Using `@akashnetwork/chain-sdk/web` from a browser application, signing transactions with a wallet extension (Keplr).
 
 If you haven't installed yet, see **@installation.md**.
 
@@ -42,17 +42,6 @@ const sdk = createChainNodeWebSDK({
   query: { baseUrl: "https://api.akashnet.net" }, // gRPC-Gateway base
   tx:    { signer: stargate },
 });
-```
-
-## Wallet integration (Leap)
-
-Identical pattern — Leap exposes the same Keplr-compatible interface on `window.leap`:
-
-```typescript
-if (!window.leap) throw new Error("Leap not installed");
-await window.leap.enable("akashnet-2");
-const offlineSigner = window.leap.getOfflineSigner("akashnet-2");
-// ... same as above
 ```
 
 ## Wallet integration (WalletConnect / hardware)

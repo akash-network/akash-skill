@@ -127,7 +127,7 @@ This is a major restructure. Highlights:
   - `/v1/sdl/validate` and `/v1/sdl/price` no longer exist; pricing is now `POST /v1/pricing` against raw `cpu/memory/storage` numbers.
   - `POST /v1/certificates` is removed for the Console API path — identity is verified by API key.
 - **Method-selection guidance.** The deployer skill now asks once which deployment method (Console API, CLI, TypeScript SDK, Go SDK) the user wants and commits to it. The previous version conflated "Console API" with "managed wallet" and steered API-key users toward CLI/cert workflows.
-- **Console Air disambiguation.** The new **self-hosted** Console Air repo (self-custody UI for Keplr/Leap/hardware wallets — clone from [github.com/akash-network/console-air](https://github.com/akash-network/console-air)) is called out distinctly from the managed-wallet `console.akash.network`.
+- **Console Air disambiguation.** The new **self-hosted** Console Air repo (self-custody UI for Keplr or hardware wallets — clone from [github.com/akash-network/console-air](https://github.com/akash-network/console-air)) is called out distinctly from the managed-wallet `console.akash.network`.
 - **Logs/events flow documented.** New file `skills/akash/rules/deploy/console-api/operations.md` covers the full JWT + provider proxy + WebSocket flow for streaming logs from a running deployment.
 - **TypeScript SDK refreshed.** Documentation now targets `@akashnetwork/chain-sdk` (the current package); the deprecated `@akashnetwork/akashjs` has been removed entirely.
 - **Denom rename.** All `uakt` references replaced with `uact` (the current native denom). The legacy name is only mentioned in historical / migration notes.

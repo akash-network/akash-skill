@@ -91,7 +91,7 @@ akash tx deployment deposit \
 
 ```bash
 # From Noble to Akash (conceptual)
-# Use a wallet like Keplr or Leap for easier transfers
+# Use a wallet like Keplr for easier transfers
 ```
 
 ## Price Calculations

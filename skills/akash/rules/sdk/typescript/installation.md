@@ -107,7 +107,7 @@ const deployments = await sdk.akash.deployment.v1beta4.getDeployments({
 console.log(deployments);
 ```
 
-## Minimal web setup (Keplr / Leap)
+## Minimal web setup (Keplr)
 
 The web entry expects you to supply a `TxClient` (an object with a `signAndBroadcast` method) — typically wired to a browser wallet extension.
 

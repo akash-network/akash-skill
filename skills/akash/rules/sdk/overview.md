@@ -70,7 +70,7 @@ Use the Cosmos SDK (`github.com/cosmos/cosmos-sdk`) for transaction building, si
 Best for:
 - Web applications (use the `/web` entry)
 - Node.js services (use the default entry)
-- Browser-based dApps with Keplr/Leap
+- Browser-based dApps with Keplr
 
 Features:
 - Chain transactions and queries via a flat proxy
@@ -139,7 +139,7 @@ msg := &v1beta4.MsgCreateDeployment{
 
 ## When to use an SDK vs. the Console API
 
-- Use the **TypeScript SDK** when you need self-custody (Keplr / Leap / hardware) and want JS/TS code.
+- Use the **TypeScript SDK** when you need self-custody (Keplr or hardware) and want JS/TS code.
 - Use the **Go SDK** for self-custody backends.
 - Use the **Console API** (not this chapter) if you want HTTP + an API key and don't mind that Console manages the wallet. See **@../deploy/console-api/**.
 

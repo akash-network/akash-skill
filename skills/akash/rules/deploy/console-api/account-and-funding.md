@@ -222,7 +222,7 @@ See `deployment-endpoints.md` for the full list of allowed `typeUrl` values and 
 
 ## What this file does NOT cover
 
-- **Self-custody wallets.** Keplr, Leap, Ledger — none of those touch the Console API. Use the CLI or an SDK (see `../cli/` and `../../sdk/`).
+- **Self-custody wallets.** Keplr or Ledger — none of those touch the Console API. Use the CLI or an SDK (see `../cli/` and `../../sdk/`).
 - **Direct on-chain transactions.** If you want to construct and broadcast `MsgCreateDeployment` yourself, use the Go or TypeScript SDK — the Console API's `/v1/tx` will sign with the *managed* wallet, not yours.
 
 ## Related files

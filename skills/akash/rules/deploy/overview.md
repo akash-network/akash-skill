@@ -11,12 +11,12 @@ This page exists because conflating these methods is the most common mistake. Th
 - **Console-managed wallet** → Console API. You sign up on console.akash.network, generate an API key, and authenticate every request with `x-api-key`. The Console account owns the on-chain wallet, holds the funds, and signs transactions on your behalf. No private keys ever leave Console's infrastructure.
 - **Self-custody** → CLI, TypeScript SDK, or Go SDK. You hold the private key (in `~/.akash/keys`, a browser wallet like Keplr, a Ledger, or wherever), and your code signs each transaction locally before broadcasting.
 
-There is no fifth path. There is no "Console API + my own wallet." A Console account IS the wallet — the API key authenticates as that account, period. If a user wants to deploy from a self-custody wallet (Keplr / Leap / hardware), they need the CLI or an SDK.
+There is no fifth path. There is no "Console API + my own wallet." A Console account IS the wallet — the API key authenticates as that account, period. If a user wants to deploy from a self-custody wallet (Keplr or hardware), they need the CLI or an SDK.
 
 ## Console has two web UIs — disambiguate
 
 - **Standard Console** (`console.akash.network`) — managed wallet. The Console API in this skill drives this product.
-- **Console Air** ([github.com/akash-network/console-air](https://github.com/akash-network/console-air)) — self-custody UI for Keplr / Leap / hardware wallets. **Self-hosted** — there is no hosted URL at `console-air.akash.network`; users clone the repo and run it locally. It is a **UI**, not an API. This skill does not cover it; programmatic self-custody users go CLI or SDK.
+- **Console Air** ([github.com/akash-network/console-air](https://github.com/akash-network/console-air)) — self-custody UI for Keplr or hardware wallets. **Self-hosted** — there is no hosted URL at `console-air.akash.network`; users clone the repo and run it locally. It is a **UI**, not an API. This skill does not cover it; programmatic self-custody users go CLI or SDK.
 
 ## The four methods at a glance
 
@@ -24,7 +24,7 @@ There is no fifth path. There is no "Console API + my own wallet." A Console acc
 |---|---|---|---|---|
 | **Console API** | Managed | `x-api-key` header | HTTP + JSON | CI/CD, server-to-server, integrations, anything where you have a deploy account but no private keys |
 | **Akash CLI** | Self-custody | Local key + signature | `akash` binary | Shell scripting, manual workflows, full local control |
-| **TypeScript SDK** | Self-custody | Wallet adapter (Keplr, Leap, mnemonic) | `@akashnetwork/chain-sdk` | dApps, Node.js services, any TS/JS integration |
+| **TypeScript SDK** | Self-custody | Wallet adapter (Keplr or mnemonic) | `@akashnetwork/chain-sdk` | dApps, Node.js services, any TS/JS integration |
 | **Go SDK** | Self-custody | Local key | Go modules | Backend Go services, custom tooling |
 
 ## Console API
@@ -68,7 +68,7 @@ See **@cli/** for installation and command reference.
 
 **Strengths**
 - Native JS/TS integration
-- Works with browser wallet adapters (Keplr, Leap)
+- Works with browser wallet adapters (Keplr)
 - Type safety
 - Self-custody — keys stay client-side
 
@@ -169,6 +169,6 @@ Do **not** silently mix methods. If the user is mid-CLI workflow and you suggest
 |---|---|---|---|
 | `x-api-key` header | ✅ primary | ❌ | ❌ |
 | Local wallet key | ❌ | ✅ primary | ✅ primary |
-| Browser wallet adapter (Keplr/Leap) | ❌ | ❌ | ✅ (TS SDK in browser) |
+| Browser wallet adapter (Keplr) | ❌ | ❌ | ✅ (TS SDK in browser) |
 | `Authorization: Bearer <jwt>` | ✅ (for Console-account JWT session auth) | ❌ | ❌ |
 | mTLS certificate | ❌ ([deprecated](../certificates/mtls-legacy.md) for Console API; CLI direct-to-provider calls still use it where applicable) | ✅ (CLI direct provider calls) | ✅ (SDK direct provider calls) |

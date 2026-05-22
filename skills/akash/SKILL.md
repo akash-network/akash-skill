@@ -54,19 +54,19 @@ There are **four** paths:
 
 **A Console account *is* a wallet.** When you sign up on `console.akash.network` and generate an API key, that API key authenticates as your Console account — and your account has a managed wallet underneath it. Deployments spend from that wallet. There is no separate "Console API + bring your own wallet" mode.
 
-If a user has a self-custody wallet (Keplr, Leap, Ledger) and wants to deploy from *that* wallet, they need the **CLI** or **an SDK**. The Console API will not sign with an external wallet.
+If a user has a self-custody wallet (Keplr or Ledger) and wants to deploy from *that* wallet, they need the **CLI** or **an SDK**. The Console API will not sign with an external wallet.
 
 ### Console has two flavors — disambiguate
 
 - **Standard Console** at `console.akash.network` — managed wallet. This is what the Console API in this skill operates on.
-- **Console Air** ([github.com/akash-network/console-air](https://github.com/akash-network/console-air)) — self-custody UI for Keplr / Leap / hardware wallets. **Self-hosted** — there is no official hosted URL at `console-air.akash.network`; users clone the repo and run it locally or on their own infrastructure. **Out of scope for this skill** (it is a UI, not an API). If a user wants a UI with self-custody, point them at the repo and stop; programmatic self-custody users go CLI or SDK.
+- **Console Air** ([github.com/akash-network/console-air](https://github.com/akash-network/console-air)) — self-custody UI for Keplr or hardware wallets. **Self-hosted** — there is no official hosted URL at `console-air.akash.network`; users clone the repo and run it locally or on their own infrastructure. **Out of scope for this skill** (it is a UI, not an API). If a user wants a UI with self-custody, point them at the repo and stop; programmatic self-custody users go CLI or SDK.
 
 ### Recognize strong cues — skip the question when they are clear
 
 | If the user mentions… | Commit to… |
 |---|---|
 | `"I have an API key"`, `"$AKASH_API_KEY"`, `"x-api-key"`, `"curl"`, `"CI/CD"` | Console API |
-| `"Keplr"`, `"Leap"`, `"Ledger"`, `"hardware wallet"`, `"my wallet"`, `"self-custody"`, `"akash keys add"` | CLI or SDK (ask which) |
+| `"Keplr"`, `"Ledger"`, `"hardware wallet"`, `"my wallet"`, `"self-custody"`, `"akash keys add"` | CLI or SDK (ask which) |
 | `"React app"`, `"Next.js"`, `"@akashnetwork/chain-sdk"` | TypeScript SDK |
 | `"Go service"`, `"golang"`, `"cosmos-sdk Go"` | Go SDK |
 | `"Console Air"`, `"web UI for my Keplr wallet"` | Console Air (out-of-scope; point to docs) |
@@ -254,6 +254,6 @@ profiles:
 - **[awesome-akash](https://github.com/akash-network/awesome-akash)** — 100+ production-ready SDL templates
 - **[Akash Network Docs](https://akash.network/docs/)** — Official documentation
 - **[Console (managed wallet)](https://console.akash.network)** — Web UI; managed-wallet equivalent of this skill's Console API path
-- **[Console Air (self-custody, self-hosted)](https://github.com/akash-network/console-air)** — Web UI for Keplr / Leap / hardware wallets; clone and run locally
+- **[Console Air (self-custody, self-hosted)](https://github.com/akash-network/console-air)** — Web UI for Keplr or hardware wallets; clone and run locally
 - **[Console API Swagger](https://console-api.akash.network/v1/doc)** — Full OpenAPI spec (this skill curates the deployment-management subset; the full spec also contains Console-UI internals like Stripe, alerts, user signup)
 - **[@akashnetwork/chain-sdk](https://www.npmjs.com/package/@akashnetwork/chain-sdk)** — TypeScript SDK (self-custody JWT signing, chain messages)
