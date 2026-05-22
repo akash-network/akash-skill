@@ -12,7 +12,7 @@ All write endpoints wrap payloads in `{ "data": { ... } }`.
 - [Pricing](#pricing)
 - [Bid screening](#bid-screening)
 - [Providers](#providers)
-- [Generic signed transaction](#generic-signed-transaction)
+- [Auto-top-up (deployment settings v2)](#auto-top-up-deployment-settings-v2)
 
 For API keys and JWT minting, see **@authentication.md**. For logs/events/status from the provider, see **@operations.md**.
 
@@ -183,7 +183,8 @@ POST /v1/leases
 
 **Auth:** `x-api-key`
 
-**Body:**
+**Body:** **flat** — this is the one exception in the API; the body is NOT wrapped in `{ "data": { ... } }`.
+
 ```json
 {
   "manifest": "<manifest from the create-deployment response>",
@@ -198,6 +199,8 @@ This single call:
 1. Broadcasts a `MsgCreateLease` for each item in `leases`.
 2. Sends the manifest to each chosen provider.
 
+**Bid identity gotcha:** when you copy a bid from the bids list response into the `leases` array, take **only** `dseq`, `gseq`, `oseq`, `provider`. The bid object also contains `owner` and `bseq` — those are not part of the lease payload and including them is unnecessary.
+
 **Example (one provider):**
 ```bash
 curl -X POST https://console-api.akash.network/v1/leases \
@@ -211,7 +214,7 @@ curl -X POST https://console-api.akash.network/v1/leases \
 
 ### Closing a lease
 
-There is no `DELETE /v1/lease/...` endpoint. To close a lease, send a `MsgCloseDeployment` (closes all leases under the deployment) via `POST /v1/tx`, or close the entire deployment via `DELETE /v1/deployments/{dseq}`. See [Generic signed transaction](#generic-signed-transaction).
+There is no `DELETE /v1/lease/...` endpoint. To close a lease, close the entire deployment via `DELETE /v1/deployments/{dseq}` — that's the only documented way. Closing an individual lease while keeping the deployment open is not exposed as a programmatic endpoint.
 
 ### Reading lease state
 
@@ -222,16 +225,12 @@ There is no `GET /v1/lease/...` either. Lease state — current bid price, escro
 ### List bids for a deployment
 
 ```
-GET /v1/bids/{dseq}
-```
-
-— or —
-
-```
 GET /v1/bids?dseq={dseq}
 ```
 
 **Auth:** `x-api-key`
+
+This is the canonical form documented in the official API reference. A path-parameter variant (`GET /v1/bids/{dseq}`) may be exposed by the running service but is **not in the official docs** — use the query-string form.
 
 **Response:** an array of bids. Each bid contains:
 
@@ -379,45 +378,49 @@ GET /v1/auditors
 
 All public; useful for SDL placement attribute editors.
 
-## Generic signed transaction
+## Auto-top-up (deployment settings v2)
+
+Programmatically toggle auto-top-up for a specific deployment. Documented in the official API reference.
+
+### Get deployment settings
 
 ```
-POST /v1/tx
+GET /v2/deployment-settings/{dseq}
 ```
 
 **Auth:** `x-api-key`
 
-The Console API's escape hatch — broadcasts an arbitrary Akash-chain message signed by your account's managed wallet. Use this when there's no purpose-built endpoint.
+Returns the current settings for the deployment. The record is auto-created on first read. Response includes `autoTopUpEnabled`, `estimatedTopUpAmount`, `topUpFrequencyMs`.
+
+### Create deployment settings
+
+```
+POST /v2/deployment-settings
+```
+
+**Auth:** `x-api-key`
 
 **Body:**
 ```json
-{
-  "data": {
-    "userId": "<your-user-id>",
-    "messages": [
-      {
-        "typeUrl": "/akash.deployment.v1beta4.MsgCloseDeployment",
-        "value": { "id": { "owner": "akash1...", "dseq": "12345678" } }
-      }
-    ]
-  }
-}
+{ "data": { "dseq": "12345678", "autoTopUpEnabled": true } }
 ```
 
-**Allowed `typeUrl` values:**
+Returns 201 on success.
 
-| typeUrl | Purpose |
-|---|---|
-| `/akash.deployment.v1beta4.MsgCreateDeployment` | Create deployment (usually use `POST /v1/deployments` instead) |
-| `/akash.deployment.v1beta4.MsgUpdateDeployment` | Update SDL (usually use `PUT /v1/deployments/{dseq}` instead) |
-| `/akash.deployment.v1beta4.MsgCloseDeployment` | Close deployment (alternative to `DELETE /v1/deployments/{dseq}`) |
-| `/akash.market.v1beta5.MsgCreateLease` | Create lease (usually use `POST /v1/leases` instead) |
-| `/akash.cert.v1.MsgCreateCertificate` | mTLS cert (rarely needed — see below) |
-| `/akash.escrow.v1.MsgAccountDeposit` | Deposit to deployment escrow (usually use `POST /v1/deposit-deployment` instead) |
+### Update deployment settings
 
-**Note the module versions:** `deployment` is `v1beta4`, `market` is `v1beta5`, `cert` is `v1`, `escrow` is `v1`. Using the wrong version yields a chain-side parse error.
+```
+PATCH /v2/deployment-settings/{dseq}
+```
 
-For most workflows you don't need `/v1/tx` — the dedicated endpoints are clearer and validate the payload server-side. Reach for `/v1/tx` only when you need a message that isn't exposed elsewhere.
+**Auth:** `x-api-key`
+
+**Body:**
+```json
+{ "data": { "autoTopUpEnabled": false } }
+```
+
+> The older `/v1/deployment-settings/*` paths are not documented in the official API reference; use the **v2** endpoints. Global account-level auto-reload (`/v1/wallet-settings`) is **UI-only** — only the per-deployment v2 toggle is documented as programmatic.
 
 ## What is gone vs. older docs
 
@@ -432,7 +435,7 @@ For anyone migrating from older skill versions, here is the change set:
 | `GET /providers/{address}/status` | merged into `GET /v1/providers/{address}` |
 | `POST /lease` (single) | `POST /v1/leases` (batch + manifest) |
 | `GET /lease/{dseq}/{gseq}/{oseq}` | read from `GET /v1/deployments/{dseq}.leases[]` |
-| `DELETE /lease/{dseq}/{gseq}/{oseq}` | `POST /v1/tx` with `MsgCloseDeployment`, or `DELETE /v1/deployments/{dseq}` |
+| `DELETE /lease/{dseq}/{gseq}/{oseq}` | not exposed; close the entire deployment via `DELETE /v1/deployments/{dseq}` instead |
 | `POST /sdl/validate` | does not exist — validate client-side |
 | `POST /sdl/price` | replaced by `POST /v1/pricing` (raw cpu/mem/storage, not SDL) |
 | `POST /wallet/create` | Account creation is **UI-only** at [console.akash.network](https://console.akash.network) — no API for first-time signup (see @account-and-funding.md) |

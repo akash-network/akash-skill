@@ -98,7 +98,7 @@ Bids arrive within ~5–30 seconds. Poll until you see at least one:
 
 ```bash
 for i in 1 2 3 4 5 6; do
-  BIDS=$(curl -s https://console-api.akash.network/v1/bids/$DSEQ \
+  BIDS=$(curl -s "https://console-api.akash.network/v1/bids?dseq=$DSEQ" \
     -H "x-api-key: $AKASH_API_KEY")
   COUNT=$(echo "$BIDS" | jq '.data | length')
   echo "Attempt $i: $COUNT bid(s)"

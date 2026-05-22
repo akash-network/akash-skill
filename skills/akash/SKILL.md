@@ -224,7 +224,7 @@ deployment:
   - `authentication.md` — API key (`x-api-key`), JWT minting, API Keys CRUD
   - `deployment-endpoints.md` — full curated endpoint reference
   - `api-key-quickstart.md` — linear walkthrough from "I have an API key" to a running deployment
-  - `account-and-funding.md` — Console account model, programmatic balance reads, `/v1/tx` (bootstrap + Stripe funding are UI-only)
+  - `account-and-funding.md` — Console account model, programmatic balance reads, per-deployment auto-top-up (bootstrap + Stripe funding + arbitrary tx signing are UI-only)
   - `operations.md` — JWT + provider proxy + logs/events/status/shell
 - **@rules/deploy/cli/** — Akash CLI (self-custody path)
 - **@rules/deploy/certificates/** — Auth methods; mTLS deprecated for Console API

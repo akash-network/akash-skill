@@ -2,7 +2,7 @@
 
 When you sign up on console.akash.network, your account *is* a managed wallet. There isn't a separate "wallet" product to enable — the API key authenticates as your account, and deployments spend from that account's wallet automatically.
 
-This file covers the lifecycle around the account: how to bootstrap one (UI-only), how to read your balance programmatically, and the `/v1/tx` escape hatch for arbitrary signed messages.
+This file covers the lifecycle around the account: how to bootstrap one (UI-only) and how to read account state programmatically. All wallet operations — signing transactions, depositing to deployments — happen through the dedicated deployment endpoints in **@deployment-endpoints.md**, not through any account-level "send arbitrary tx" endpoint (no such programmatic endpoint exists in the documented API).
 
 ## The model
 
@@ -57,50 +57,26 @@ All values are USD numbers. The conversion from `uact` happens server-side.
 
 Your account's wallet address is shown in the Console UI under Settings; copy it once and store it alongside your API key (e.g., `AKASH_WALLET_ADDRESS`).
 
-### Generic signed transaction
+### Auto-top-up (per-deployment)
 
-```
-POST /v1/tx
-```
-
-**Auth:** `x-api-key`
-
-The escape hatch. Broadcasts an arbitrary Akash chain message signed by your account's managed wallet. Use this when there's no purpose-built endpoint for what you want to do.
-
-**Body:**
-```json
-{
-  "data": {
-    "userId": "<your-user-id>",
-    "messages": [
-      {
-        "typeUrl": "/akash.deployment.v1beta4.MsgCloseDeployment",
-        "value": { "id": { "owner": "akash1...", "dseq": "12345678" } }
-      }
-    ]
-  }
-}
-```
-
-See **@deployment-endpoints.md** for the full list of allowed `typeUrl` values and which dedicated endpoint to prefer when one exists. Most workflows don't need `/v1/tx` — reach for it only when you need a chain message that isn't exposed via a dedicated endpoint.
+Programmatic auto-top-up is supported, but only per-deployment via the **v2** endpoints — see **@deployment-endpoints.md** § "Auto-top-up (deployment settings v2)". Global account-level auto-reload (`/v1/wallet-settings`) is UI-only.
 
 ## What this file deliberately does NOT cover
 
-The following are real Console-UI features but are **not** part of the programmatic API contract. Use the UI for these; don't write code against the underlying endpoints.
+The following are real Console-UI features but are **not** part of the documented programmatic API. Use the UI for these; don't write code against the underlying endpoints.
 
 - **Account creation, password reset, email verification, OAuth flows** — UI only.
-- **Stripe payment methods, payment confirmation, transaction history, customer management** — UI only. All `/v1/stripe/*` endpoints back the Console's billing screens; they are not for programmatic use.
-- **Auto-top-up configuration** (`/v1/wallet-settings`, `/v1/deployment-settings/*`, `/v2/deployment-settings/*`) — UI only (Settings → Auto-top-up; per-deployment toggles on each deployment page).
+- **Stripe payment methods, payment confirmation, transaction history, customer management** — UI only. All `/v1/stripe/*` endpoints back the Console's billing screens.
+- **Account-level auto-reload** (`/v1/wallet-settings`) — UI only. (Per-deployment auto-top-up via `/v2/deployment-settings/*` *is* documented as programmatic — covered in `deployment-endpoints.md`.)
 - **Username and profile management** (`/v1/user/*`) — UI only.
 - **Favorite templates, saved templates, newsletter signup** — UI only.
 - **Alerts and notification channels** — UI only.
 - **Console dashboard analytics** (`/v1/bme/*`, `/v1/dashboard-data`, etc.) — UI only.
+- **Arbitrary signed transactions.** The Console API documentation explicitly states "you cannot export private keys or sign arbitrary transactions." There is no documented endpoint to broadcast a custom `Msg*` from the managed wallet — use the dedicated deployment endpoints, and if you need a chain message they don't cover, switch to a self-custody SDK.
 - **Self-custody wallets.** Keplr or Ledger don't touch the Console API at all. Use the CLI or an SDK (see `../cli/` and `../../sdk/`).
-- **Direct on-chain transactions from a non-Console wallet.** `/v1/tx` signs with the *managed* wallet on your Console account. If you want to broadcast from your own self-custody wallet, use the Go or TypeScript SDK.
 
 ## Related files
 
-- **@authentication.md** — `x-api-key` setup, JWT minting, API Keys CRUD (for rotating keys after the first one is generated in the UI)
-- **@deployment-endpoints.md** — Full endpoint reference (Deployments, Leases, Bids, Pricing, `/v1/tx` allowed typeUrls)
+- **@authentication.md** — `x-api-key` setup
+- **@deployment-endpoints.md** — Full endpoint reference (Deployments, Leases, Bids, Auto-top-up)
 - **@api-key-quickstart.md** — End-to-end walkthrough
-- **@operations.md** — Logs, events, status, shell (post-deploy)

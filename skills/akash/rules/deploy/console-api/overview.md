@@ -78,7 +78,7 @@ The response contains a `dseq` (deployment sequence number), the manifest the se
 ### 3. List bids
 
 ```bash
-curl https://console-api.akash.network/v1/bids/<dseq> \
+curl "https://console-api.akash.network/v1/bids?dseq=<dseq>" \
   -H "x-api-key: $AKASH_API_KEY"
 ```
 
@@ -133,13 +133,13 @@ Rate limits exist and depend on your account tier; the exact numbers are managed
 |---|---|---|---|
 | Deployments | CRUD + deposit + update | 10 paths under `/v1/deployments` and `/v1/deposit-deployment` | @deployment-endpoints.md |
 | Leases | Batch create | `POST /v1/leases` | @deployment-endpoints.md |
-| Bids | List | `GET /v1/bids`, `GET /v1/bids/{dseq}` | @deployment-endpoints.md |
+| Bids | List | `GET /v1/bids?dseq=` | @deployment-endpoints.md |
 | Pricing | Estimate | `POST /v1/pricing` | @deployment-endpoints.md |
 | Providers | Read | `GET /v1/providers`, `GET /v1/providers/{address}`, ... | @deployment-endpoints.md |
 | Bid screening | Match deployment to providers | `POST /v1/bid-screening` | @deployment-endpoints.md |
 | API Keys | CRUD | `/v1/api-keys` | @authentication.md |
 | JWT minting | Provider-access tokens | `POST /v1/create-jwt-token` | @authentication.md, @operations.md |
-| Account & funding | Read-only balances + `/v1/tx` (all setup/funding is UI-only) | `GET /v1/balances`, `POST /v1/tx` | @account-and-funding.md |
+| Account & funding | Read-only balance + per-deployment auto-top-up (setup, funding, and arbitrary tx signing are UI-only) | `GET /v1/balances`, `/v2/deployment-settings/*` | @account-and-funding.md |
 | Operations | Logs, events, status, shell (via provider proxy) | provider URL templates | @operations.md |
 
 For the curated reference: **@deployment-endpoints.md**.
@@ -155,7 +155,7 @@ The full Swagger exposes ~80 additional endpoints that this skill intentionally 
 | Account creation, auth, email verification | `/v1/auth/signup`, `/v1/register-user`, `/v1/send-verification-email`, `/v1/verify-email`, `/v1/verify-email-code`, `/v1/send-verification-code` | Sign up, log in, password reset, email verification |
 | Trial wallet provisioning | `/v1/start-trial` | First-time wallet creation (handled implicitly by signup in the UI) |
 | **Stripe payments and transactions** | `/v1/stripe/*` (payment methods, transactions, customer, coupons) | Adding cards, topping up the wallet, viewing billing history |
-| Auto-top-up configuration | `/v1/wallet-settings`, `/v1/deployment-settings/*`, `/v2/deployment-settings/*` | Settings → Auto-top-up; per-deployment toggles |
+| Account-level auto-reload | `/v1/wallet-settings`, `/v1/deployment-settings/*` (v1) | Settings → Auto-top-up. (Per-deployment auto-top-up via `/v2/deployment-settings/*` *is* programmatic — see @deployment-endpoints.md.) |
 | Username & profile management | `/v1/user/me`, `/v1/user/updateSettings`, username availability checks | Editing your profile |
 | Favorite / saved templates | `/v1/user/addFavoriteTemplate`, `/v1/user/saveTemplate`, etc. | Bookmarking templates in the Console UI |
 | Alerts and notification channels | `/v1/alerts/*`, `/v1/deployment-alerts/*`, `/v1/notification-channels/*` | Configuring deployment health alerts |
@@ -171,5 +171,5 @@ These endpoints exist to power the Console UI and may change without notice. The
 - **@authentication.md** — `x-api-key` vs JWT, API Keys CRUD, JWT minting
 - **@deployment-endpoints.md** — Full endpoint reference with bodies and examples
 - **@api-key-quickstart.md** — End-to-end walkthrough for the API-key path
-- **@account-and-funding.md** — Account model, programmatic balance reads, `/v1/tx`; bootstrap and Stripe funding are UI-only
+- **@account-and-funding.md** — Account model, programmatic balance reads, per-deployment auto-top-up; bootstrap, Stripe funding, and arbitrary tx signing are UI-only
 - **@operations.md** — Post-deploy: logs, events, status, shell, manifest updates
