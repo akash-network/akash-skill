@@ -91,6 +91,22 @@ If the user is silent on the language, ask: *"What's your integration written in
 
 This is a separate gate from the deployment-method selection — they happen in sequence. Method first, language second. Once both are chosen, **stay on both** for the rest of the conversation.
 
+### When on the Console API path — never put the API key inline
+
+Treat the API key like any other production secret. Before producing any code:
+
+1. **Confirm the key is in an environment variable** — `AKASH_API_KEY` is the canonical name. If the user is about to paste a literal key into a prompt or a file, redirect them: *"don't paste the key here — export it as `AKASH_API_KEY` in your shell, or add it to your `.env` / your CI secrets store, then I'll use `$AKASH_API_KEY` in the code."*
+2. **Never echo the literal value** back into code or chat. Always reference `$AKASH_API_KEY` (Bash), `process.env.AKASH_API_KEY` (Node), `os.environ["AKASH_API_KEY"]` (Python), `os.Getenv("AKASH_API_KEY")` (Go), etc.
+3. **Suggest the right secrets store for the runtime.** A one-liner is fine:
+   - Local dev → `export AKASH_API_KEY=...` in shell or a `.env` file (gitignored).
+   - GitHub Actions → `secrets.AKASH_API_KEY` referenced as `${{ secrets.AKASH_API_KEY }}`.
+   - GitLab CI → CI/CD variable, masked + protected.
+   - Docker → `-e AKASH_API_KEY=$AKASH_API_KEY` at runtime, never `ARG` (which bakes the value into image history).
+   - Production → AWS Secrets Manager, GCP Secret Manager, Vault, etc.
+4. **Warn about `.gitignore`** if the user mentions a `.env` file: it must be gitignored. Don't assume it is.
+
+If the user has already done this (e.g. they say *"my key is in `$AKASH_API_KEY`"* or `"I've got it in GitHub Actions secrets"*), skip the lecture and just use the env var name they referenced.
+
 ### Once committed, stay there
 
 - On the **Console API** path: don't suggest `akash keys add`, don't suggest mTLS certs (deprecated for Console API — see `rules/deploy/certificates/mtls-legacy.md`), don't suggest `akash query market bid list` — every read is an HTTP call with `x-api-key` in whatever language the user picked.

@@ -8,11 +8,25 @@ If you don't have an API key yet, follow **@authentication.md** § "Getting an A
 
 ## What you need
 
-- An API key in `$AKASH_API_KEY` (export it once: `export AKASH_API_KEY="..."`).
+- An API key, **stored in an environment variable, never pasted inline**. The canonical name is `AKASH_API_KEY`.
 - A funded Console account (≥ $5 USD balance is enough for a small test deployment).
 - An SDL file. We'll use `deploy.yaml`.
 
 Optional: `jq` for parsing JSON responses.
+
+### Setting up the env var (skip if already done)
+
+| Where you'll run this | How to set the key |
+|---|---|
+| **Local shell** (one-off) | `export AKASH_API_KEY="..."` — won't persist across shells |
+| **Local shell** (persistent) | Add `export AKASH_API_KEY="..."` to `~/.zshrc` / `~/.bashrc`, or use a `.env` file + `direnv`/`dotenv` |
+| **`.env` file** | `AKASH_API_KEY=...` in `.env`; **add `.env` to `.gitignore` immediately** |
+| **GitHub Actions** | Settings → Secrets and variables → Actions → New secret `AKASH_API_KEY`; reference as `${{ secrets.AKASH_API_KEY }}` |
+| **GitLab CI** | Settings → CI/CD → Variables → add `AKASH_API_KEY` (mask + protect) |
+| **Docker** | `docker run -e AKASH_API_KEY=$AKASH_API_KEY ...` at runtime — **never** `ARG`/`ENV` in the Dockerfile (bakes into image history) |
+| **Production** | AWS Secrets Manager / GCP Secret Manager / Vault / etc. — fetch at startup, expose to the process as an env var |
+
+Once set, you should be able to run `echo "${AKASH_API_KEY:+set}"` and see `set` (without echoing the value). All examples below assume the env var exists.
 
 ## Step 1 — Write the SDL
 
