@@ -437,6 +437,6 @@ For anyone migrating from older skill versions, here is the change set:
 | `POST /sdl/price` | replaced by `POST /v1/pricing` (raw cpu/mem/storage, not SDL) |
 | `POST /wallet/create` | Account creation is **UI-only** at [console.akash.network](https://console.akash.network) — no API for first-time signup (see @account-and-funding.md) |
 | `GET /wallet/balance` | `GET /v1/balances?address=...` |
-| `POST /wallet/deposit` | Stripe funding via `/v1/stripe/*` (see @account-and-funding.md) |
+| `POST /wallet/deposit` | Funding happens in the Console UI via Stripe; **no programmatic deposit endpoint** (see @account-and-funding.md) |
 | `Authorization: Bearer <api-key>` | `x-api-key: <key>` |
 | `POST /v1/auth/refresh` | does not exist — re-mint via `POST /v1/create-jwt-token` |

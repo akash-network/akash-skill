@@ -223,6 +223,6 @@ This is the value proposition of the Console API. If a step in your workflow eve
 - **@overview.md** — Architectural overview, response envelope, the curated subset
 - **@authentication.md** — API key + JWT details
 - **@deployment-endpoints.md** — Full endpoint reference
-- **@account-and-funding.md** — Account model, balances, Stripe funding
+- **@account-and-funding.md** — Account model, programmatic balance reads; bootstrap and Stripe funding are UI-only
 - **@operations.md** — Logs, events, status, shell after the deployment is running
 - **@../certificates/mtls-legacy.md** — Why you don't need certificates on this path

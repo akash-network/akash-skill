@@ -139,7 +139,7 @@ Rate limits exist and depend on your account tier; the exact numbers are managed
 | Bid screening | Match deployment to providers | `POST /v1/bid-screening` | @deployment-endpoints.md |
 | API Keys | CRUD | `/v1/api-keys` | @authentication.md |
 | JWT minting | Provider-access tokens | `POST /v1/create-jwt-token` | @authentication.md, @operations.md |
-| Account & funding | Account, balances, Stripe, `/v1/tx` | various | @account-and-funding.md |
+| Account & funding | Read-only balances + `/v1/tx` (all setup/funding is UI-only) | `GET /v1/balances`, `POST /v1/tx` | @account-and-funding.md |
 | Operations | Logs, events, status, shell (via provider proxy) | provider URL templates | @operations.md |
 
 For the curated reference: **@deployment-endpoints.md**.
@@ -148,22 +148,28 @@ For a linear walkthrough from "I have an API key" to a running deployment: **@ap
 
 ## What is NOT covered here
 
-The full Swagger exposes ~80 additional endpoints that this skill intentionally omits because they are Console-UI internals, not a stable public API:
+The full Swagger exposes ~80 additional endpoints that this skill intentionally omits because they are **Console-UI internals**, not a stable public API. Do not write code against them — use the Console UI for these operations instead.
 
-- Stripe payment methods, transactions, customer management
-- User signup, email verification, username management, favorite templates
-- Alerts, notification channels, deployment alerts
-- Dashboard analytics, GPU stats, network capacity
-- Blockchain explorer (blocks, validators, proposals, transactions, addresses)
-- Newsletter management
-- BME (provider monitoring dashboard data)
+| UI-only surface | Endpoint pattern | Use the UI for… |
+|---|---|---|
+| Account creation, auth, email verification | `/v1/auth/signup`, `/v1/register-user`, `/v1/send-verification-email`, `/v1/verify-email`, `/v1/verify-email-code`, `/v1/send-verification-code` | Sign up, log in, password reset, email verification |
+| Trial wallet provisioning | `/v1/start-trial` | First-time wallet creation (handled implicitly by signup in the UI) |
+| **Stripe payments and transactions** | `/v1/stripe/*` (payment methods, transactions, customer, coupons) | Adding cards, topping up the wallet, viewing billing history |
+| Auto-top-up configuration | `/v1/wallet-settings`, `/v1/deployment-settings/*`, `/v2/deployment-settings/*` | Settings → Auto-top-up; per-deployment toggles |
+| Username & profile management | `/v1/user/me`, `/v1/user/updateSettings`, username availability checks | Editing your profile |
+| Favorite / saved templates | `/v1/user/addFavoriteTemplate`, `/v1/user/saveTemplate`, etc. | Bookmarking templates in the Console UI |
+| Alerts and notification channels | `/v1/alerts/*`, `/v1/deployment-alerts/*`, `/v1/notification-channels/*` | Configuring deployment health alerts |
+| Newsletter | `/v1/newsletter/*` | Email subscriptions |
+| Dashboard analytics | `/v1/bme/*`, `/v1/dashboard-data`, `/v1/network-capacity`, `/v1/graph-data/*`, `/v1/provider-graph-data/*`, `/v1/provider-dashboard/*`, `/v1/provider-earnings/*`, `/v1/leases-duration/*`, `/v1/market-data/*` | Browsing dashboards in the UI |
+| Blockchain explorer | `/v1/blocks/*`, `/v1/validators/*`, `/v1/proposals/*`, `/v1/transactions/*`, `/v1/addresses/{address}/*`, `/v1/predicted-*`, `/v1/gpu*` | Chain inspection in the UI |
+| Templates listing | `/v1/templates-list`, `/v1/templates/{id}` | Browsing the template marketplace |
 
-If you need these, consult the full Swagger directly — but understand they may change without notice. They are not part of the deployment-management contract.
+These endpoints exist to power the Console UI and may change without notice. They are not part of the deployment-management contract this skill documents.
 
 ## Related files
 
 - **@authentication.md** — `x-api-key` vs JWT, API Keys CRUD, JWT minting
 - **@deployment-endpoints.md** — Full endpoint reference with bodies and examples
 - **@api-key-quickstart.md** — End-to-end walkthrough for the API-key path
-- **@account-and-funding.md** — Account model, balances, Stripe funding, `/v1/tx`
+- **@account-and-funding.md** — Account model, programmatic balance reads, `/v1/tx`; bootstrap and Stripe funding are UI-only
 - **@operations.md** — Post-deploy: logs, events, status, shell, manifest updates
