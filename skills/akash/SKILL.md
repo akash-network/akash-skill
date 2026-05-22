@@ -39,7 +39,13 @@ image: nginx          # implies :latest
 
 ## Choosing a Deployment Method
 
-This is the most important decision in this skill — and the one most easily gotten wrong. When the user asks to deploy and hasn't specified the method, **ask once which path they want, then commit to it for the rest of the conversation.** Do not silently switch methods. If the user explicitly asks to switch later, do so cleanly and stay on the new path.
+This is the most important decision in this skill — and the one most easily gotten wrong.
+
+**Default behavior: recommend + proceed, don't interrogate.** If the user gave any reasonable cue (see the cue table below), commit to that path silently and start producing code. If you must ask, ask **one short question**, give a recommendation, and offer to switch — don't build a multi-step decision tree before the user has seen any commands. The goal is to get them running code fast, not to make them answer a quiz.
+
+Only **stop and ask** when the prompt is genuinely silent about everything (no language signal, no wallet signal, no CI signal). Even then, recommend + offer to switch rather than presenting an open menu of equals.
+
+Once a path is chosen, **stay on it** for the rest of the conversation. Do not silently switch. If the user explicitly asks to switch later, do so cleanly.
 
 There are **four** paths:
 
@@ -61,51 +67,66 @@ If a user has a self-custody wallet (Keplr or Ledger) and wants to deploy from *
 - **Standard Console** at `console.akash.network` — managed wallet. This is what the Console API in this skill operates on.
 - **Console Air** ([github.com/akash-network/console-air](https://github.com/akash-network/console-air)) — self-custody UI for Keplr or hardware wallets. **Self-hosted** — there is no official hosted URL at `console-air.akash.network`; users clone the repo and run it locally or on their own infrastructure. **Out of scope for this skill** (it is a UI, not an API). If a user wants a UI with self-custody, point them at the repo and stop; programmatic self-custody users go CLI or SDK.
 
-### Recognize strong cues — skip the question when they are clear
+### Recognize cues — and use them aggressively
+
+If you see **any** of these signals, commit to the matching path silently and start producing code. Don't ask for confirmation; the cue *is* the confirmation.
 
 | If the user mentions… | Commit to… |
 |---|---|
-| `"I have an API key"`, `"$AKASH_API_KEY"`, `"x-api-key"`, `"curl"`, `"CI/CD"` | Console API |
-| `"Keplr"`, `"Ledger"`, `"hardware wallet"`, `"my wallet"`, `"self-custody"`, `"akash keys add"` | CLI or SDK (ask which) |
-| `"React app"`, `"Next.js"`, `"@akashnetwork/chain-sdk"` | TypeScript SDK |
-| `"Go service"`, `"golang"`, `"cosmos-sdk Go"` | Go SDK |
-| `"Console Air"`, `"web UI for my Keplr wallet"` | Console Air (out-of-scope; point to docs) |
+| `"I have an API key"`, `"$AKASH_API_KEY"`, `"x-api-key"`, `"curl"`, `"CI/CD"`, `"GitHub Actions"`, `"backend"`, `"server-to-server"`, `"deploy from CI"`, `"automate"` | Console API |
+| `"Keplr"`, `"Ledger"`, `"hardware wallet"`, `"my wallet"`, `"self-custody"`, `"akash keys add"`, `"my mnemonic"` | CLI or SDK (ask only if they didn't also signal a language) |
+| `"React app"`, `"Next.js"`, `"akashjs"` (legacy), `"@akashnetwork/chain-sdk"`, `"my dApp"`, `"in the browser"` | TypeScript SDK |
+| `"Go service"`, `"golang"`, `"cosmos-sdk Go"`, `"my Go backend"` | Go SDK |
+| `"Console Air"`, `"web UI for my Keplr wallet"`, `"GUI"` + `"self-custody"` | Console Air (out-of-scope; one-line point to repo, then stop) |
+| `"easiest"`, `"simplest"`, `"first time"`, `"just want to try"` + no wallet/keys signal | Console (UI or API — recommend the UI for a one-off, the API for a script) |
 
-If the user is silent on the method, ask. Phrase it as a short menu, not an open-ended question.
+**Only ask** when the prompt is genuinely empty of signals — no language hint, no wallet hint, no CI/automation hint. When you do ask, the question is one line: *"Do you want this in a script (Console API) or a UI (Console for managed wallet, Console Air for self-custody)?"* — then proceed with their answer.
 
-### When on the Console API path — ask which language
+A "first small deploy" with no other signals → just recommend Console UI and write the SDL; offer to switch to API/CLI in one line at the end. Do **not** make the user pick from a 4-row table before seeing any commands.
 
-Once the user commits to Console API, **ask which language** the integration will be written in before producing code. Don't default to curl + Bash unless the user has clearly indicated they want shell — e.g. `"curl"`, `"bash"`, `"shell script"`, `"$AKASH_API_KEY"` in a `.sh` context, or `"CI/CD"` for a generic step. Otherwise the answer should match the runtime they're actually targeting.
+### Language for the Console API — infer first, ask only if silent
 
-Recognize cues; otherwise ask:
+Once on the Console API path, pick the integration language from cues. **Ask only as a last resort.**
 
-| Cue | Language to use |
+| Cue | Use |
 |---|---|
-| `"curl"`, `"bash"`, `"shell"`, `"GitHub Actions"` step | curl + Bash |
-| `"Node"`, `"Next.js"`, `"Express"`, `package.json`, `.ts` file | TypeScript / Node `fetch` |
-| `"Python"`, `requirements.txt`, `.py` file, `"FastAPI"`, `"Django"` | Python `requests` or `httpx` |
-| `"Go"`, `go.mod`, `.go` file | Go `net/http` |
+| `"curl"`, `"bash"`, `"shell"`, `"GitHub Actions"`, `"GitLab CI"`, any `.sh` reference, no app stack mentioned | curl + Bash |
+| `"Node"`, `"Next.js"`, `"Express"`, `package.json`, `.ts`/`.js` file, `"my Node app"` | TypeScript / Node `fetch` |
+| `"Python"`, `requirements.txt`, `.py`, `"FastAPI"`, `"Django"`, `"Flask"` | Python `requests` or `httpx` |
+| `"Go"`, `go.mod`, `.go`, `"my Go service"` | Go `net/http` |
 | `"Rust"`, `Cargo.toml` | Rust `reqwest` |
 
-If the user is silent on the language, ask: *"What's your integration written in? I can give you curl, Node/TS, Python, or Go — same flow, different syntax."* Then commit.
+**Default to curl + Bash** when the language is unstated *and* the surrounding context is automation/CI (the most common case for API-key users). Don't ask unless you have a positive reason to believe the user wants a specific other runtime — and even then, write curl first and offer to translate. Curl is the universal lingua franca for HTTP and translates trivially to any language.
 
-This is a separate gate from the deployment-method selection — they happen in sequence. Method first, language second. Once both are chosen, **stay on both** for the rest of the conversation.
+**Skip the question entirely** if:
+- Any cue above is present (commit to that language).
+- The user already pasted code in a specific language (match it).
+- The user said `"curl"`, `"shell"`, `"CI"`, or anything implying scripts — they want Bash.
 
-### When on the Console API path — never put the API key inline
+**Only ask** when there are zero signals — e.g. *"deploy to Akash via the API"* with no other context. Then it's one line: *"Want this as curl/Bash, Node, Python, or Go?"* — and produce the response in their answer.
 
-Treat the API key like any other production secret. Before producing any code:
+This is a separate gate from the deployment-method selection. Once both are chosen, **stay on both** for the rest of the conversation.
 
-1. **Confirm the key is in an environment variable** — `AKASH_API_KEY` is the canonical name. If the user is about to paste a literal key into a prompt or a file, redirect them: *"don't paste the key here — export it as `AKASH_API_KEY` in your shell, or add it to your `.env` / your CI secrets store, then I'll use `$AKASH_API_KEY` in the code."*
-2. **Never echo the literal value** back into code or chat. Always reference `$AKASH_API_KEY` (Bash), `process.env.AKASH_API_KEY` (Node), `os.environ["AKASH_API_KEY"]` (Python), `os.Getenv("AKASH_API_KEY")` (Go), etc.
-3. **Suggest the right secrets store for the runtime.** A one-liner is fine:
-   - Local dev → `export AKASH_API_KEY=...` in shell or a `.env` file (gitignored).
-   - GitHub Actions → `secrets.AKASH_API_KEY` referenced as `${{ secrets.AKASH_API_KEY }}`.
-   - GitLab CI → CI/CD variable, masked + protected.
-   - Docker → `-e AKASH_API_KEY=$AKASH_API_KEY` at runtime, never `ARG` (which bakes the value into image history).
-   - Production → AWS Secrets Manager, GCP Secret Manager, Vault, etc.
-4. **Warn about `.gitignore`** if the user mentions a `.env` file: it must be gitignored. Don't assume it is.
+### API key handling — silent rules, only intervene when needed
 
-If the user has already done this (e.g. they say *"my key is in `$AKASH_API_KEY`"* or `"I've got it in GitHub Actions secrets"*), skip the lecture and just use the env var name they referenced.
+Two non-negotiable rules, applied silently:
+
+1. **Always reference the key via env var** in code: `$AKASH_API_KEY` (Bash), `process.env.AKASH_API_KEY` (Node), `os.environ["AKASH_API_KEY"]` (Python), `os.Getenv("AKASH_API_KEY")` (Go).
+2. **Never echo a literal key value** in code or chat, even if the user pasted one. If the user pastes a literal key, replace it with `$AKASH_API_KEY` in the response and add **one sentence** at the top: *"I've used `$AKASH_API_KEY` in the code below — export your key as that env var before running."*
+
+**When to add extra guidance** (only one of these — pick the smallest one that applies):
+
+- User pastes a literal key → one-sentence redirect (above). Don't lecture; just use the env var name.
+- User asks where to put the key for a *specific runtime* they mentioned (GitHub Actions, GitLab CI, Docker, etc.) → answer for *that* runtime in one line. Don't enumerate all of them.
+- User is **writing a Dockerfile** → flag that the key must be passed at runtime (`-e`) and not baked in via `ARG`/`ENV`. One sentence.
+- User mentions a `.env` file → one-line `.gitignore` reminder. Don't assume they need a tutorial.
+
+**Stay silent on key handling** when:
+- The user already said the key is in `$AKASH_API_KEY` or `${{ secrets.AKASH_API_KEY }}` or similar — they've got it. Don't repeat the rules.
+- The user is asking about something downstream of the call (status, logs, bids) — the key handling is settled.
+- The conversation isn't producing code at all (architecture questions, troubleshooting on existing deployments).
+
+A pitfall table at the end of a code response *can* mention "don't use `Authorization: Bearer` for the API key" since that's a real common error — but keep it to one row, not a discourse on secret management.
 
 ### Once committed, stay there
 
