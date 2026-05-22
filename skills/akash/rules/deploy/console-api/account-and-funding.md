@@ -36,6 +36,8 @@ These are the only two account-related operations supported via the API. Everyth
 
 ### Read your balance
 
+> ⚠️ **Swagger-only (Tier 2).** Not in the [official API reference](https://akash.network/docs/api-documentation/console-api/api-reference/) — observed on the live service but may change without notice. Pin to a tested runtime version.
+
 ```
 GET /v1/balances?address=<your-akash-address>
 ```

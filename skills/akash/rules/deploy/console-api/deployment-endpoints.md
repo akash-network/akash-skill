@@ -153,6 +153,8 @@ POST /v1/deposit-deployment
 
 ### Public read-only deployment view
 
+> ⚠️ **Swagger-only (Tier 2).** Not in the [official API reference](https://akash.network/docs/api-documentation/console-api/api-reference/). For authenticated, supported deployment reads use `GET /v1/deployments/{dseq}` instead.
+
 ```
 GET /v1/deployment/{owner}/{dseq}
 ```
@@ -162,6 +164,8 @@ GET /v1/deployment/{owner}/{dseq}
 Read-only deployment lookup by owner address + dseq. Returns the on-chain state, lease info, monthly cost, and recent events. Useful for status pages and external dashboards.
 
 ### Weekly cost (auto-top-up deployments)
+
+> ⚠️ **Swagger-only (Tier 2).** Not in the [official API reference](https://akash.network/docs/api-documentation/console-api/api-reference/). May change without notice.
 
 ```
 GET /v1/weekly-cost
@@ -257,6 +261,8 @@ This is the canonical form documented in the official API reference. A path-para
 
 ## Pricing
 
+> ⚠️ **Swagger-only (Tier 2).** Not in the [official API reference](https://akash.network/docs/api-documentation/console-api/api-reference/). Useful for client-side cost estimation but may change without notice.
+
 ### Estimate cost for raw resources
 
 ```
@@ -301,6 +307,8 @@ POST /v1/pricing
 **Note:** This is **not** an SDL-based pricing endpoint. There is no `POST /v1/sdl/price` and no `POST /v1/sdl/validate`. Validate SDL client-side (e.g., via the TypeScript SDK's SDL parser) and convert resources to the `cpu/memory/storage` numbers before calling this endpoint.
 
 ## Bid screening
+
+> ⚠️ **Swagger-only (Tier 2).** Not in the [official API reference](https://akash.network/docs/api-documentation/console-api/api-reference/). Powers the `akash-bid-matcher` companion skill; useful for pre-flight checks but not a stable contract.
 
 ### Match a deployment's compute requirements against providers
 
@@ -368,6 +376,8 @@ Returns the provider's `hostUri`, attributes, region, uptime, audit status, and 
 There is no `GET /v1/providers/{address}/status` — that endpoint was removed. Status fields are merged into `GET /v1/providers/{address}`.
 
 ### Provider regions / versions / attributes schema / auditors
+
+> ⚠️ **Swagger-only (Tier 2).** Only `GET /v1/providers` and `GET /v1/providers/{address}` are in the [official API reference](https://akash.network/docs/api-documentation/console-api/api-reference/). The four endpoints below are observed on the running service but may change without notice. Useful for SDL placement-attribute editors.
 
 ```
 GET /v1/provider-regions

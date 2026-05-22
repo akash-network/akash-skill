@@ -14,8 +14,26 @@ https://console-api.akash.network/v1
 
 - **Full spec (JSON):** `https://console-api.akash.network/v1/doc`
 - **Swagger UI:** `https://console-api.akash.network/v1/swagger`
+- **Official API reference:** [akash.network/docs/api-documentation/console-api/api-reference](https://akash.network/docs/api-documentation/console-api/api-reference/)
 
-The full spec mixes deployment endpoints with Console-UI internals. If you only need the deployment management contract, use this skill's curated reference in `deployment-endpoints.md`. The Akash team may publish a filtered "public API" spec in the future.
+The full Swagger spec mixes deployment endpoints with Console-UI internals. If you only need the deployment management contract, use this skill's curated reference in `deployment-endpoints.md`.
+
+## Two stability tiers — read this before you write code
+
+Endpoints in this skill fall into two tiers. Code against the higher tier; treat the lower tier as best-effort.
+
+**Tier 1 — Documented in the official API reference.** The Akash team commits to these as the supported programmatic surface. 13 endpoints total:
+
+- Deployments — `POST /v1/deployments`, `GET /v1/deployments`, `GET /v1/deployments/{dseq}`, `PUT /v1/deployments/{dseq}`, `DELETE /v1/deployments/{dseq}`
+- Escrow — `POST /v1/deposit-deployment`
+- Leases — `POST /v1/leases`
+- Bids — `GET /v1/bids?dseq=`
+- Auto-top-up — `GET /v2/deployment-settings/{dseq}`, `POST /v2/deployment-settings`, `PATCH /v2/deployment-settings/{dseq}`
+- Providers (public, no auth) — `GET /v1/providers`, `GET /v1/providers/{address}`
+
+**Tier 2 — Swagger-only / undocumented.** Observed on the running Console API service but **not** in the official reference. They may change or be removed without notice. The skill documents them for completeness because some are genuinely useful (e.g., `GET /v1/balances`, `POST /v1/create-jwt-token` for the logs flow), but you should pin to a tested runtime version and watch for breakage on Console releases. Examples: `/v1/balances`, `/v1/create-jwt-token`, `/v1/api-keys` CRUD, `/v1/pricing`, `/v1/bid-screening`, `/v1/blockchain-status`, `/v1/weekly-cost`, `/v1/deployment/{owner}/{dseq}`, `/v1/provider-regions`, `/v1/provider-versions`, `/v1/provider-attributes-schema`, `/v1/auditors`.
+
+Each Tier-2 endpoint in this skill carries a "Swagger-only" banner at the section that documents it. If you're building something critical, prefer Tier-1 paths and use the UI for what Tier 2 covers.
 
 ## Authentication
 

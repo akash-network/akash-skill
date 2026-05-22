@@ -69,7 +69,9 @@ resp, _ := http.DefaultClient.Do(req)
 
 ## API Keys CRUD
 
-Once you have a first key (created via the Console UI), the Console API exposes endpoints to manage additional keys programmatically. **You cannot create your first key via the API** — every `/v1/api-keys` call requires an existing key in the `x-api-key` header. Bootstrap via the UI, then automate from there.
+> ⚠️ **Swagger-only (Tier 2).** The `/v1/api-keys` endpoints are observed on the running service but **not** in the [official API reference](https://akash.network/docs/api-documentation/console-api/api-reference/). The official docs say keys are managed in the Console UI under Settings → API Keys. The endpoints below appear to work for listing, renaming, and deleting keys via API, but they're not a stable contract — prefer the UI for production key management, and pin to a tested runtime version if you do automate it.
+
+Once you have a first key (created via the Console UI), the Console API also exposes endpoints to manage additional keys programmatically. **You cannot create your first key via the API** — every `/v1/api-keys` call requires an existing key in the `x-api-key` header. Bootstrap via the UI, then automate from there.
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -128,6 +130,8 @@ JWTs are used in two contexts:
 To stream logs from a deployment's provider, you need a JWT that the provider will accept.
 
 #### For Console-account users (this skill's primary path)
+
+> ⚠️ **Swagger-only (Tier 2).** `POST /v1/create-jwt-token` is observed on the running service but **not** in the [official API reference](https://akash.network/docs/api-documentation/console-api/api-reference/). For managed-wallet users this is currently the only way to mint a provider-access JWT programmatically, but it may change without notice. For production logging, also consider using the Console UI's built-in log viewer.
 
 Mint via the Console API:
 

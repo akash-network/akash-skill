@@ -1,5 +1,7 @@
 # Operations — Logs, Events, Status, and Shell
 
+> ⚠️ **Mixed stability.** The managed-wallet path on this page depends on `POST /v1/create-jwt-token`, which is **Swagger-only / Tier 2** — observed on the live service but not in the [official API reference](https://akash.network/docs/api-documentation/console-api/api-reference/). It may change without notice. For production log/shell workflows on the managed-wallet path, you may want to use the Console UI's built-in viewers and treat the API flow below as best-effort. The self-custody path (signing the JWT locally with `@akashnetwork/chain-sdk`) is fully supported and not subject to this caveat.
+
 Once a deployment is running, you need to read **logs**, watch **events**, check **status**, and occasionally **exec into the container**. None of this is served by `console-api.akash.network` — it all comes from the **provider** directly, gated by a short-lived JWT.
 
 This page covers the full post-deploy operational loop. It applies equally to managed-wallet users (Console API path) and self-custody users (CLI/SDK path) — the only difference is how you mint the JWT.
