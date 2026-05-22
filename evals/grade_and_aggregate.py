@@ -96,13 +96,15 @@ def main():
     ap.add_argument("--evals", required=True)
     ap.add_argument("--workspace", required=True)
     ap.add_argument("--skill-name", required=True)
+    ap.add_argument("--baseline-config", default="old_skill", help="Config name of the baseline (default: old_skill, use iter1_skill for iteration-2)")
     args = ap.parse_args()
 
     evals = json.loads(Path(args.evals).read_text())["evals"]
     ws = Path(args.workspace)
+    baseline = args.baseline_config
 
     per_eval_results = []
-    config_runs = {"with_skill": [], "old_skill": []}
+    config_runs = {"with_skill": [], baseline: []}
 
     for ev in evals:
         eval_dir = ws / f"eval-{ev['id']}-{ev['name']}"
@@ -112,7 +114,7 @@ def main():
 
         per_eval_entry = {"eval_id": ev["id"], "eval_name": ev["name"], "configs": {}}
 
-        for config in ["with_skill", "old_skill"]:
+        for config in ["with_skill", baseline]:
             config_dir = eval_dir / config
             response_path = config_dir / "outputs" / "response.md"
             timing_path = config_dir / "timing.json"
@@ -159,7 +161,7 @@ def main():
 
     # Aggregate
     run_summary = {}
-    for config in ["with_skill", "old_skill"]:
+    for config in ["with_skill", baseline]:
         runs = config_runs[config]
         run_summary[config] = {
             "pass_rate": stats([r["pass_rate"] for r in runs]),
@@ -168,23 +170,23 @@ def main():
             "runs": runs,
         }
 
-    # Delta (new vs old)
+    # Delta (new vs baseline)
     new_pr = run_summary["with_skill"]["pass_rate"]["mean"]
-    old_pr = run_summary["old_skill"]["pass_rate"]["mean"]
-    new_t = run_summary["with_skill"]["time_seconds"]["mean"]
-    old_t = run_summary["old_skill"]["time_seconds"]["mean"]
+    base_pr = run_summary[baseline]["pass_rate"]["mean"]
+    new_time = run_summary["with_skill"]["time_seconds"]["mean"]
+    base_time = run_summary[baseline]["time_seconds"]["mean"]
     new_tok = run_summary["with_skill"]["tokens"]["mean"]
-    old_tok = run_summary["old_skill"]["tokens"]["mean"]
+    base_tok = run_summary[baseline]["tokens"]["mean"]
 
     benchmark = {
         "skill_name": args.skill_name,
-        "configs": ["with_skill", "old_skill"],
-        "baseline": "old_skill",
+        "configs": ["with_skill", baseline],
+        "baseline": baseline,
         "run_summary": run_summary,
         "delta": {
-            "pass_rate_diff": round(new_pr - old_pr, 4),
-            "time_seconds_diff": round(new_t - old_t, 4),
-            "tokens_diff": round(new_tok - old_tok, 4),
+            "pass_rate_diff": round(new_pr - base_pr, 4),
+            "time_seconds_diff": round(new_time - base_time, 4),
+            "tokens_diff": round(new_tok - base_tok, 4),
         },
         "per_eval": per_eval_results,
     }
@@ -196,24 +198,24 @@ def main():
     # Pretty summary
     print("\n=== Per-eval pass rate ===")
     for e in per_eval_results:
-        new = e["configs"].get("with_skill", {}).get("pass_rate", 0.0)
-        old = e["configs"].get("old_skill", {}).get("pass_rate", 0.0)
-        new_p = e["configs"].get("with_skill", {}).get("passed", 0)
-        new_t = e["configs"].get("with_skill", {}).get("total", 0)
-        old_p = e["configs"].get("old_skill", {}).get("passed", 0)
-        old_t = e["configs"].get("old_skill", {}).get("total", 0)
-        diff = new - old
+        nw = e["configs"].get("with_skill", {}).get("pass_rate", 0.0)
+        bl = e["configs"].get(baseline, {}).get("pass_rate", 0.0)
+        nw_p = e["configs"].get("with_skill", {}).get("passed", 0)
+        nw_total = e["configs"].get("with_skill", {}).get("total", 0)
+        bl_p = e["configs"].get(baseline, {}).get("passed", 0)
+        bl_total = e["configs"].get(baseline, {}).get("total", 0)
+        diff = nw - bl
         sign = "+" if diff >= 0 else ""
-        print(f"  eval-{e['eval_id']:>2} {e['eval_name']:<25} new={new_p}/{new_t} ({new:.0%})  old={old_p}/{old_t} ({old:.0%})  Δ={sign}{diff:+.0%}")
+        print(f"  eval-{e['eval_id']:>2} {e['eval_name']:<25} new={nw_p}/{nw_total} ({nw:.0%})  {baseline}={bl_p}/{bl_total} ({bl:.0%})  Δ={sign}{diff:+.0%}")
 
     print(f"\n=== Aggregate ===")
-    print(f"  new plugin pass rate: {new_pr:.1%}")
-    print(f"  old skill pass rate:  {old_pr:.1%}")
-    print(f"  delta:                {new_pr-old_pr:+.1%}")
-    print(f"  new tokens (mean):    {new_tok:.0f}")
-    print(f"  old tokens (mean):    {old_tok:.0f}")
-    print(f"  new time (mean):      {new_t:.1f}s")
-    print(f"  old time (mean):      {old_t:.1f}s")
+    print(f"  new plugin pass rate:  {new_pr:.1%}")
+    print(f"  {baseline} pass rate: {base_pr:.1%}")
+    print(f"  delta:                 {new_pr-base_pr:+.1%}")
+    print(f"  new tokens (mean):     {new_tok:.0f}")
+    print(f"  {baseline} tokens:    {base_tok:.0f}")
+    print(f"  new time (mean):       {new_time:.1f}s")
+    print(f"  {baseline} time:      {base_time:.1f}s")
 
 
 if __name__ == "__main__":

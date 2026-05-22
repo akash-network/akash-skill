@@ -102,7 +102,7 @@ func NewAkashClient(
         WithKeybase(kr).
         WithGas(200000).
         WithGasAdjustment(1.5).
-        WithGasPrices("0.025uact").
+        WithGasPrices("0.025uakt").
         WithSignMode(signing.SignMode_SIGN_MODE_DIRECT)
 
     return &AkashClient{

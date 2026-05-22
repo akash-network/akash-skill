@@ -49,7 +49,7 @@ bidWaitDuration: 5s
 bidTimeout: 5m
 
 # Minimum deposit required in the order's escrow
-bidMinDeposit: 5000000  # 5 AKT in uact
+bidMinDeposit: 5000000  # 5 ACT in uact (1 ACT = 1,000,000 uact)
 
 # Filter orders by maximum resource request
 bidMaxCPU: 256000       # 256 cores in millicpu

@@ -4,9 +4,18 @@ Understanding payment options, pricing calculations, and cost optimization on Ak
 
 ## Payment Denominations
 
-### uact (Native AKT)
+Akash has **two tokens**. Don't conflate them:
 
-The native Akash token in micro-denomination:
+| Token | Denom | What it's for |
+|---|---|---|
+| **AKT** | `uakt` | Chain token — gas (`--gas-prices`), staking, validator rewards. `1 AKT = 1,000,000 uakt`. |
+| **ACT** | `uact` | Deployment-payment token — SDL pricing, bids, lease payments, escrow. `1 ACT = 1,000,000 uact`. |
+
+**AKT and ACT are separate tokens.** Self-custody deployers must mint ACT by burning AKT before depositing to a deployment. Console API users skip this — Console funds the managed wallet with ACT directly (Stripe → USD → ACT server-side).
+
+### uact (deployment-payment denom)
+
+Used in SDL pricing, deployment deposits, and lease payments:
 
 ```yaml
 pricing:
@@ -15,10 +24,7 @@ pricing:
     amount: 1000
 ```
 
-**Conversion:**
-```
-1 AKT = 1,000,000 uact
-```
+`1 ACT = 1,000,000 uact`. Values in deployment messages (`MsgDepositDeployment`, escrow balances, bid amounts) are denominated in `uact`.
 
 ### USDC via IBC
 
@@ -67,7 +73,7 @@ pricing:
     denom: uact
     amount: 1000
 
-# Monthly cost: 1000 × 438,000 = 438,000,000 uact = 438 AKT
+# Monthly cost: 1000 × 438,000 = 438,000,000 uact = 438 ACT
 ```
 
 **Example with USDC:**
@@ -84,7 +90,7 @@ pricing:
 
 ### By Workload Type
 
-| Workload | CPU | Memory | Storage | uact/block | ~Monthly AKT |
+| Workload | CPU | Memory | Storage | uact/block | ~Monthly ACT |
 |----------|-----|--------|---------|------------|--------------|
 | Static Site | 0.25 | 256Mi | 512Mi | 300-500 | 130-220 |
 | Web App | 0.5 | 512Mi | 1Gi | 500-1000 | 220-438 |
@@ -94,7 +100,7 @@ pricing:
 
 ### GPU Pricing
 
-| GPU Model | VRAM | uact/block | ~Monthly AKT |
+| GPU Model | VRAM | uact/block | ~Monthly ACT |
 |-----------|------|------------|--------------|
 | T4 | 16GB | 10000-20000 | 4380-8760 |
 | RTX 3080 | 10GB | 15000-25000 | 6570-10950 |
@@ -122,7 +128,7 @@ Minimum Escrow = bid_amount × blocks_per_day × 7
 
 For a 1000 uact/block deployment:
 ```
-1000 × 14400 × 7 = 100,800,000 uact = 100.8 AKT
+1000 × 14400 × 7 = 100,800,000 uact = 100.8 ACT
 ```
 
 ### Escrow Monitoring
@@ -174,8 +180,8 @@ Providers will bid at or below this amount.
 
 ### Choose Payment Currency Wisely
 
-- **uact** - Best when AKT price is low relative to compute value
-- **USDC** - Best for predictable costs, hedges AKT volatility
+- **uact** - The default. Required if you don't want to deal with bridged stablecoins. Console-API users get this with no extra steps.
+- **USDC (IBC)** - Best for predictable USD-denominated costs. Self-custody only — bridge USDC from Noble to Akash first.
 
 ### Persistent vs Ephemeral Storage
 

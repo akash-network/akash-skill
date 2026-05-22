@@ -12,7 +12,8 @@
         {"id": "no_akash_cli", "type": "regex_absent", "pattern": "(?<!\\w)akash (tx|query|keys) ", "description": "Does NOT use the akash CLI (akash tx/query/keys ...)"},
         {"id": "no_cert_generation", "type": "regex_absent", "pattern": "(akash tx cert create|certificateManager\\.createCertificate|tls.*cert.*generate)", "description": "Does NOT walk through mTLS certificate generation"},
         {"id": "batch_leases_endpoint", "type": "regex_present", "pattern": "/v1/leases\\b", "description": "Uses POST /v1/leases (batch endpoint that also sends manifest)"},
-        {"id": "no_authorization_bearer_for_apikey", "type": "regex_absent", "pattern": "Authorization:\\s*Bearer\\s*\\$?AKASH_API_KEY", "description": "Does NOT use Authorization: Bearer with the API key"}
+        {"id": "no_authorization_bearer_for_apikey", "type": "regex_absent", "pattern": "Authorization:\\s*Bearer\\s*\\$?AKASH_API_KEY", "description": "Does NOT use Authorization: Bearer with the API key"},
+        {"id": "uses_env_var_reference", "type": "regex_present", "pattern": "(\\$AKASH_API_KEY|\\$\\{AKASH_API_KEY\\}|\\$\\{\\{ secrets\\.AKASH_API_KEY \\}\\}|process\\.env\\.AKASH_API_KEY|os\\.environ\\[[\"']AKASH_API_KEY[\"']\\]|os\\.Getenv\\([\"']AKASH_API_KEY[\"']\\))", "description": "References the API key via env var, never inline"}
       ]
     },
     {
@@ -31,7 +32,8 @@
       "assertions": [
         {"id": "mentions_self_custody_path", "type": "regex_present", "pattern": "(akash cli|akash keys|chain-sdk|@akashnetwork/chain-sdk|typescript sdk|go sdk)", "description": "Mentions a self-custody path (CLI or SDK)", "case_insensitive": true},
         {"id": "no_console_api_push", "type": "regex_absent", "pattern": "(use the console api|via the console api|x-api-key|/v1/deployments)", "description": "Does NOT push Console API for this user", "case_insensitive": true},
-        {"id": "respects_keplr", "type": "regex_present", "pattern": "keplr", "description": "Acknowledges the Keplr wallet specifically", "case_insensitive": true}
+        {"id": "respects_keplr", "type": "regex_present", "pattern": "keplr", "description": "Acknowledges the Keplr wallet specifically", "case_insensitive": true},
+        {"id": "no_fake_console_air_url", "type": "regex_absent", "pattern": "https?://console-air\\.akash\\.network", "description": "Does NOT reference the bogus console-air.akash.network URL (Console Air is self-hosted)"}
       ]
     },
     {

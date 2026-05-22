@@ -35,7 +35,14 @@ image: nginx:latest
 image: nginx          # implies :latest
 ```
 
-**Native denom is `uact`, not `uakt`.** The token denom was renamed; any older docs you find referencing `uakt` are stale.
+**Akash has two tokens — don't conflate them.**
+
+- **AKT** (`uakt`, 1 AKT = 1,000,000 uakt) is the **chain token**. Used for gas fees (`--gas-prices`, `minimum-gas-prices`, SDK `WithGasPrices`), staking (self-delegation, validator bonds, slashing), and validator rewards. Self-custody wallets hold AKT.
+- **ACT** (`uact`, 1 ACT = 1,000,000 uact) is the **deployment-payment token**. Used for SDL pricing (`denom: uact`), deployment deposits and escrow, bid amounts, lease payments.
+
+**For self-custody deployers: you must mint ACT by burning AKT before you can deposit to a deployment.** Acquire AKT first (exchange / faucet for testnet), then convert a portion to ACT via the burn/mint mechanism. Console API users skip this entirely — Console funds the managed wallet with ACT directly (Stripe → USD → ACT server-side).
+
+When you see `--gas-prices 0.025uakt`, that's correct (gas is paid in AKT). When you see `denom: uact, amount: 1000` in an SDL, that's also correct (lease pricing is in ACT). Both denoms coexist in normal commands.
 
 ## Choosing a Deployment Method
 

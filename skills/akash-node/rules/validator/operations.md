@@ -44,7 +44,7 @@ akash tx slashing unjail \
   --chain-id=akashnet-2 \
   --gas="auto" \
   --gas-adjustment=1.5 \
-  --gas-prices="0.025uact" \
+  --gas-prices="0.025uakt" \
   --from=validator-wallet \
   -y
 
@@ -85,7 +85,7 @@ akash tx staking edit-validator \
   --chain-id=akashnet-2 \
   --gas="auto" \
   --gas-adjustment=1.5 \
-  --gas-prices="0.025uact" \
+  --gas-prices="0.025uakt" \
   --from=validator-wallet \
   -y
 ```
@@ -124,7 +124,7 @@ akash tx distribution withdraw-rewards \
   --chain-id=akashnet-2 \
   --gas="auto" \
   --gas-adjustment=1.5 \
-  --gas-prices="0.025uact" \
+  --gas-prices="0.025uakt" \
   --from=validator-wallet \
   -y
 
@@ -134,7 +134,7 @@ akash tx distribution withdraw-rewards \
   --chain-id=akashnet-2 \
   --gas="auto" \
   --gas-adjustment=1.5 \
-  --gas-prices="0.025uact" \
+  --gas-prices="0.025uakt" \
   --from=validator-wallet \
   -y
 
@@ -154,11 +154,11 @@ akash query distribution commission \
 akash tx staking redelegate \
   source_validator_operator_address \
   destination_validator_operator_address \
-  1000000uact \
+  1000000uakt \
   --chain-id=akashnet-2 \
   --gas="auto" \
   --gas-adjustment=1.5 \
-  --gas-prices="0.025uact" \
+  --gas-prices="0.025uakt" \
   --from=validator-wallet \
   -y
 ```
@@ -194,7 +194,7 @@ akash tx gov vote PROPOSAL_ID yes \
   --chain-id=akashnet-2 \
   --gas="auto" \
   --gas-adjustment=1.5 \
-  --gas-prices="0.025uact" \
+  --gas-prices="0.025uakt" \
   --from=validator-wallet \
   -y
 ```
@@ -217,7 +217,7 @@ akash tx gov weighted-vote PROPOSAL_ID \
   --chain-id=akashnet-2 \
   --gas="auto" \
   --gas-adjustment=1.5 \
-  --gas-prices="0.025uact" \
+  --gas-prices="0.025uakt" \
   --from=validator-wallet \
   -y
 ```

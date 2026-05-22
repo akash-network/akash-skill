@@ -4,7 +4,7 @@ Payment denominations available on Akash Network via Inter-Blockchain Communicat
 
 ## Native Token
 
-### AKT (uact)
+### ACT (uact)
 
 The native Akash token:
 
@@ -17,7 +17,7 @@ pricing:
 
 **Conversion:**
 ```
-1 AKT = 1,000,000 uact
+1 ACT = 1,000,000 uact
 ```
 
 ## IBC Tokens
@@ -49,7 +49,7 @@ ibc/170C677610AC31DF0904FFE09CD3B5C657492170E7E52372E48756B71E56F2F1
 
 | Token | Denom | Decimals | Source |
 |-------|-------|----------|--------|
-| AKT | `uact` | 6 | Native |
+| ACT | `uact` | 6 | Native |
 | USDC | `ibc/170C677610AC31DF0904FFE09CD3B5C657492170E7E52372E48756B71E56F2F1` | 6 | Noble |
 
 ## Using IBC Tokens
@@ -111,30 +111,29 @@ blocks_per_month ≈ 438,000
 monthly_cost = 10 × 438,000 = 4,380,000 uusdc = $4.38
 ```
 
-### AKT vs USDC Comparison
+### ACT vs USDC Comparison
 
 | Metric | uact | USDC |
 |--------|------|------|
-| Price Stability | Volatile | Stable |
+| Price Stability | Variable (linked to ACT market) | Stable USD peg |
 | Availability | High | Moderate |
 | Provider Support | Universal | Most providers |
-| Cost Predictability | Low | High |
+| Cost Predictability | Variable | High |
 
 ## Choosing Payment Token
 
-### Use AKT (uact) When:
+### Use ACT (uact) When:
 
-- AKT price is low relative to compute value
-- You hold AKT and want to use it
+- You already have ACT (minted from AKT, or funded via Console)
 - Maximum provider compatibility needed
-- Willing to accept price volatility
+- You're OK with the deployment cost varying with ACT's market value
 
 ### Use USDC When:
 
-- Predictable costs are important
+- Predictable USD-denominated costs are important
 - Budgeting in USD terms
-- Hedging against AKT price movements
-- Enterprise/business deployments
+- Enterprise/business deployments where finance wants stable line items
+- You're bridging USDC from Noble anyway
 
 ## Querying Balances
 
@@ -190,7 +189,7 @@ The Akash Network may support additional IBC tokens in the future. Check the off
 ### Denom Format
 
 ```yaml
-# VALID - Native AKT
+# VALID - ACT (deployment-payment token)
 denom: uact
 
 # VALID - IBC token

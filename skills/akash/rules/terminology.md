@@ -149,12 +149,23 @@ Secures the Akash blockchain:
 
 ## Payment Terms
 
+### Two tokens — AKT vs ACT
+
+Akash has two separate tokens. Don't conflate them.
+
+| Token | Denom | Purpose |
+|---|---|---|
+| **AKT** | `uakt` | Chain token — gas, staking, validator rewards. `1 AKT = 1,000,000 uakt`. |
+| **ACT** | `uact` | Deployment-payment token — SDL pricing, bids, escrow, lease payments. `1 ACT = 1,000,000 uact`. |
+
+Self-custody deployers must mint ACT by burning AKT before depositing to a deployment. Console API users skip this — Console funds the managed wallet with ACT directly.
+
 ### uact
 
-Micro-AKT, the smallest denomination:
+Micro-ACT, the smallest denomination of the deployment-payment token:
 
 ```
-1 AKT = 1,000,000 uact
+1 ACT = 1,000,000 uact
 ```
 
 ### Escrow
@@ -179,7 +190,7 @@ Monthly cost calculation:
 ```
 blocks_per_month = 438,000 (approx)
 monthly_cost = amount × blocks_per_month
-1000 uact × 438,000 = 438,000,000 uact = 438 AKT
+1000 uact × 438,000 = 438,000,000 uact = 438 ACT
 ```
 
 ## Provider Terms

@@ -249,7 +249,7 @@ akash tx provider create provider.yaml \
   --from provider-wallet \
   --chain-id akashnet-2 \
   --node https://rpc.akashnet.net:443 \
-  --gas-prices 0.025uact \
+  --gas-prices 0.025uakt \
   --gas auto \
   --gas-adjustment 1.5
 ```

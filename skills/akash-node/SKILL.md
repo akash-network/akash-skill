@@ -31,7 +31,8 @@ For **deploying workloads** to Akash, use the `akash-network:akash` skill. For *
 - **Slashing** — penalty for double-signing (5% of stake, permanent jail) or downtime (0.01%, unjailable). Both burn AKT.
 - **Sentry node** — a non-validating full node that fronts your validator on the p2p layer. Hides the validator's IP from DDoS / direct attack.
 - **State sync** — fast bootstrap method: download a recent state snapshot rather than replaying every block from genesis.
-- **uact** — native Akash denom; older docs may say `uakt`, which is deprecated.
+- **AKT** (`uakt`) — chain token. **What validators care about.** All gas (`--gas-prices`, `minimum-gas-prices`), staking (`create-validator --amount`, `delegate`, `redelegate`, `unbond`), self-bond, slashing, and validator rewards are denominated in `uakt`. `1 AKT = 1,000,000 uakt`.
+- **ACT** (`uact`) — deployment-payment token. Used by deployers for SDL pricing and lease payments; validators normally don't touch this directly. Mentioned here only so you don't confuse it with `uakt` when reading deployer-side docs.
 
 For deployer-side terminology, see `akash-network:akash`'s `rules/terminology.md`.
 

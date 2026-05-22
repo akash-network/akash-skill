@@ -94,7 +94,7 @@ http_options:
 | `amount` | Positive integer |
 
 ```yaml
-# Valid - Native AKT
+# Valid - ACT (deployment-payment token)
 pricing:
   web:
     denom: uact

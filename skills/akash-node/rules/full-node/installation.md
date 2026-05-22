@@ -104,7 +104,7 @@ sed -i "s/^persistent_peers *=.*/persistent_peers = \"$PEERS\"/" ~/.akash/config
 
 ```bash
 # Set minimum gas price in app.toml
-sed -i 's/^minimum-gas-prices *=.*/minimum-gas-prices = "0.025uact"/' ~/.akash/config/app.toml
+sed -i 's/^minimum-gas-prices *=.*/minimum-gas-prices = "0.025uakt"/' ~/.akash/config/app.toml
 ```
 
 ### Pruning Configuration

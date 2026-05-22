@@ -219,7 +219,7 @@ Common flags for transactions:
 --gas 200000
 
 # Gas prices
---gas-prices 0.025uact
+--gas-prices 0.025uakt
 
 # Skip confirmation
 -y
@@ -240,7 +240,7 @@ export AKASH_KEYRING_BACKEND="os"
 export AKASH_FROM="wallet"
 export AKASH_GAS="auto"
 export AKASH_GAS_ADJUSTMENT="1.5"
-export AKASH_GAS_PRICES="0.025uact"
+export AKASH_GAS_PRICES="0.025uakt"
 export AKASH_OUTPUT="json"
 ```
 

@@ -72,7 +72,7 @@ Commission is the percentage of delegator rewards that the validator keeps.
 
 ```bash
 akash tx staking create-validator \
-  --amount=1000000uact \
+  --amount=1000000uakt \
   --pubkey=$(akash tendermint show-validator) \
   --moniker="My Akash Validator" \
   --details="A reliable validator for the Akash Network" \
@@ -86,7 +86,7 @@ akash tx staking create-validator \
   --min-self-delegation="1" \
   --gas="auto" \
   --gas-adjustment=1.5 \
-  --gas-prices="0.025uact" \
+  --gas-prices="0.025uakt" \
   --from=validator-wallet \
   --node="http://localhost:26657" \
   -y
@@ -96,7 +96,7 @@ akash tx staking create-validator \
 
 | Flag | Value | Description |
 |------|-------|-------------|
-| `--amount` | `1000000uact` | Self-delegation amount (1 AKT = 1,000,000 uact) |
+| `--amount` | `1000000uakt` | Self-delegation amount (1 AKT = 1,000,000 uakt) |
 | `--pubkey` | Auto-detected | Validator's consensus public key |
 | `--moniker` | `"My Akash Validator"` | Display name |
 | `--details` | `"A reliable validator..."` | Description text |
@@ -107,10 +107,10 @@ akash tx staking create-validator \
 | `--commission-rate` | `0.05` | 5% starting commission |
 | `--commission-max-rate` | `0.20` | 20% maximum commission (permanent) |
 | `--commission-max-change-rate` | `0.01` | 1% maximum daily change (permanent) |
-| `--min-self-delegation` | `1` | Minimum 1 uact self-delegation |
+| `--min-self-delegation` | `1` | Minimum 1 uakt self-delegation |
 | `--gas` | `auto` | Automatically estimate gas |
 | `--gas-adjustment` | `1.5` | Gas estimate multiplier for safety |
-| `--gas-prices` | `0.025uact` | Gas price |
+| `--gas-prices` | `0.025uakt` | Gas price |
 | `--from` | `validator-wallet` | Wallet name to sign with |
 
 ## Verify Validator Creation
@@ -152,7 +152,7 @@ akash tx staking edit-validator \
   --chain-id=akashnet-2 \
   --gas="auto" \
   --gas-adjustment=1.5 \
-  --gas-prices="0.025uact" \
+  --gas-prices="0.025uakt" \
   --from=validator-wallet \
   -y
 ```
@@ -168,7 +168,7 @@ akash tx staking edit-validator \
   --identity="[do-not-modify]" \
   --chain-id=akashnet-2 \
   --gas="auto" \
-  --gas-prices="0.025uact" \
+  --gas-prices="0.025uakt" \
   --from=validator-wallet \
   -y
 ```
@@ -182,7 +182,7 @@ akash tx staking edit-validator \
   --chain-id=akashnet-2 \
   --gas="auto" \
   --gas-adjustment=1.5 \
-  --gas-prices="0.025uact" \
+  --gas-prices="0.025uakt" \
   --from=validator-wallet \
   -y
 ```
@@ -201,11 +201,11 @@ akash tx staking edit-validator \
 # Delegate additional tokens to your own validator
 akash tx staking delegate \
   $(akash keys show validator-wallet --bech val -a) \
-  500000uact \
+  500000uakt \
   --chain-id=akashnet-2 \
   --gas="auto" \
   --gas-adjustment=1.5 \
-  --gas-prices="0.025uact" \
+  --gas-prices="0.025uakt" \
   --from=validator-wallet \
   -y
 ```
@@ -225,11 +225,11 @@ akash query staking delegation \
 # Unbond tokens (subject to 21-day unbonding period)
 akash tx staking unbond \
   $(akash keys show validator-wallet --bech val -a) \
-  100000uact \
+  100000uakt \
   --chain-id=akashnet-2 \
   --gas="auto" \
   --gas-adjustment=1.5 \
-  --gas-prices="0.025uact" \
+  --gas-prices="0.025uakt" \
   --from=validator-wallet \
   -y
 ```

@@ -198,7 +198,7 @@ func createDeployment(
         WithChainID(clientCtx.ChainID).
         WithGas(200000).
         WithGasAdjustment(1.5).
-        WithGasPrices("0.025uact")
+        WithGasPrices("0.025uakt")
 
     return tx.GenerateOrBroadcastTxWithFactory(clientCtx, txf, msg)
 }

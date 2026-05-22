@@ -91,15 +91,15 @@ signedBy:
 
 ## Payment Denominations
 
-### uact (Native AKT)
+### uact (ACT — the deployment-payment token)
 
-The native Akash token in micro-denomination:
+ACT is Akash's deployment-payment token (distinct from AKT, the chain token used for gas/staking). `uact` is its micro-denomination — `1 ACT = 1,000,000 uact`.
 
 ```yaml
 pricing:
   web:
     denom: uact
-    amount: 1000      # 0.001 AKT per block
+    amount: 1000      # 0.001 ACT per block
 ```
 
 ### USDC via IBC
@@ -117,7 +117,7 @@ pricing:
 
 - Prices are per block (approximately every 6 seconds)
 - Monthly cost ≈ amount × 438,000 blocks/month
-- Example: `amount: 1000` uact ≈ 438,000,000 uact/month ≈ 438 AKT/month
+- Example: `amount: 1000` uact ≈ 438,000,000 uact/month ≈ 438 ACT/month
 
 ## Multiple Placements
 

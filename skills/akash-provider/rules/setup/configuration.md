@@ -104,7 +104,7 @@ akash query bank balances $(akash keys show provider-wallet -a) \
   --node https://rpc.akashnet.net:443
 
 # Send funds to provider wallet
-akash tx bank send <SOURCE_WALLET> <PROVIDER_ADDRESS> 10000000uact \
+akash tx bank send <SOURCE_WALLET> <PROVIDER_ADDRESS> 10000000uakt \
   --from <SOURCE_WALLET> \
   --chain-id akashnet-2 \
   --node https://rpc.akashnet.net:443
@@ -290,7 +290,7 @@ env:
   - name: AKASH_LOG_LEVEL
     value: debug
   - name: AKASH_GAS_PRICES
-    value: "0.025uact"
+    value: "0.025uakt"
   - name: AKASH_GAS_ADJUSTMENT
     value: "1.5"
 ```

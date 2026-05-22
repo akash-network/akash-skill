@@ -72,8 +72,9 @@ The [Console API](https://console-api.akash.network/v1/swagger) provides REST en
 | Property | Value |
 |----------|-------|
 | Chain ID | `akashnet-2` |
-| Native Token | AKT |
-| Denomination | uact (1 AKT = 1,000,000 uact) |
+| Chain Token | AKT — denom `uakt` (1 AKT = 1,000,000 uakt). Used for gas, staking, validator rewards. |
+| Deployment Token | ACT — denom `uact` (1 ACT = 1,000,000 uact). Used for SDL pricing, bids, lease payments, escrow. **Separate from AKT.** |
+| Self-custody deployers | Must mint ACT by burning AKT before depositing to a deployment. Console API users skip this (Console funds the managed wallet with ACT directly). |
 | Block Time | ~6 seconds |
 | Consensus | Tendermint BFT |
 

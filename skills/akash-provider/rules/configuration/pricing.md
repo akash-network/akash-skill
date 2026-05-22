@@ -60,7 +60,7 @@ The script must output a single number: the total price in uact per block.
 
 ```
 Monthly Cost (uact) = price_per_block * 438,000
-Monthly Cost (AKT)  = price_per_block * 438,000 / 1,000,000
+Monthly Cost (ACT)  = price_per_block * 438,000 / 1,000,000
 ```
 
 ### Target Monthly Revenue per Resource
@@ -85,10 +85,10 @@ Use these as guidelines for setting competitive prices:
 Converting monthly target to per-block price (in uact):
 
 ```
-price_per_block = (monthly_usd_target / akt_price_usd) * 1000000 / 438000
+price_per_block = (monthly_usd_target / act_usd_price) * 1000000 / 438000
 ```
 
-Example: Target $10/month per CPU core, AKT at $3.50:
+Example: Target $10/month per CPU core, ACT at $3.50:
 
 ```
 price_per_block = ($10 / $3.50) * 1000000 / 438000 = 6.52 uact/block per core
@@ -110,16 +110,16 @@ storage=$(echo "$data_in" | jq -r '.storage')
 gpu=$(echo "$data_in" | jq -r '.gpu // 0')
 
 # Prices in uact per block
-# CPU: ~$5/month per core at AKT=$3.50
+# CPU: ~$5/month per core at ACT=$3.50
 cpu_price=$(echo "scale=6; $cpu / 1000 * 3.3" | bc)
 
-# Memory: ~$3/month per GB at AKT=$3.50
+# Memory: ~$3/month per GB at ACT=$3.50
 memory_price=$(echo "scale=6; $memory / 1073741824 * 2.0" | bc)
 
-# Storage: ~$0.05/month per GB at AKT=$3.50
+# Storage: ~$0.05/month per GB at ACT=$3.50
 storage_price=$(echo "scale=6; $storage / 1073741824 * 0.03" | bc)
 
-# GPU: ~$300/month per GPU at AKT=$3.50
+# GPU: ~$300/month per GPU at ACT=$3.50
 gpu_price=$(echo "scale=6; $gpu * 195.0" | bc)
 
 total=$(echo "scale=6; $cpu_price + $memory_price + $storage_price + $gpu_price" | bc)
@@ -229,9 +229,11 @@ gpu=$(echo "$data_in" | jq -r '.gpu // 0')
 gpu_model=$(echo "$data_in" | jq -r '.gpu_model // "unknown"')
 
 # Pricing in USD terms (per month)
-# Then convert to uact per block using AKT price
-# Update AKT_PRICE regularly or fetch dynamically
-AKT_PRICE=3.50
+# Then convert to uact per block using ACT's USD price
+# (ACT is the deployment-payment token; mintable from AKT via burn/mint.
+# Bid in uact, not uakt — they're separate denoms.)
+# Update ACT_USD_PRICE regularly or fetch dynamically
+ACT_USD_PRICE=3.50
 
 # Monthly USD targets
 cpu_monthly_usd=5.0      # per core
@@ -240,9 +242,9 @@ storage_monthly_usd=0.05 # per GB
 gpu_monthly_usd=300.0    # per GPU (default)
 
 # Convert monthly USD to uact per block
-# formula: (monthly_usd / akt_price) * 1000000 / 438000
+# formula: (monthly_usd / act_usd_price) * 1000000 / 438000
 usd_to_uact_block() {
-  echo "scale=6; ($1 / $AKT_PRICE) * 1000000 / 438000" | bc
+  echo "scale=6; ($1 / $ACT_USD_PRICE) * 1000000 / 438000" | bc
 }
 
 cpu_rate=$(usd_to_uact_block $cpu_monthly_usd)
@@ -333,7 +335,7 @@ kubectl logs -n akash-services -l app=akash-provider -f | grep -i "bid\|price"
 | Premium | Price above market for higher-quality infrastructure |
 | GPU-Focused | Lower CPU/memory prices, premium GPU prices |
 | Volume | Lower unit prices to attract more total deployments |
-| Dynamic | Update AKT_PRICE variable regularly based on market |
+| Dynamic | Update ACT_USD_PRICE variable regularly based on market |
 
 ### Market Rate Discovery
 
