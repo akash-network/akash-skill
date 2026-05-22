@@ -2,7 +2,7 @@
 
 When you sign up on console.akash.network, your account *is* a managed wallet. There isn't a separate "wallet" product to enable — the API key authenticates as your account, and deployments spend from that account's wallet automatically.
 
-This file covers the lifecycle around the account: signup, reading balances, funding with Stripe, and the `/v1/tx` escape hatch for arbitrary signed messages.
+This file covers the lifecycle around the account: how to bootstrap one (UI-only), reading balances programmatically, funding with Stripe, and the `/v1/tx` escape hatch for arbitrary signed messages.
 
 ## The model
 
@@ -19,29 +19,24 @@ The API key doesn't carry a wallet of its own. It's an authentication credential
 
 ## Account lifecycle
 
-### Sign up
+### Sign up — use the Console UI, not the API
 
-```
-POST /v1/auth/signup
-```
+Account creation is a **UI-only flow**. Go to [console.akash.network](https://console.akash.network), sign up with email + password (or OAuth), and verify your email via the link in your inbox. The Console handles email verification end-to-end through the UI.
 
-**Auth:** Public
+> Do not call `POST /v1/auth/signup`, `POST /v1/send-verification-email`, or `POST /v1/verify-email` from your application. These endpoints back the Console UI; they are not part of the supported programmatic surface and may change without notice. Direct users to the Console UI for any account creation, password reset, or email verification action.
 
-**Body:**
-```json
-{ "email": "you@example.com", "password": "<min 8 chars>" }
-```
+Once your account is verified, the rest of this file applies — you'll have an account with a managed wallet attached, and you can read its state via the API.
 
-**Response:** 204 (no content) on success. Account is created with a managed wallet attached.
+### Generate an API key — also via the UI
 
-Email verification flow:
+API keys are generated through **Settings → API Keys** in the Console UI. The plaintext key is shown once at creation; copy it then. Programmatic API-key management endpoints (`/v1/api-keys`) exist for rotating or listing existing keys — see **@authentication.md** — but the **first** key has to be created through the UI because you don't have a key to authenticate to the API yet.
 
-```
-POST /v1/send-verification-email     # public
-POST /v1/verify-email                # public, validates the link token
-```
-
-For most programmatic users this is done through the Console UI once. Skip the API flow if you can.
+Bootstrap order:
+1. Sign up in the Console UI.
+2. Verify email via the UI / your inbox.
+3. Fund the wallet (Settings → Payment Methods → add a card).
+4. Generate an API key in the UI (copy it once, store it as `AKASH_API_KEY`).
+5. *Then* — and only then — use the programmatic endpoints below.
 
 ### Get your user / me
 
@@ -183,15 +178,9 @@ Returns the wallet objects associated with your account:
 
 Most accounts have exactly one wallet. Multi-wallet accounts are rare and handled the same way.
 
-### Trial wallet (legacy onboarding endpoint)
+### Trial wallet (UI-only onboarding endpoint)
 
-```
-POST /v1/start-trial
-```
-
-**Auth:** Public
-
-This is an onboarding endpoint the Console UI uses to provision a trial wallet for a new user. You generally don't need to call it manually — `POST /v1/auth/signup` already creates a wallet. Documented here only so the model recognizes it.
+`POST /v1/start-trial` backs a step of the Console UI's onboarding flow. **Do not call it from your application** — like signup and email verification, it's part of the UI's internal surface, not a supported programmatic endpoint. Documented here only so the model recognizes it if it appears in logs or browser dev tools.
 
 ## Generic signed transaction
 

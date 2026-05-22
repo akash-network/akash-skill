@@ -69,7 +69,7 @@ resp, _ := http.DefaultClient.Do(req)
 
 ## API Keys CRUD
 
-The Console API exposes endpoints to manage API keys programmatically (you can also do this through the Console UI).
+Once you have a first key (created via the Console UI), the Console API exposes endpoints to manage additional keys programmatically. **You cannot create your first key via the API** — every `/v1/api-keys` call requires an existing key in the `x-api-key` header. Bootstrap via the UI, then automate from there.
 
 | Method | Endpoint | Description |
 |---|---|---|
