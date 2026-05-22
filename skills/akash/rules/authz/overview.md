@@ -65,7 +65,7 @@ akash tx feegrant grant <GRANTER_ADDRESS> <GRANTEE_ADDRESS> \
 
 # With spending limit
 akash tx feegrant grant <GRANTER_ADDRESS> <GRANTEE_ADDRESS> \
-  --spend-limit 10000000uact \
+  --spend-limit 10000000uakt \
   --from granter
 
 # With expiration

@@ -54,7 +54,7 @@ akash tx feegrant grant $(akash keys show granter -a) $GRANTEE \
 
 # With limit
 akash tx feegrant grant $(akash keys show granter -a) $GRANTEE \
-  --spend-limit 10000000uact \
+  --spend-limit 10000000uakt \
   --from granter
 
 # With time expiration
@@ -64,7 +64,7 @@ akash tx feegrant grant $(akash keys show granter -a) $GRANTEE \
 
 # With both
 akash tx feegrant grant $(akash keys show granter -a) $GRANTEE \
-  --spend-limit 10000000uact \
+  --spend-limit 10000000uakt \
   --expiration "2025-06-30T00:00:00Z" \
   --from granter
 ```

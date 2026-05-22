@@ -49,7 +49,7 @@ bidWaitDuration: 5s
 bidTimeout: 5m
 
 # Minimum deposit required in the order's escrow
-bidMinDeposit: 5000000  # 5 ACT in uact (1 ACT = 1,000,000 uact)
+bidMinDeposit: 5000000  # 5 AKT in uakt (1 AKT = 1,000,000 uakt) — bid escrow is in AKT, not ACT
 
 # Filter orders by maximum resource request
 bidMaxCPU: 256000       # 256 cores in millicpu
@@ -70,7 +70,7 @@ bidpricescript: |
 | `bidMaxConcurrent` | int | 10 | Maximum simultaneous bids |
 | `bidWaitDuration` | duration | 5s | Delay before submitting bid |
 | `bidTimeout` | duration | 5m | Bid acceptance timeout |
-| `bidMinDeposit` | int | 5000000 | Minimum escrow deposit (uact) |
+| `bidMinDeposit` | int | 5000000 | Minimum escrow deposit (uakt — bid escrow is in AKT, not ACT) |
 | `bidMaxCPU` | int | - | Max CPU per order (millicpu) |
 | `bidMaxMemory` | int | - | Max memory per order (bytes) |
 | `bidMaxStorage` | int | - | Max storage per order (bytes) |
@@ -121,7 +121,7 @@ Reject orders with insufficient escrow deposits:
 
 ```yaml
 # Require at least 5 AKT deposit
-bidMinDeposit: 5000000  # uact
+bidMinDeposit: 5000000  # uakt
 ```
 
 This protects against orders that would run out of funds quickly.
