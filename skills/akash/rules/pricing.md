@@ -9,7 +9,7 @@ Akash has **two tokens**. Don't conflate them:
 | Token | Denom | What it's for |
 |---|---|---|
 | **AKT** | `uakt` | Chain token — gas (`--gas-prices`), staking, validator rewards. `1 AKT = 1,000,000 uakt`. |
-| **ACT** | `uact` | Deployment-payment token — SDL pricing, bids, lease payments, escrow. `1 ACT = 1,000,000 uact`. |
+| **ACT** | `uact` | Deployment-payment token — SDL pricing, bid *prices* (the rate providers offer), deployment escrow/deposit, lease payments. `1 ACT = 1,000,000 uact`. Note: the provider-side bid *deposit* (anti-spam collateral on `MsgCreateBid`) is uakt, not uact. |
 
 **AKT and ACT are separate tokens.** Self-custody deployers must mint ACT by burning AKT before depositing to a deployment. Console API users skip this — Console funds the managed wallet with ACT directly (Stripe → USD → ACT server-side).
 
