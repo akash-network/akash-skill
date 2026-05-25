@@ -1,193 +1,153 @@
-# Akash Network Skill for Claude Code
+# Akash Network Plugin for Claude Code
 
-A comprehensive Claude Code skill for working with the Akash Network - the decentralized cloud computing marketplace. Covers SDL generation, deployments, provider operations, node management, SDK integration, and live bid-matching diagnostics.
+A Claude Code **plugin** bundling three focused skills for the Akash Network — the decentralized cloud computing marketplace.
 
-## Installation
+| Skill | Persona | What it covers |
+|---|---|---|
+| `akash-network:akash` | Deployer | SDL syntax, Console API (with API key), Akash CLI, TypeScript/Go SDKs, authz, bid-matching, payment in `uact` / IBC denoms |
+| `akash-network:akash-provider` | Provider operator | Kubernetes prereqs, provider installation, attributes & pricing, bid engine, monitoring, troubleshooting |
+| `akash-network:akash-node` | Node / validator operator | Full node setup, state sync, validator setup, slashing avoidance, sentry nodes, key management |
 
-using [skills-cli](https://github.com/vercel-labs/skills):
+The companion skill `akash-bid-matcher` (distributed separately) gives live bid-failure diagnostics against the current provider set and is referenced from `akash-network:akash`.
 
-```bash
-npx skills add akash-network/akash-skill
-```
+## Quick start
 
-## Usage
-
-Once installed, Claude will automatically use this skill when you ask it to:
-
-**SDL & Deployments:**
-
-- "Create an Akash deployment for..."
-- "Generate SDL for..."
-- "Deploy to Akash..."
-
-**CLI & API:**
-
-- "How do I deploy with Akash CLI?"
-- "Use the Console API to deploy..."
-- "Show me Akash CLI commands..."
-
-**SDKs:**
-
-- "Deploy using the Akash TypeScript SDK..."
-- "Integrate Akash in my Node.js app..."
-
-**Providers & Nodes:**
-
-- "How do I become an Akash provider?"
-- "Set up an Akash validator..."
-- "Run an Akash full node..."
-
-**Bid Matching:**
-
-- "Why am I not getting bids on my SDL?"
-- "Will this SDL get bids on Akash?"
-- "Which providers can run this deployment?"
-- "Adapt my SDL to get more bids"
-
-### Examples
-
-```
-> Generate an SDL for a simple nginx web server
-
-> Create an Akash deployment for WordPress with a MySQL database
-
-> Deploy a GPU workload with an NVIDIA A100 on Akash
-
-> Generate SDL for a game server with a dedicated IP
-
-> How do I deploy using the Console API?
-
-> Show me how to use the TypeScript SDK to create a deployment
-
-> What are the requirements to become an Akash provider?
-```
-
-## Usage by Agent
-
-This skill can be used with various AI coding assistants:
-
-### Claude Code
+### Install the plugin (local clone)
 
 ```bash
-# for device-global claude configuration
-git clone https://github.com/akash-network/akash-skill.git ~/.claude/skills/akash
-# for project specific claude configuration (in your project workspace)
-git clone https://github.com/akash-network/akash-skill.git .claude/skills/akash
+git clone https://github.com/akash-network/akash-skill
+cd akash-skill
+claude --plugin-dir "$(pwd)"
 ```
 
-### Cursor
+### Install from a marketplace
 
-Copy the contents of the `rules/` directory to your project's `.cursorrules` file or add as project rules in Cursor settings.
+If your Claude Code client is configured for a marketplace that publishes this plugin:
 
-### Windsurf
+```bash
+/plugin install akash-network
+```
 
-Add the rules content to Cascade rules or memory for persistent context.
+(Marketplace publication is in progress at the time of writing — use the local-clone approach until then.)
 
-### Cline
+### Trigger the skills
 
-Add as custom instructions in Cline extension settings.
+Once installed, the skills auto-trigger on relevant queries. Examples:
 
-### Codex / OpenCode
+- *"Deploy this SDL to Akash using my API key"* → `akash-network:akash`
+- *"Set up an Akash provider on a Kubernetes cluster"* → `akash-network:akash-provider`
+- *"How do I run an Akash validator with state sync?"* → `akash-network:akash-node`
 
-Include the rules as system prompt context when initializing your session.
+You can also invoke them explicitly: `/akash-network:akash`, `/akash-network:akash-provider`, `/akash-network:akash-node`.
 
-### Generic Integration
+## Repo layout
 
-For other AI assistants or custom setups, reference the [`rules/`](./rules/) directory directly. Each markdown file contains structured guidelines that can be adapted to any LLM's instruction format.
+```
+.
+├── .claude-plugin/
+│   └── plugin.json              # Plugin manifest (name, version, author)
+├── skills/
+│   ├── akash/                   # Deployer skill
+│   │   ├── SKILL.md
+│   │   ├── rules/
+│   │   │   ├── overview.md
+│   │   │   ├── terminology.md
+│   │   │   ├── pricing.md
+│   │   │   ├── sdl/             # SDL syntax and examples
+│   │   │   ├── deploy/
+│   │   │   │   ├── overview.md  # Method selection
+│   │   │   │   ├── console-api/ # Console API (API key path)
+│   │   │   │   ├── cli/         # Akash CLI (self-custody)
+│   │   │   │   └── certificates/
+│   │   │   ├── sdk/
+│   │   │   │   ├── typescript/  # @akashnetwork/chain-sdk
+│   │   │   │   └── go/          # github.com/akash-network/akash-api
+│   │   │   ├── authz/           # Fee grants & delegated permissions
+│   │   │   ├── bid-matching/    # Deployer-facing bid explainers
+│   │   │   └── reference/       # GPU models, storage classes, IBC denoms, RPC
+│   │   └── scripts/
+│   │       └── match_providers.py
+│   ├── akash-provider/          # Provider operator skill
+│   │   ├── SKILL.md
+│   │   └── rules/
+│   │       ├── requirements.md
+│   │       ├── setup/           # Kubernetes, installation, config
+│   │       ├── configuration/   # Attributes, pricing, bid engine
+│   │       └── operations/      # Leases, monitoring, troubleshooting
+│   └── akash-node/              # Node / validator skill
+│       ├── SKILL.md
+│       └── rules/
+│           ├── overview.md
+│           ├── full-node/       # Installation, requirements, state sync
+│           └── validator/       # Becoming a validator, ops, security
+├── SKILL.md                     # Deprecation stub for the old standalone skill
+├── README.md                    # This file
+└── LICENSE
+```
 
-## What's Included
+## Upgrading from v2.x (standalone skill → plugin)
 
-### Core Concepts
+If you previously installed this repo as a single `akash` skill (e.g. by symlinking or cloning into `~/.claude/skills/akash/`):
 
-- **overview.md** - Akash Network introduction and architecture
-- **terminology.md** - Key terms (lease, bid, dseq, gseq, oseq)
-- **pricing.md** - Payment with uact, USDC, IBC denoms
+1. **Remove the old install.** Delete the standalone skill directory:
 
-### SDL Configuration (`rules/sdl/`)
+   ```bash
+   rm -rf ~/.claude/skills/akash
+   ```
 
-- **schema-overview.md** - SDL structure and version requirements
-- **services.md** - Service configuration (image, expose, env, credentials)
-- **compute-resources.md** - CPU, memory, storage, and GPU specifications
-- **placement-pricing.md** - Provider selection and pricing (uact/USDC)
-- **deployment.md** - Service-to-profile mapping
-- **endpoints.md** - IP endpoint configuration (v2.1)
-- **validation-rules.md** - All constraints and validation rules
+   (Adjust the path if you used a different location.)
 
-### SDL Examples (`rules/sdl/examples/`)
+2. **Pull the latest version of this repo** (which now has the plugin layout):
 
-- **web-app.md** - Simple web deployment
-- **wordpress-db.md** - Multi-service with persistent storage
-- **gpu-workload.md** - GPU deployment with NVIDIA
-- **ip-lease.md** - IP endpoint configuration
+   ```bash
+   git pull
+   ```
 
-### Deployment Methods (`rules/deploy/`)
+3. **Install as a plugin:**
 
-- **overview.md** - Comparison of deployment options
-- **cli/** - Akash CLI installation, wallet setup, deployment lifecycle
-- **console-api/** - Console API authentication, managed wallets, endpoints
-- **certificates/** - JWT and mTLS authentication
+   ```bash
+   claude --plugin-dir "$(pwd)"
+   ```
 
-### SDK Documentation (`rules/sdk/`)
+4. The three skills will now show up in your Claude Code session as `akash-network:akash`, `akash-network:akash-provider`, and `akash-network:akash-node`. The trigger phrases are the same as before; only the namespacing changed.
 
-- **overview.md** - SDK comparison and selection
-- **typescript/** - TypeScript SDK for web and Node.js
-- **go/** - Go SDK for backend services
+If you keep the old `~/.claude/skills/akash` install around, both will coexist (Claude Code uses different namespaces for plugin vs. standalone skills). Behaviour from the old standalone may be stale — remove it once the plugin is working.
 
-### AuthZ (`rules/authz/`)
+## What changed in v3.0.0
 
-- Fee grants and deployment authorization
+This is a major restructure. Highlights:
 
-### Provider Operations (`rules/provider/`)
+- **Three skills instead of one.** Deployer, provider operator, and validator operator are distinct personas; each now has its own focused skill description.
+- **Console API documentation rebuilt against the live spec.** All endpoint paths, request bodies, and auth headers have been updated. Notably:
+  - Authentication uses the `x-api-key` header. `Authorization: Bearer` is for JWTs only.
+  - All paths are `/v1/...` and resource names are plural (e.g. `/v1/deployments`, not `/v1/deployment`).
+  - Bodies wrap in `{ "data": { ... } }`.
+  - `deposit` is a USD number, not a `"5000000uact"` string.
+  - Leases are created in batch via `POST /v1/leases` (which also sends the manifest).
+  - `/v1/sdl/validate` and `/v1/sdl/price` no longer exist; pricing is now `POST /v1/pricing` against raw `cpu/memory/storage` numbers.
+  - `POST /v1/certificates` is removed for the Console API path — identity is verified by API key.
+- **Method-selection guidance.** The deployer skill now asks once which deployment method (Console API, CLI, TypeScript SDK, Go SDK) the user wants and commits to it. The previous version conflated "Console API" with "managed wallet" and steered API-key users toward CLI/cert workflows.
+- **Console Air disambiguation.** The new **self-hosted** Console Air repo (self-custody UI for Keplr or hardware wallets — clone from [github.com/akash-network/console-air](https://github.com/akash-network/console-air)) is called out distinctly from the managed-wallet `console.akash.network`.
+- **Logs/events flow documented.** New file `skills/akash/rules/deploy/console-api/operations.md` covers the full JWT + provider proxy + WebSocket flow for streaming logs from a running deployment.
+- **TypeScript SDK refreshed.** Documentation now targets `@akashnetwork/chain-sdk` (the current package); the deprecated `@akashnetwork/akashjs` has been removed entirely.
+- **Denom rename.** All `uakt` references replaced with `uact` (the current native denom). The legacy name is only mentioned in historical / migration notes.
+- **mTLS marked deprecated for Console API.** The CLI flow still uses certs where applicable; the Console API path no longer does.
 
-- **overview.md** - Provider requirements
-- **setup/** - Kubernetes cluster and provider installation
-- **configuration/** - Attributes, pricing, bid engine
-- **operations/** - Monitoring and troubleshooting
+## Contributing
 
-### Node Operations (`rules/node/`)
+Found something stale or wrong? Open an issue or PR at https://github.com/akash-network/akash-skill.
 
-- **overview.md** - Running Akash nodes
-- **full-node/** - Full node setup and state sync
-- **validator/** - Validator operations and security
-
-### Bid Matching (`rules/bid-matching/`)
-
-- **overview.md** - When to use, how to run the matcher script, how to present results
-- **adaptation-rules.md** - Priority order for SDL changes (count before model, never touch pricing)
-- **matching-rules.md** - SDL ↔ provider field mapping, unit conversions, edge cases
-
-Bundled `scripts/match_providers.py` fetches the live audited+online provider set from `console-api.akash.network/v1/providers` and runs a constraint funnel against the SDL. Requires Python 3 + `pyyaml`.
-
-### Reference (`rules/reference/`)
-
-- **storage-classes.md** - beta2, beta3, ram storage
-- **gpu-models.md** - Supported NVIDIA GPUs
-- **ibc-denoms.md** - Payment denominations
-- **rpc-endpoints.md** - Public RPC endpoints
-
-## Features
-
-- **SDL v2.0 and v2.1** support (IP endpoints)
-- **All resource types**: CPU, memory, storage classes, GPUs
-- **Payment options**: uact (native AKT) and USDC via IBC
-- **Persistent storage** with beta2/beta3/ram classes
-- **GPU models**: A100, T4, RTX 3090, and more
-- **IP lease endpoints** for custom domains
-- **Comprehensive validation** rules
-- **Console API** integration for programmatic deployments
-- **TypeScript & Go SDKs** for application integration
-- **Provider setup** documentation
-- **Validator & node** operation guides
-
-## Resources
-
-- [awesome-akash](https://github.com/akash-network/awesome-akash) - 100+ production-ready SDL templates
-- [Akash Network Docs](https://akash.network/docs/) - Official documentation
-- [Console](https://console.akash.network) - Web-based deployment interface
-- [Console API](https://console-api.akash.network/v1/swagger) - REST API documentation
-- [chain-sdk](https://github.com/akash-network/chain-sdk) - Official TypeScript SDK
-- [skills-cli](https://skills.sh/) - Vercel Skills CLI tooling 
+The skills are written for [Claude Code](https://docs.claude.com/) but should be readable as general Akash documentation as well.
 
 ## License
 
-MIT
+MIT — see `LICENSE`.
+
+## Related projects
+
+- [`akash-network/console`](https://github.com/akash-network/console) — Managed-wallet Console (UI + API)
+- [`akash-network/console-air`](https://github.com/akash-network/console-air) — Self-custody Console
+- [`akash-network/chain-sdk`](https://github.com/akash-network/chain-sdk) — TypeScript/Go/Rust SDKs
+- [`akash-network/node`](https://github.com/akash-network/node) — Akash chain node
+- [`akash-network/provider`](https://github.com/akash-network/provider) — Provider services
+- [`akash-network/awesome-akash`](https://github.com/akash-network/awesome-akash) — Production-ready SDL templates
