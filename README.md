@@ -4,7 +4,7 @@ A Claude Code **plugin** bundling three focused skills for the Akash Network —
 
 | Skill | Persona | What it covers |
 |---|---|---|
-| `akash-network:akash` | Deployer | SDL syntax, Console API (with API key), Akash CLI, TypeScript/Go SDKs, authz, bid-matching, payment in `uact` / IBC denoms |
+| `akash-network:akash` | Deployer | SDL syntax, Console API (with API key), Akash CLI, TypeScript/Go SDKs, **AkashML managed inference** (OpenAI/Anthropic-compatible LLM APIs on Akash compute), authz, bid-matching, payment in `uact` / IBC denoms |
 | `akash-network:akash-provider` | Provider operator | Kubernetes prereqs, provider installation, attributes & pricing, bid engine, monitoring, troubleshooting |
 | `akash-network:akash-node` | Node / validator operator | Full node setup, state sync, validator setup, slashing avoidance, sentry nodes, key management |
 
@@ -46,6 +46,7 @@ This loads the plugin **for the current session only**. Subsequent `claude` invo
 Once installed, the skills auto-trigger on relevant queries. Examples:
 
 - *"Deploy this SDL to Akash using my API key"* → `akash-network:akash`
+- *"How do I call an LLM on Akash with the OpenAI SDK?"* → `akash-network:akash` (AkashML path)
 - *"Set up an Akash provider on a Kubernetes cluster"* → `akash-network:akash-provider`
 - *"How do I run an Akash validator with state sync?"* → `akash-network:akash-node`
 
@@ -70,6 +71,7 @@ You can also invoke them explicitly: `/akash-network:akash`, `/akash-network:aka
 │   │   │   │   ├── overview.md  # Method selection
 │   │   │   │   ├── console-api/ # Console API (API key path)
 │   │   │   │   ├── cli/         # Akash CLI (self-custody)
+│   │   │   │   ├── akashml/     # AkashML managed inference (consumption path)
 │   │   │   │   └── certificates/
 │   │   │   ├── sdk/
 │   │   │   │   ├── typescript/  # @akashnetwork/chain-sdk
@@ -109,19 +111,14 @@ If you previously installed this repo as a single `akash` skill (e.g. by symlink
 
    (Adjust the path if you used a different location.)
 
-2. **Pull the latest version of this repo** (which now has the plugin layout):
+2. **Install as a plugin via the marketplace** (from inside a Claude Code session):
 
-   ```bash
-   git pull
+   ```
+   /plugin marketplace add akash-network/akash-skill
+   /plugin install akash-network@akash-network
    ```
 
-3. **Install as a plugin:**
-
-   ```bash
-   claude --plugin-dir "$(pwd)"
-   ```
-
-4. The three skills will now show up in your Claude Code session as `akash-network:akash`, `akash-network:akash-provider`, and `akash-network:akash-node`. The trigger phrases are the same as before; only the namespacing changed.
+3. The three skills will now show up as `akash-network:akash`, `akash-network:akash-provider`, and `akash-network:akash-node`. The trigger phrases are the same as before; only the namespacing changed.
 
 If you keep the old `~/.claude/skills/akash` install around, both will coexist (Claude Code uses different namespaces for plugin vs. standalone skills). Behaviour from the old standalone may be stale — remove it once the plugin is working.
 
@@ -130,6 +127,7 @@ If you keep the old `~/.claude/skills/akash` install around, both will coexist (
 This is a major restructure. Highlights:
 
 - **Three skills instead of one.** Deployer, provider operator, and validator operator are distinct personas; each now has its own focused skill description.
+- **AkashML managed inference.** New section [`skills/akash/rules/deploy/akashml/`](skills/akash/rules/deploy/akashml/) covering [playground.akashml.com](https://playground.akashml.com) — Akash's OpenAI- and Anthropic-compatible LLM API. Documented as a *consumption* path distinct from the four *deployment* paths: when a user wants to **call** an LLM (not host one), the skill now routes to AkashML instead of jumping straight to a GPU SDL. Includes a Claude Code integration guide for routing Claude Code itself through AkashML via `ANTHROPIC_BASE_URL`.
 - **Console API documentation rebuilt against the live spec.** All endpoint paths, request bodies, and auth headers have been updated. Notably:
   - Authentication uses the `x-api-key` header. `Authorization: Bearer` is for JWTs only.
   - All paths are `/v1/...` and resource names are plural (e.g. `/v1/deployments`, not `/v1/deployment`).
