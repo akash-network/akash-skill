@@ -24,7 +24,7 @@ This repo publishes its own Claude Code plugin marketplace. From inside a Claude
 The first command registers the marketplace from this GitHub repo; the second installs the bundled plugin. To pin to a specific release instead of the default branch:
 
 ```
-/plugin marketplace add akash-network/akash-skill@v3.0.1
+/plugin marketplace add akash-network/akash-skill@v3.0.2
 ```
 
 Use `/plugin marketplace update akash-network` to pull new releases later.
