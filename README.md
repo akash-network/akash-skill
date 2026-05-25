@@ -24,7 +24,7 @@ This repo publishes its own Claude Code plugin marketplace. From inside a Claude
 The first command registers the marketplace from this GitHub repo; the second installs the bundled plugin. To pin to a specific release instead of the default branch:
 
 ```
-/plugin marketplace add akash-network/akash-skill@v3.0.0
+/plugin marketplace add akash-network/akash-skill@v3.0.1
 ```
 
 Use `/plugin marketplace update akash-network` to pull new releases later.
@@ -121,6 +121,10 @@ If you previously installed this repo as a single `akash` skill (e.g. by symlink
 3. The three skills will now show up as `akash-network:akash`, `akash-network:akash-provider`, and `akash-network:akash-node`. The trigger phrases are the same as before; only the namespacing changed.
 
 If you keep the old `~/.claude/skills/akash` install around, both will coexist (Claude Code uses different namespaces for plugin vs. standalone skills). Behaviour from the old standalone may be stale — remove it once the plugin is working.
+
+## What changed in v3.0.1
+
+- **IBC denom payment removed.** Providers no longer accept any non-`uact` denom for lease payment. All USDC-via-IBC examples and the dedicated `skills/akash/rules/reference/ibc-denoms.md` reference have been deleted; `match_providers.py` now warns on any `ibc/...` denom instead of silently treating it as recognized.
 
 ## What changed in v3.0.0
 
