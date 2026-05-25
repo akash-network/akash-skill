@@ -10,7 +10,7 @@ A provider is the supply side of the Akash marketplace. Providers:
 - Monitor the chain for deployment orders matching their resources
 - Automatically bid on orders via the bid engine
 - Deploy and manage tenant workloads on Kubernetes
-- Earn AKT or USDC for hosting deployments
+- Earn ACT (paid in `uact`) for hosting deployments
 
 ## Why Become a Provider?
 
@@ -153,7 +153,7 @@ Revenue = Sum(lease_price × blocks_active) for all active leases
 ```
 
 - Providers earn per-block payments from each active lease
-- Payments are in uact or USDC (IBC) depending on tenant choice
+- Payments are in `uact` (the only accepted lease-payment denom)
 - Providers can withdraw accumulated earnings periodically
 
 ### Cost Considerations

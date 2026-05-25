@@ -30,7 +30,6 @@ except ImportError:
 
 
 DEFAULT_API = "https://console-api.akash.network/v1/providers"
-IBC_DENOM_RE = re.compile(r"^ibc/[A-F0-9]{64}$", re.IGNORECASE)
 
 
 # ---------- Unit parsing ----------
@@ -467,11 +466,9 @@ def _denom_note(denom: str | None) -> str | None:
         return None
     if denom in KNOWN_DENOMS:
         return None
-    if IBC_DENOM_RE.match(denom):
-        return None
     return (
-        f"denom '{denom}' is not a recognized Akash denom (uact) or ibc/… — "
-        "providers endpoint does not expose accepted denoms; verify support separately."
+        f"denom '{denom}' is not the native Akash denom (uact) — "
+        "providers reject non-uact denoms for lease payment."
     )
 
 

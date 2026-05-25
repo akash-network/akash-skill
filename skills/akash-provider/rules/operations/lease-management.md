@@ -59,7 +59,7 @@ akash query market lease get \
 | `lease_id.gseq` | Group sequence number |
 | `lease_id.oseq` | Order sequence number |
 | `lease_id.provider` | Provider's Akash address |
-| `price.denom` | Payment denomination (uact or IBC USDC) |
+| `price.denom` | Payment denomination (uact) |
 | `price.amount` | Price per block |
 | `state` | Lease state (active, closed, etc.) |
 

@@ -4,7 +4,7 @@ A Claude Code **plugin** bundling three focused skills for the Akash Network —
 
 | Skill | Persona | What it covers |
 |---|---|---|
-| `akash-network:akash` | Deployer | SDL syntax, Console API (with API key), Akash CLI, TypeScript/Go SDKs, **AkashML managed inference** (OpenAI/Anthropic-compatible LLM APIs on Akash compute), authz, bid-matching, payment in `uact` / IBC denoms |
+| `akash-network:akash` | Deployer | SDL syntax, Console API (with API key), Akash CLI, TypeScript/Go SDKs, **AkashML managed inference** (OpenAI/Anthropic-compatible LLM APIs on Akash compute), authz, bid-matching, payment in `uact` |
 | `akash-network:akash-provider` | Provider operator | Kubernetes prereqs, provider installation, attributes & pricing, bid engine, monitoring, troubleshooting |
 | `akash-network:akash-node` | Node / validator operator | Full node setup, state sync, validator setup, slashing avoidance, sentry nodes, key management |
 
@@ -78,7 +78,7 @@ You can also invoke them explicitly: `/akash-network:akash`, `/akash-network:aka
 │   │   │   │   └── go/          # github.com/akash-network/akash-api
 │   │   │   ├── authz/           # Fee grants & delegated permissions
 │   │   │   ├── bid-matching/    # Deployer-facing bid explainers
-│   │   │   └── reference/       # GPU models, storage classes, IBC denoms, RPC
+│   │   │   └── reference/       # GPU models, storage classes, RPC endpoints
 │   │   └── scripts/
 │   │       └── match_providers.py
 │   ├── akash-provider/          # Provider operator skill

@@ -107,7 +107,7 @@ When picking changes:
 
 ## Known limitations
 
-- **Denom support is not in the providers endpoint.** The script accepts `uact` and IBC denoms as recognized. It can't verify which denoms a *specific* provider accepts — that's invisible.
+- **Denom support is not in the providers endpoint.** The script accepts only `uact` as recognized; any other denom — including `ibc/...` — gets a warning. It can't verify which denoms a *specific* provider accepts, but in practice only `uact` is taken.
 - **Per-GPU-model availability is not exposed.** The endpoint reports total GPU count via `stats.gpu.available` and a list of models via `gpuModels[]`, but not a per-model available count. The matcher treats "provider has this model in `gpuModels` AND total GPUs available ≥ requested" as a match — it can overcount when one provider has mixed models.
 - **Provider-side bid config (floor prices, deployment ACLs, denom acceptance) is not exposed.** A provider can satisfy the SDL on paper and still decline the bid based on its own pricing rules or policy. The report predicts *capability*, not *intent*.
 - **Stats are snapshots.** Available capacity changes minute-to-minute as leases come and go.
