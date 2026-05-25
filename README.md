@@ -122,27 +122,6 @@ If you previously installed this repo as a single `akash` skill (e.g. by symlink
 
 If you keep the old `~/.claude/skills/akash` install around, both will coexist (Claude Code uses different namespaces for plugin vs. standalone skills). Behaviour from the old standalone may be stale — remove it once the plugin is working.
 
-## What changed in v3.0.0
-
-This is a major restructure. Highlights:
-
-- **Three skills instead of one.** Deployer, provider operator, and validator operator are distinct personas; each now has its own focused skill description.
-- **AkashML managed inference.** New section [`skills/akash/rules/deploy/akashml/`](skills/akash/rules/deploy/akashml/) covering [playground.akashml.com](https://playground.akashml.com) — Akash's OpenAI- and Anthropic-compatible LLM API. Documented as a *consumption* path distinct from the four *deployment* paths: when a user wants to **call** an LLM (not host one), the skill now routes to AkashML instead of jumping straight to a GPU SDL. Includes a Claude Code integration guide for routing Claude Code itself through AkashML via `ANTHROPIC_BASE_URL`.
-- **Console API documentation rebuilt against the live spec.** All endpoint paths, request bodies, and auth headers have been updated. Notably:
-  - Authentication uses the `x-api-key` header. `Authorization: Bearer` is for JWTs only.
-  - All paths are `/v1/...` and resource names are plural (e.g. `/v1/deployments`, not `/v1/deployment`).
-  - Bodies wrap in `{ "data": { ... } }`.
-  - `deposit` is a USD number, not a `"5000000uact"` string.
-  - Leases are created in batch via `POST /v1/leases` (which also sends the manifest).
-  - `/v1/sdl/validate` and `/v1/sdl/price` no longer exist; pricing is now `POST /v1/pricing` against raw `cpu/memory/storage` numbers.
-  - `POST /v1/certificates` is removed for the Console API path — identity is verified by API key.
-- **Method-selection guidance.** The deployer skill now asks once which deployment method (Console API, CLI, TypeScript SDK, Go SDK) the user wants and commits to it. The previous version conflated "Console API" with "managed wallet" and steered API-key users toward CLI/cert workflows.
-- **Console Air disambiguation.** The new **self-hosted** Console Air repo (self-custody UI for Keplr or hardware wallets — clone from [github.com/akash-network/console-air](https://github.com/akash-network/console-air)) is called out distinctly from the managed-wallet `console.akash.network`.
-- **Logs/events flow documented.** New file `skills/akash/rules/deploy/console-api/operations.md` covers the full JWT + provider proxy + WebSocket flow for streaming logs from a running deployment.
-- **TypeScript SDK refreshed.** Documentation now targets `@akashnetwork/chain-sdk` (the current package); the deprecated `@akashnetwork/akashjs` has been removed entirely.
-- **Denom rename.** All `uakt` references replaced with `uact` (the current native denom). The legacy name is only mentioned in historical / migration notes.
-- **mTLS marked deprecated for Console API.** The CLI flow still uses certs where applicable; the Console API path no longer does.
-
 ## Contributing
 
 Found something stale or wrong? Open an issue or PR at https://github.com/akash-network/akash-skill.
