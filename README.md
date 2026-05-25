@@ -12,7 +12,26 @@ The companion skill `akash-bid-matcher` (distributed separately) gives live bid-
 
 ## Quick start
 
-### Install the plugin (local clone)
+### Install via marketplace (recommended)
+
+This repo publishes its own Claude Code plugin marketplace. From inside a Claude Code session:
+
+```
+/plugin marketplace add akash-network/akash-skill
+/plugin install akash-network@akash-network
+```
+
+The first command registers the marketplace from this GitHub repo; the second installs the bundled plugin. To pin to a specific release instead of the default branch:
+
+```
+/plugin marketplace add akash-network/akash-skill@v3.0.0
+```
+
+Use `/plugin marketplace update akash-network` to pull new releases later.
+
+### Try without installing (local clone)
+
+Useful for development against an unreleased branch, or for trying the plugin in a single session without persisting it:
 
 ```bash
 git clone https://github.com/akash-network/akash-skill
@@ -20,15 +39,7 @@ cd akash-skill
 claude --plugin-dir "$(pwd)"
 ```
 
-### Install from a marketplace
-
-If your Claude Code client is configured for a marketplace that publishes this plugin:
-
-```bash
-/plugin install akash-network
-```
-
-(Marketplace publication is in progress at the time of writing — use the local-clone approach until then.)
+This loads the plugin **for the current session only**. Subsequent `claude` invocations won't see it — use the marketplace install above if you want persistence.
 
 ### Trigger the skills
 
@@ -45,7 +56,8 @@ You can also invoke them explicitly: `/akash-network:akash`, `/akash-network:aka
 ```
 .
 ├── .claude-plugin/
-│   └── plugin.json              # Plugin manifest (name, version, author)
+│   ├── plugin.json              # Plugin manifest (name, version, author)
+│   └── marketplace.json         # Marketplace manifest (lists this plugin)
 ├── skills/
 │   ├── akash/                   # Deployer skill
 │   │   ├── SKILL.md
