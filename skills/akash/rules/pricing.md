@@ -24,28 +24,7 @@ pricing:
     amount: 1000
 ```
 
-`1 ACT = 1,000,000 uact`. Values in deployment messages (`MsgDepositDeployment`, escrow balances, bid amounts) are denominated in `uact`.
-
-### USDC via IBC
-
-Stable coin payment using IBC (Inter-Blockchain Communication):
-
-```yaml
-pricing:
-  web:
-    denom: ibc/170C677610AC31DF0904FFE09CD3B5C657492170E7E52372E48756B71E56F2F1
-    amount: 100
-```
-
-The IBC denom hash represents USDC from the Noble chain bridged to Akash.
-
-### USDC Denom Reference
-
-```
-ibc/170C677610AC31DF0904FFE09CD3B5C657492170E7E52372E48756B71E56F2F1
-```
-
-This is the official USDC denomination on Akash Network via IBC from Noble.
+`1 ACT = 1,000,000 uact`. Values in deployment messages (`MsgDepositDeployment`, escrow balances, bid amounts) are denominated in `uact`. `uact` is the only denom providers accept for lease payment.
 
 ## Pricing Model
 
@@ -74,16 +53,6 @@ pricing:
     amount: 1000
 
 # Monthly cost: 1000 × 438,000 = 438,000,000 uact = 438 ACT
-```
-
-**Example with USDC:**
-```yaml
-pricing:
-  web:
-    denom: ibc/170C677610AC31DF0904FFE09CD3B5C657492170E7E52372E48756B71E56F2F1
-    amount: 10
-
-# Monthly cost: 10 × 438,000 = 4,380,000 uusdc = $4.38 USDC
 ```
 
 ## Pricing Guidelines
@@ -178,10 +147,9 @@ pricing:
 
 Providers will bid at or below this amount.
 
-### Choose Payment Currency Wisely
+### Payment Denomination
 
-- **uact** - The default. Required if you don't want to deal with bridged stablecoins. Console-API users get this with no extra steps.
-- **USDC (IBC)** - Best for predictable USD-denominated costs. Self-custody only — bridge USDC from Noble to Akash first.
+Lease payments are always made in `uact` — providers reject other denoms. Console-API users get `uact` funded automatically (Stripe → USD → ACT, server-side). Self-custody deployers mint ACT by burning AKT before depositing.
 
 ### Persistent vs Ephemeral Storage
 

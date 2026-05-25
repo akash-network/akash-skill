@@ -214,9 +214,9 @@ fi
 echo "$total"
 ```
 
-### USDC-Denominated Pricing Script
+### USD-Targeted Pricing Script
 
-Calculate prices targeting USD values:
+Calculate prices in `uact` while targeting USD values per resource (uses an ACT/USD reference price to convert):
 
 ```bash
 #!/bin/bash

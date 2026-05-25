@@ -215,13 +215,13 @@ deployment:
 ### Core Concepts
 - **@rules/overview.md** — Akash Network introduction and architecture
 - **@rules/terminology.md** — Key terms (lease, bid, dseq, gseq, oseq)
-- **@rules/pricing.md** — Payment with uact, USDC, IBC denoms
+- **@rules/pricing.md** — Payment with uact (deployment-payment denom)
 
 ### SDL Configuration
 - **@rules/sdl/schema-overview.md** — Version requirements and SDL structure
 - **@rules/sdl/services.md** — Service configuration (image, expose, env, credentials)
 - **@rules/sdl/compute-resources.md** — CPU, memory, storage, and GPU specifications
-- **@rules/sdl/placement-pricing.md** — Provider selection and pricing (uact/USDC)
+- **@rules/sdl/placement-pricing.md** — Provider selection and pricing (uact)
 - **@rules/sdl/deployment.md** — Service-to-profile mapping
 - **@rules/sdl/endpoints.md** — IP endpoint configuration (v2.1)
 - **@rules/sdl/validation-rules.md** — All constraints and validation rules
@@ -271,7 +271,6 @@ For live bid-failure diagnosis against the actual provider set, use the standalo
 ### Reference
 - **@rules/reference/storage-classes.md** — beta2, beta3, ram storage
 - **@rules/reference/gpu-models.md** — Supported NVIDIA GPUs
-- **@rules/reference/ibc-denoms.md** — Payment denominations
 - **@rules/reference/rpc-endpoints.md** — Public RPC endpoints
 
 ## Common Patterns
@@ -313,8 +312,7 @@ profiles:
 ```
 
 ### Payment Options
-- **uact** — Micro-denomination of ACT (the deployment-payment token, separate from AKT). Used in SDL pricing (`amount: 1000`), deployment deposits, and lease payments.
-- **USDC** — via IBC denom (e.g., `denom: ibc/170C677610AC31DF0904FFE09CD3B5C657492170E7E52372E48756B71E56F2F1`).
+- **uact** — Micro-denomination of ACT (the deployment-payment token, separate from AKT). The only denom accepted by providers for SDL pricing (`amount: 1000`), deployment deposits, and lease payments.
 - Note: the Console API expresses deposits as a **USD number**, not a denom string — translation happens server-side.
 
 ## Additional Resources

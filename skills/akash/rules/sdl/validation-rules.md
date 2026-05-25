@@ -90,7 +90,7 @@ http_options:
 
 | Field | Valid Values |
 |-------|--------------|
-| `denom` | `uact` or `ibc/...` pattern |
+| `denom` | `uact` (only accepted denom) |
 | `amount` | Positive integer |
 
 ```yaml
@@ -100,16 +100,10 @@ pricing:
     denom: uact
     amount: 1000
 
-# Valid - USDC via IBC
-pricing:
-  web:
-    denom: ibc/170C677610AC31DF0904FFE09CD3B5C657492170E7E52372E48756B71E56F2F1
-    amount: 100
-
 # Invalid
 pricing:
   web:
-    denom: usdc       # Error: must be 'uact' or 'ibc/...'
+    denom: usdc       # Error: must be 'uact'
     amount: -100      # Error: must be positive
 ```
 
@@ -422,7 +416,7 @@ deployment:
 | Timeout range | 0-60000ms |
 | Body size | 0-104857600 bytes (100MB) |
 | next_cases | All values must be strings (quote HTTP status codes) |
-| Price denom | `uact` or `ibc/...` pattern |
+| Price denom | `uact` (only accepted denom) |
 | Price amount | Positive integer |
 | RAM storage | Cannot be persistent |
 | Non-RAM + attributes | Requires persistent=true |

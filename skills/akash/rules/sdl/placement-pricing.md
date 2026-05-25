@@ -93,24 +93,13 @@ signedBy:
 
 ### uact (ACT — the deployment-payment token)
 
-ACT is Akash's deployment-payment token (distinct from AKT, the chain token used for gas/staking). `uact` is its micro-denomination — `1 ACT = 1,000,000 uact`.
+ACT is Akash's deployment-payment token (distinct from AKT, the chain token used for gas/staking). `uact` is its micro-denomination — `1 ACT = 1,000,000 uact`. It is the only denom providers accept for lease payment.
 
 ```yaml
 pricing:
   web:
     denom: uact
     amount: 1000      # 0.001 ACT per block
-```
-
-### USDC via IBC
-
-Stable coin payment using IBC denomination:
-
-```yaml
-pricing:
-  web:
-    denom: ibc/170C677610AC31DF0904FFE09CD3B5C657492170E7E52372E48756B71E56F2F1
-    amount: 100       # USDC amount per block
 ```
 
 ### Price Calculation
@@ -189,11 +178,11 @@ profiles:
         region: eu-central
       pricing:
         web:
-          denom: ibc/170C677610AC31DF0904FFE09CD3B5C657492170E7E52372E48756B71E56F2F1
-          amount: 50
+          denom: uact
+          amount: 1200
         api:
-          denom: ibc/170C677610AC31DF0904FFE09CD3B5C657492170E7E52372E48756B71E56F2F1
-          amount: 100
+          denom: uact
+          amount: 2200
 ```
 
 ## Pricing Guidelines

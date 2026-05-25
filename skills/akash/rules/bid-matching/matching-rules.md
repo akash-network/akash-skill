@@ -95,9 +95,9 @@ The matcher implements glob matching via Python `fnmatch.fnmatchcase` in both di
 
 ## Pricing / denom
 
-`uact` is the native denom for SDL pricing on Akash; USDC is supported via its IBC denom. The providers endpoint does **not** expose which denominations a provider accepts, so denom support can't be verified from this data.
+`uact` is the only denom accepted for SDL pricing on Akash. The providers endpoint does **not** expose accepted denominations, but in practice providers reject anything other than `uact` for lease payment.
 
-The matcher treats `uact` and any `ibc/[A-F0-9]{64}` denom as recognized (no warning). Anything else — including legacy `uakt` — gets a note that it's unrecognized, signalling the user to migrate. Do **not** advise switching denoms to "fix bids" — in practice the bottleneck is almost always GPU model/count/storage class, not denom.
+The matcher treats only `uact` as recognized. Anything else — including legacy `uakt` and any `ibc/...` denom — gets a note that it's unrecognized, signalling the user to migrate. Do **not** advise switching denoms to "fix bids" beyond migrating to `uact` — beyond that, the bottleneck is almost always GPU model/count/storage class, not denom.
 
 **Canonical chain check:** `x/market/handler/server.go:66` — when a provider posts a bid, the chain rejects with `ErrBidInvalidPrice` ("invalid bid price") if `order.Price().IsLT(msg.Price)`, i.e. the provider's bid exceeds the SDL's stated max amount. The Console UI surfaces this as *"Unit price exceeds the maximum allowed by the network"* (mapped in `console/apps/api/src/billing/services/chain-error/chain-error.service.ts`). Raising `pricing.<profile>.amount` can also trip this from the deployer side depending on how the chain validates `MsgCreateDeployment` — leave it alone.
 

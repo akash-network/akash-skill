@@ -82,7 +82,7 @@ The [Console API](https://console-api.akash.network/v1/swagger) provides REST en
 
 - **Escrow-based** - Funds deposited upfront
 - **Per-block billing** - Charged every ~6 seconds
-- **Multi-currency** - Pay with AKT or USDC via IBC
+- **Native ACT** - SDL pricing and lease payments in `uact` (ACT's micro-denomination, minted by burning AKT)
 - **Refundable** - Unused escrow returned on close
 
 ## Architecture Layers
