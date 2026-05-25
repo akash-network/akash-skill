@@ -214,7 +214,7 @@ For new integrations, prefer JWT authentication:
 - Better for web applications
 - No on-chain certificate needed
 
-See **@jwt-auth.md** for JWT setup.
+See **@../console-api/authentication.md** for JWT setup (the canonical reference for both Console API and self-custody JWT minting).
 
 ## When to Use mTLS
 

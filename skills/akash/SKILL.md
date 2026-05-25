@@ -146,7 +146,7 @@ A pitfall table at the end of a code response *can* mention "don't use `Authoriz
 
 ### Once committed, stay there
 
-- On the **Console API** path: don't suggest `akash keys add`, don't suggest mTLS certs (deprecated for Console API — see `rules/deploy/certificates/mtls-legacy.md`), don't suggest `akash query market bid list` — every read is an HTTP call with `x-api-key` in whatever language the user picked.
+- On the **Console API** path: don't suggest `akash keys add`, don't suggest mTLS certs (deprecated for Console API — see `rules/deploy/cli/mtls-legacy.md`), don't suggest `akash query market bid list` — every read is an HTTP call with `x-api-key` in whatever language the user picked.
 - On the **CLI** path: don't suggest `/v1/deployments` HTTP calls. Don't suggest API keys. Stay on `akash tx ...` / `akash query ...`.
 - On the **SDK** paths: don't reach for curl examples or CLI commands; the user wants code.
 - On the **AkashML** path: do not write SDL, do not talk about `uact`/`uakt`/leases/bids. The user is calling a hosted inference API, not deploying. Stay on `Authorization: Bearer $AKASHML_API_KEY` and `https://api.akashml.com/{v1,anthropic}` calls. If they later say *"actually I want to host my own"*, then switch cleanly to one of the four deployment paths.
@@ -242,7 +242,7 @@ deployment:
   - `account-and-funding.md` — Console account model, programmatic balance reads, per-deployment auto-top-up (bootstrap + Stripe funding + arbitrary tx signing are UI-only)
   - `operations.md` — JWT + provider proxy + logs/events/status/shell
 - **@rules/deploy/cli/** — Akash CLI (self-custody path)
-- **@rules/deploy/certificates/** — Auth methods; mTLS deprecated for Console API
+  - `mtls-legacy.md` — Legacy mTLS auth for CLI/SDK direct provider calls (deprecated for Console API)
 
 ### Managed Inference (consumption, not deployment)
 - **@rules/deploy/akashml/** — AkashML: call hosted open-source LLMs on Akash compute
