@@ -201,7 +201,7 @@ curl -X DELETE https://console-api.akash.network/v1/deployments/$DSEQ \
 - Install the `akash` CLI binary
 - Run `akash keys add`
 - Manage a private key, mnemonic, or hardware wallet
-- Generate or maintain mTLS certificates (those are deprecated for the Console API path — see `../certificates/mtls-legacy.md`)
+- Generate or maintain mTLS certificates (those are deprecated for the Console API path — see `../cli/mtls-legacy.md`)
 - Acquire AKT manually — your account is funded with USD via Stripe
 
 This is the value proposition of the Console API. If a step in your workflow ever requires one of those things, you've drifted into the CLI or SDK path and should re-read SKILL.md's "Choosing a Deployment Method" section.
@@ -225,4 +225,4 @@ This is the value proposition of the Console API. If a step in your workflow eve
 - **@deployment-endpoints.md** — Full endpoint reference
 - **@account-and-funding.md** — Account model, programmatic balance reads; bootstrap and Stripe funding are UI-only
 - **@operations.md** — Logs, events, status, shell after the deployment is running
-- **@../certificates/mtls-legacy.md** — Why you don't need certificates on this path
+- **@../cli/mtls-legacy.md** — Why you don't need certificates on this path

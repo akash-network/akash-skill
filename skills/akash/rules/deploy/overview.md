@@ -218,6 +218,6 @@ Do **not** silently mix methods. If the user is mid-CLI workflow and you suggest
 | Local wallet key | ❌ | ✅ primary | ✅ primary | ❌ |
 | Browser wallet adapter (Keplr) | ❌ | ❌ | ✅ (TS SDK in browser) | ❌ |
 | `Authorization: Bearer <jwt>` | ✅ (for Console-account JWT session auth) | ❌ | ❌ | ❌ |
-| mTLS certificate | ❌ ([deprecated](../certificates/mtls-legacy.md) for Console API; CLI direct-to-provider calls still use it where applicable) | ✅ (CLI direct provider calls) | ✅ (SDK direct provider calls) | ❌ |
+| mTLS certificate | ❌ ([deprecated](../cli/mtls-legacy.md) for Console API; CLI direct-to-provider calls still use it where applicable) | ✅ (CLI direct provider calls) | ✅ (SDK direct provider calls) | ❌ |
 
 The collision worth flagging: **`Authorization: Bearer`** means a JWT on the Console API and an API key on AkashML. They are different services on different hosts; don't carry credentials across.

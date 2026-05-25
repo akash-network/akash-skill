@@ -11,7 +11,7 @@
       "name": "akash-network",
       "source": "./",
       "description": "Three skills bundled: akash (deployer — SDL, Console API, CLI, SDKs, AkashML managed inference), akash-provider (provider operator — Kubernetes, attributes, pricing, bid engine), akash-node (full-node and validator operator).",
-      "version": "3.0.1",
+      "version": "3.0.2",
       "homepage": "https://github.com/akash-network/akash-skill",
       "license": "MIT",
       "keywords": ["akash", "decentralized-cloud", "kubernetes", "blockchain", "cosmos", "sdl", "deployment", "inference"]
