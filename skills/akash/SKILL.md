@@ -5,9 +5,12 @@ description: >
   marketplace. Covers SDL syntax & examples, choosing a deployment method (Console API,
   CLI, TypeScript/Go SDKs), authentication (API key, JWT, self-custody wallets),
   deployment lifecycle, fetching logs/events via the provider proxy, and fee grants/authz.
-  Use for "deploy to Akash", "Akash SDL", "Akash Console API", "Akash CLI deploy",
-  "Akash API key", "x-api-key", "Akash deploy logs", "stream Akash logs", "integrate
-  Akash into my app", "@akashnetwork/chain-sdk", "@akashnetwork".
+  Also covers AkashML — the managed inference surface for calling open-source LLMs on
+  Akash compute via OpenAI/Anthropic-compatible APIs. Use for "deploy to Akash", "Akash SDL",
+  "Akash Console API", "Akash CLI deploy", "Akash API key", "x-api-key", "Akash deploy logs",
+  "stream Akash logs", "integrate Akash into my app", "@akashnetwork/chain-sdk",
+  "@akashnetwork", "AkashML", "managed inference on Akash", "call an LLM on Akash",
+  "playground.akashml.com", "api.akashml.com".
 license: MIT
 metadata:
   author: Akash Network
@@ -54,7 +57,7 @@ Only **stop and ask** when the prompt is genuinely silent about everything (no l
 
 Once a path is chosen, **stay on it** for the rest of the conversation. Do not silently switch. If the user explicitly asks to switch later, do so cleanly.
 
-There are **four** paths:
+There are **four deployment paths** (you host the workload) plus one **consumption path** (you call a hosted model):
 
 | # | Method | Wallet model | Auth | When to use |
 |---|---|---|---|---|
@@ -62,6 +65,9 @@ There are **four** paths:
 | 2 | **Akash CLI** | Self-custody (you hold the keys) | Local key + signature | Shell scripting, manual workflows, full control. |
 | 3 | **TypeScript SDK** | Self-custody (browser wallet, hardware, or local key) | SDK signs locally | dApps, Node.js services, anywhere you want JS/TS code to deploy. |
 | 4 | **Go SDK** | Self-custody | SDK signs locally | Backend Go services, custom tooling. |
+| 5 | **AkashML** *(consumption, not deployment)* | Managed (AkashML account, USD credits) | `Authorization: Bearer` | You want to **call** an LLM, not host one. OpenAI/Anthropic-compatible REST. No SDL, no wallet, no ACT. |
+
+Rows 1–4 are paths to **host your own workload** on Akash. Row 5 is the answer when the user wants to **consume** inference instead — different problem, different surface. See [@rules/deploy/akashml/overview.md](rules/deploy/akashml/overview.md) for the full split.
 
 ### The concept that bites everyone
 
@@ -84,8 +90,11 @@ If you see **any** of these signals, commit to the matching path silently and st
 | `"Keplr"`, `"Ledger"`, `"hardware wallet"`, `"my wallet"`, `"self-custody"`, `"akash keys add"`, `"my mnemonic"` | CLI or SDK (ask only if they didn't also signal a language) |
 | `"React app"`, `"Next.js"`, `"akashjs"` (legacy), `"@akashnetwork/chain-sdk"`, `"my dApp"`, `"in the browser"` | TypeScript SDK |
 | `"Go service"`, `"golang"`, `"cosmos-sdk Go"`, `"my Go backend"` | Go SDK |
+| `"AkashML"`, `"akml-..."`, `"managed inference"`, `"call an LLM"`, `"hosted LLM on Akash"`, `"OpenAI-compatible"`, `"Anthropic-compatible"`, `"playground.akashml.com"`, `"api.akashml.com"`, `ANTHROPIC_BASE_URL` pointing at AkashML | AkashML (consumption path) |
 | `"Console Air"`, `"web UI for my Keplr wallet"`, `"GUI"` + `"self-custody"` | Console Air (out-of-scope; one-line point to repo, then stop) |
 | `"easiest"`, `"simplest"`, `"first time"`, `"just want to try"` + no wallet/keys signal | Console (UI or API — recommend the UI for a one-off, the API for a script) |
+
+**Ambiguity on LLMs — ask one short question.** If the user says *"run an LLM on Akash"* without saying *"my own"* or *"call"*, that cue is genuinely split between **AkashML** (call a hosted model) and **self-deploy with GPU SDL** (host the model yourself). One line: *"Do you want to call a hosted LLM, or run your own instance?"* — then commit. The two answers go to completely different files (AkashML vs `rules/sdl/examples/gpu-workload.md`).
 
 **Only ask** when the prompt is genuinely empty of signals — no language hint, no wallet hint, no CI/automation hint. When you do ask, the question is one line: *"Do you want this in a script (Console API) or a UI (Console for managed wallet, Console Air for self-custody)?"* — then proceed with their answer.
 
@@ -140,6 +149,12 @@ A pitfall table at the end of a code response *can* mention "don't use `Authoriz
 - On the **Console API** path: don't suggest `akash keys add`, don't suggest mTLS certs (deprecated for Console API — see `rules/deploy/certificates/mtls-legacy.md`), don't suggest `akash query market bid list` — every read is an HTTP call with `x-api-key` in whatever language the user picked.
 - On the **CLI** path: don't suggest `/v1/deployments` HTTP calls. Don't suggest API keys. Stay on `akash tx ...` / `akash query ...`.
 - On the **SDK** paths: don't reach for curl examples or CLI commands; the user wants code.
+- On the **AkashML** path: do not write SDL, do not talk about `uact`/`uakt`/leases/bids. The user is calling a hosted inference API, not deploying. Stay on `Authorization: Bearer $AKASHML_API_KEY` and `https://api.akashml.com/{v1,anthropic}` calls. If they later say *"actually I want to host my own"*, then switch cleanly to one of the four deployment paths.
+  - **Always query the live API for catalog/pricing/capabilities — never trust the model IDs, prices, or feature lists baked into this skill.** Before recommending a model, quoting pricing, or claiming a feature (tool use, reasoning, streaming, context length), call the relevant endpoint:
+    - `GET https://api.akashml.com/v1/models` — pricing (per-million tokens), `context_length`, `supported_features`, `supported_sampling_parameters`, `max_output_length`, `quantization`
+    - `GET https://api.akashml.com/anthropic/v1/models` — Anthropic-shape list (returns IDs aliased with `--`)
+    - Any other documented endpoint when the user asks something the docs may have stale info on
+  - This skill's named models (DeepSeek, MiniMax, Kimi, Qwen) are examples that may have shifted; the live list is authoritative. If the user provides their own API key, hit the live endpoint with their key before producing an answer that pins a model or price.
 
 If the user asks to **switch** ("can we do this via the API instead?"), acknowledge the switch, and from that point on apply the new path's rules.
 
@@ -228,6 +243,15 @@ deployment:
   - `operations.md` — JWT + provider proxy + logs/events/status/shell
 - **@rules/deploy/cli/** — Akash CLI (self-custody path)
 - **@rules/deploy/certificates/** — Auth methods; mTLS deprecated for Console API
+
+### Managed Inference (consumption, not deployment)
+- **@rules/deploy/akashml/** — AkashML: call hosted open-source LLMs on Akash compute
+  - `overview.md` — base URLs, when to use AkashML vs self-deploy GPU, billing differences
+  - `authentication.md` — `akml-...` keys, `Authorization: Bearer`, env-var rules
+  - `api-reference.md` — OpenAI + Anthropic surfaces with curl + SDK examples
+  - `quickstart.md` — Linear walkthrough from signup to first inference call
+  - `account-and-billing.md` — USD credits (off-chain, distinct from `uact`), per-key RPM/TPM limits
+  - `claude-code-integration.md` — Point Claude Code's Anthropic client at AkashML via `ANTHROPIC_BASE_URL`
 
 ### SDK Documentation
 - **@rules/sdk/overview.md** — SDK comparison and selection

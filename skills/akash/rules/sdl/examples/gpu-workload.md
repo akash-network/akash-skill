@@ -2,6 +2,8 @@
 
 SDL configurations for GPU-accelerated workloads including machine learning, AI inference, and rendering.
 
+> **If you only need to *call* an open-source LLM (not host it), AkashML is a lower-friction alternative** — managed inference behind OpenAI- and Anthropic-compatible APIs, no SDL required. See [@rules/deploy/akashml/overview.md](../../deploy/akashml/overview.md). Self-deploying via the SDLs below is the right answer when you need custom weights, fine-tunes, persistent state, or a non-LLM GPU workload.
+
 ## Use Case
 
 - Machine learning training
