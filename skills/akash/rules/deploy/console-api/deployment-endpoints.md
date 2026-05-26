@@ -308,7 +308,7 @@ POST /v1/pricing
 
 ## Bid screening
 
-> ⚠️ **Swagger-only (Tier 2).** Not in the [official API reference](https://akash.network/docs/api-documentation/console-api/api-reference/). Powers the `akash-bid-matcher` companion skill; useful for pre-flight checks but not a stable contract.
+> ⚠️ **Swagger-only (Tier 2).** Not in the [official API reference](https://akash.network/docs/api-documentation/console-api/api-reference/). Powers the bid-matching workflow in this skill (see `rules/bid-matching/`); useful for pre-flight checks but not a stable contract.
 
 ### Match a deployment's compute requirements against providers
 
@@ -349,7 +349,7 @@ POST /v1/bid-screening
 }
 ```
 
-This is the live engine that powers the `akash-bid-matcher` companion skill. Use it to predict whether an SDL will get bids before broadcasting.
+This is the live engine behind the bid-matching workflow in this skill (see `rules/bid-matching/`). Use it to predict whether an SDL will get bids before broadcasting.
 
 ## Providers
 

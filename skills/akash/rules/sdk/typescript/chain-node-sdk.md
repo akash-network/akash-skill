@@ -219,7 +219,7 @@ try {
 | `MsgCreateDeployment` parse error | Wrong message version | Use `v1beta4`, not `v1beta3` |
 | `MsgCreateLease` parse error | Wrong message version | Use `v1beta5`, not `v1beta4` |
 | Insufficient gas | Default gas too low for SDL with many services | Pass `gas: "auto"` or set a higher limit in tx options |
-| No bids | Pricing too low, or SDL resources don't match providers | Use `POST /v1/bid-screening` on the Console API or the `akash-bid-matcher` skill to diagnose |
+| No bids | Pricing too low, or SDL resources don't match providers | Use `POST /v1/bid-screening` on the Console API; for in-skill diagnosis see `rules/bid-matching/` in the `akash` skill |
 | Manifest push fails | Sent to wrong provider host | Resolve `hostUri` from `sdk.akash.audit.v1` queries or the Console API's `GET /v1/providers/{address}` |
 
 ## See also
