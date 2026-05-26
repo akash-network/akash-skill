@@ -8,8 +8,6 @@ A Claude Code **plugin** bundling three focused skills for the Akash Network —
 | `akash-network:akash-provider` | Provider operator | Kubernetes prereqs, provider installation, attributes & pricing, bid engine, monitoring, troubleshooting |
 | `akash-network:akash-node` | Node / validator operator | Full node setup, state sync, validator setup, slashing avoidance, sentry nodes, key management |
 
-The companion skill `akash-bid-matcher` (distributed separately) gives live bid-failure diagnostics against the current provider set and is referenced from `akash-network:akash`.
-
 ## Quick start
 
 ### Install via marketplace (recommended)

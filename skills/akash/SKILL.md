@@ -266,8 +266,6 @@ deployment:
 - **@rules/bid-matching/adaptation-rules.md** — Priority order for SDL changes
 - **@rules/bid-matching/matching-rules.md** — SDL ↔ provider field mapping
 
-For live bid-failure diagnosis against the actual provider set, use the standalone `akash-bid-matcher` skill — it is the companion to this one.
-
 ### Reference
 - **@rules/reference/storage-classes.md** — beta2, beta3, ram storage
 - **@rules/reference/gpu-models.md** — Supported NVIDIA GPUs

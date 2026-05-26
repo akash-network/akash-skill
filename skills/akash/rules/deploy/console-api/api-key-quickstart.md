@@ -109,7 +109,7 @@ done
 echo "$BIDS" | jq '.data[] | {provider: .bid_id.provider, price: .price.amount}'
 ```
 
-If you don't get bids, the SDL might not match any provider's resources or pricing. Use the standalone `akash-bid-matcher` skill, or hit `POST /v1/bid-screening` to diagnose.
+If you don't get bids, the SDL might not match any provider's resources or pricing. See `rules/bid-matching/` or hit `POST /v1/bid-screening` to diagnose.
 
 ## Step 4 — Accept the cheapest bid (and send the manifest)
 
@@ -213,7 +213,7 @@ This is the value proposition of the Console API. If a step in your workflow eve
 | `401 Unauthorized` | API key in `Authorization: Bearer` | Move to `x-api-key` header |
 | `400 Bad Request` on create | Body not wrapped in `{ "data": { ... } }` | Wrap it |
 | `400 Bad Request` on create | `deposit` sent as `"5uact"` string | Send as USD number (e.g. `5`) |
-| No bids | SDL resources don't match providers; price too low | Run `POST /v1/bid-screening` or use `akash-bid-matcher` |
+| No bids | SDL resources don't match providers; price too low | Run `POST /v1/bid-screening` or see `rules/bid-matching/` |
 | `404` on lease endpoints | Tried `/lease/{dseq}/{gseq}/{oseq}` | Read lease state from `GET /v1/deployments/{dseq}.leases[]` instead |
 | Logs request times out | Hit `console-api.akash.network` for logs | Logs are served by the provider — see step 6 |
 | Provider TLS cert rejected | Used standard HTTPS verification | Use identity-pinned validation (chain-sdk helper) or run provider-proxy |

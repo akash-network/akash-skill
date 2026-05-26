@@ -107,8 +107,7 @@ kubectl -n akash-services logs -f deployment/akash-provider | grep -i bid
 
 ## Companion skills
 
-- **`akash-network:akash`** — Deployer-side knowledge. Read it to understand how tenants write SDLs and what attributes they filter on.
-- **`akash-bid-matcher`** — Live diagnostic for deployers checking which providers can run their SDL. Helpful to run against your own provider to see whether you're being filtered out.
+- **`akash-network:akash`** — Deployer-side knowledge: how tenants write SDLs, what attributes they filter on, and the bid-matching workflow (`rules/bid-matching/`) that deployers use to check which providers can run their SDL. Helpful to run against your own provider to see whether you're being filtered out.
 
 ## Additional resources
 
