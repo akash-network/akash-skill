@@ -1,7 +1,7 @@
 {
   "name": "akash-network",
   "description": "Akash Network skills bundle: deploy workloads to the decentralized cloud, run providers, and operate full nodes and validators.",
-  "version": "3.0.2",
+  "version": "3.1.0",
   "author": {
     "name": "Akash Network",
     "url": "https://akash.network"
