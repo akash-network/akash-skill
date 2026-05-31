@@ -1,0 +1,8 @@
+interface:
+  display_name: "Akash Provider"
+  short_description: "Run and troubleshoot Akash providers"
+  brand_color: "#FF414C"
+  default_prompt: "Use $akash-provider to set up and operate an Akash provider."
+
+policy:
+  allow_implicit_invocation: true

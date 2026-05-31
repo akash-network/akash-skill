@@ -1,0 +1,8 @@
+interface:
+  display_name: "Akash"
+  short_description: "Deploy workloads and write Akash SDL"
+  brand_color: "#FF414C"
+  default_prompt: "Use $akash to write and deploy an SDL on Akash."
+
+policy:
+  allow_implicit_invocation: true

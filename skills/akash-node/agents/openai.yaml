@@ -1,0 +1,8 @@
+interface:
+  display_name: "Akash Node"
+  short_description: "Operate Akash full nodes and validators"
+  brand_color: "#FF414C"
+  default_prompt: "Use $akash-node to run an Akash full node or validator."
+
+policy:
+  allow_implicit_invocation: true
