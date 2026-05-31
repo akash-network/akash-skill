@@ -1,0 +1,39 @@
+{
+  "name": "akash-network",
+  "version": "3.1.0",
+  "description": "Akash Network skills bundle: deploy workloads to the decentralized cloud, run providers, and operate full nodes and validators.",
+  "author": {
+    "name": "Akash Network",
+    "url": "https://akash.network"
+  },
+  "homepage": "https://github.com/akash-network/akash-skill",
+  "repository": "https://github.com/akash-network/akash-skill",
+  "license": "MIT",
+  "keywords": [
+    "akash",
+    "decentralized-cloud",
+    "kubernetes",
+    "cosmos",
+    "sdl",
+    "deployment",
+    "inference"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Akash Network",
+    "shortDescription": "Akash deployment, provider, node, and validator skills",
+    "longDescription": "Use Akash Network skills for SDL authoring, workload deployment, provider operations, and node or validator operations.",
+    "developerName": "Akash Network",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://akash.network",
+    "defaultPrompt": [
+      "Deploy this workload on Akash.",
+      "Write an Akash SDL for this app.",
+      "Set up an Akash provider."
+    ]
+  }
+}
