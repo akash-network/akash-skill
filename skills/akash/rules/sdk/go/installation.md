@@ -65,7 +65,7 @@ import (
     "github.com/cosmos/cosmos-sdk/codec"
     codectypes "github.com/cosmos/cosmos-sdk/codec/types"
     "google.golang.org/grpc"
-    "google.golang.org/grpc/credentials/insecure"
+    "google.golang.org/grpc/credentials"
 )
 
 func createClientContext() (client.Context, error) {
@@ -75,8 +75,9 @@ func createClientContext() (client.Context, error) {
 
     // Create gRPC connection
     grpcConn, err := grpc.NewClient(
-        "grpc.akashnet.net:443",
-        grpc.WithTransportCredentials(insecure.NewCredentials()),
+        "akash-grpc.publicnode.com:443",
+        // Public mainnet gRPC is TLS on :443 — use TLS creds (system roots), not insecure.
+        grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(nil, "")),
     )
     if err != nil {
         return client.Context{}, err

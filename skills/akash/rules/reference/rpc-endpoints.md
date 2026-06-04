@@ -10,7 +10,9 @@ Public RPC and API endpoints for interacting with the Akash Network.
 |---------|-----|
 | RPC | `https://rpc.akashnet.net:443` |
 | REST/LCD | `https://api.akashnet.net:443` |
-| gRPC | `grpc.akashnet.net:443` |
+| gRPC | `akash-grpc.publicnode.com:443` (or `akash.lavenderfive.com:443`) |
+
+> Note: `grpc.akashnet.net` is Cloudflare-fronted and does **not** serve usable raw gRPC — use a registry-listed community gRPC endpoint (above) for SDK / `grpcurl` access.
 
 ### Chain ID
 
@@ -60,7 +62,7 @@ const signer = createStargateClient({
 });
 
 const sdk = createChainNodeSDK({
-  query: { baseUrl: "https://grpc.akashnet.net:443" },
+  query: { baseUrl: "https://akash-grpc.publicnode.com:443" },
   tx:    { signer },
 });
 ```
@@ -107,7 +109,7 @@ For efficient binary protocol access:
 ```bash
 # Using grpcurl
 grpcurl -d '{"owner": "akash1..."}' \
-  grpc.akashnet.net:443 \
+  akash-grpc.publicnode.com:443 \
   akash.deployment.v1beta4.Query/Deployments
 ```
 

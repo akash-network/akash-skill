@@ -15,7 +15,7 @@ const signer = createStargateClient({
 });
 
 const sdk = createChainNodeSDK({
-  query: { baseUrl: "https://grpc.akashnet.net:443" },
+  query: { baseUrl: "https://akash-grpc.publicnode.com:443" },
   tx:    { signer },
 });
 

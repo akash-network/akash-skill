@@ -23,7 +23,7 @@ import (
     "github.com/cosmos/cosmos-sdk/types/tx/signing"
     authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
     "google.golang.org/grpc"
-    "google.golang.org/grpc/credentials/insecure"
+    "google.golang.org/grpc/credentials"
 
     // Codec registration is per-module in pkg.akt.dev/go (there is no
     // aggregate "node/codec" package). Each module exposes its own
@@ -87,7 +87,8 @@ func NewAkashClient(
     // Create gRPC connection
     grpcConn, err := grpc.NewClient(
         nodeURI,
-        grpc.WithTransportCredentials(insecure.NewCredentials()),
+        // Public mainnet gRPC is TLS on :443 — use TLS creds (system roots), not insecure.
+        grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(nil, "")),
     )
     if err != nil {
         return nil, fmt.Errorf("failed to connect to node: %w", err)
@@ -313,7 +314,7 @@ func (c *AkashClient) broadcastTx(
 ```go
 func main() {
     client, err := NewAkashClient(
-        "grpc.akashnet.net:443",
+        "akash-grpc.publicnode.com:443",
         "akashnet-2",
         "file",
         os.ExpandEnv("$HOME/.akash"),
