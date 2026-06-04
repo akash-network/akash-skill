@@ -156,7 +156,7 @@ Akash has two separate tokens. Don't conflate them.
 | Token | Denom | Purpose |
 |---|---|---|
 | **AKT** | `uakt` | Chain token — gas, staking, validator rewards. `1 AKT = 1,000,000 uakt`. |
-| **ACT** | `uact` | Deployment-payment token — SDL pricing, bid *prices*, deployment escrow/deposit, lease payments. `1 ACT = 1,000,000 uact`. The provider-side bid *deposit* (`MsgCreateBid.deposit`, the anti-spam collateral) is uakt, not uact. |
+| **ACT** | `uact` | Deployment-payment token — SDL pricing, bid *prices*, deployment escrow/deposit, lease payments. `1 ACT = 1,000,000 uact`. The provider-side bid *deposit* (`MsgCreateBid.deposit`, the anti-spam collateral) accepts either uakt or uact — the chain's `bid_min_deposits` lists both, with a default minimum of 500000 (0.5 AKT) of either denom. |
 
 Self-custody deployers must mint ACT by burning AKT before depositing to a deployment. Console API users skip this — Console funds the managed wallet with ACT directly.
 
@@ -186,12 +186,7 @@ pricing:
     amount: 1000  # per block (~6 seconds)
 ```
 
-Monthly cost calculation:
-```
-blocks_per_month = 438,000 (approx)
-monthly_cost = amount × blocks_per_month
-1000 uact × 438,000 = 438,000,000 uact = 438 ACT
-```
+Monthly cost is roughly `amount × blocks_per_month` (a block is ~6 seconds, so on the order of hundreds of thousands of blocks per month). These figures are illustrative only — do not treat them as a quote. For real costs, rely on live price discovery (the bids returned for your deployment) and the pricing in current awesome-akash templates.
 
 ## Provider Terms
 

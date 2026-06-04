@@ -7,6 +7,7 @@ Akash Network supports multiple storage classes for different use cases.
 | Class | Type | Persistent | Speed | Use Case |
 |-------|------|------------|-------|----------|
 | `default` | Ephemeral | No | Fast | Temporary data, caches |
+| `beta1` | HDD | Yes | Standard | Bulk/cold persistent storage |
 | `beta2` | SSD | Yes | Fast | Databases, general persistent |
 | `beta3` | NVMe | Yes | Fastest | High-performance workloads |
 | `ram` | RAM Disk | No | Ultra-fast | Caches, temp files |

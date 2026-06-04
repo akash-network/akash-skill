@@ -87,7 +87,7 @@ If you see **any** of these signals, commit to the matching path silently and st
 | If the user mentions… | Commit to… |
 |---|---|
 | `"I have an API key"`, `"$AKASH_API_KEY"`, `"x-api-key"`, `"curl"`, `"CI/CD"`, `"GitHub Actions"`, `"backend"`, `"server-to-server"`, `"deploy from CI"`, `"automate"` | Console API |
-| `"Keplr"`, `"Ledger"`, `"hardware wallet"`, `"my wallet"`, `"self-custody"`, `"akash keys add"`, `"my mnemonic"` | CLI or SDK (ask only if they didn't also signal a language) |
+| `"Keplr"`, `"Ledger"`, `"hardware wallet"`, `"my wallet"`, `"self-custody"`, `"provider-services keys add"`, `"my mnemonic"` | CLI or SDK (ask only if they didn't also signal a language) |
 | `"React app"`, `"Next.js"`, `"akashjs"` (legacy), `"@akashnetwork/chain-sdk"`, `"my dApp"`, `"in the browser"` | TypeScript SDK |
 | `"Go service"`, `"golang"`, `"cosmos-sdk Go"`, `"my Go backend"` | Go SDK |
 | `"AkashML"`, `"akml-..."`, `"managed inference"`, `"call an LLM"`, `"hosted LLM on Akash"`, `"OpenAI-compatible"`, `"Anthropic-compatible"`, `"playground.akashml.com"`, `"api.akashml.com"`, `ANTHROPIC_BASE_URL` pointing at AkashML | AkashML (consumption path) |
@@ -146,8 +146,8 @@ A pitfall table at the end of a code response *can* mention "don't use `Authoriz
 
 ### Once committed, stay there
 
-- On the **Console API** path: don't suggest `akash keys add`, don't suggest mTLS certs (deprecated for Console API — see `rules/deploy/cli/mtls-legacy.md`), don't suggest `akash query market bid list` — every read is an HTTP call with `x-api-key` in whatever language the user picked.
-- On the **CLI** path: don't suggest `/v1/deployments` HTTP calls. Don't suggest API keys. Stay on `akash tx ...` / `akash query ...`.
+- On the **Console API** path: don't suggest `provider-services keys add`, don't suggest mTLS certs (deprecated for Console API — see `rules/deploy/cli/mtls-legacy.md`), don't suggest `provider-services query market bid list` — every read is an HTTP call with `x-api-key` in whatever language the user picked.
+- On the **CLI** path: don't suggest `/v1/deployments` HTTP calls. Don't suggest API keys. Stay on `provider-services tx ...` / `provider-services query ...`.
 - On the **SDK** paths: don't reach for curl examples or CLI commands; the user wants code.
 - On the **AkashML** path: do not write SDL, do not talk about `uact`/`uakt`/leases/bids. The user is calling a hosted inference API, not deploying. Stay on `Authorization: Bearer $AKASHML_API_KEY` and `https://api.akashml.com/{v1,anthropic}` calls. If they later say *"actually I want to host my own"*, then switch cleanly to one of the four deployment paths.
   - **Always query the live API for catalog/pricing/capabilities — never trust the model IDs, prices, or feature lists baked into this skill.** Before recommending a model, quoting pricing, or claiming a feature (tool use, reasoning, streaming, context length), call the relevant endpoint:
@@ -310,7 +310,7 @@ profiles:
 ```
 
 ### Payment Options
-- **uact** — Micro-denomination of ACT (the deployment-payment token, separate from AKT). The only denom accepted by providers for SDL pricing (`amount: 1000`), deployment deposits, and lease payments.
+- **uact** — Micro-denomination of ACT (the deployment-payment token, separate from AKT). The standard SDL pricing (`amount: 1000`) and lease-payment denom post-Mainnet-17. For the deployment deposit the chain accepts `uakt` as well — `min_deposits` lists both `uact:500000` and `uakt:500000` — so deposits are not uact-only.
 - Note: the Console API expresses deposits as a **USD number**, not a denom string — translation happens server-side.
 
 ## Additional Resources

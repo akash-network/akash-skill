@@ -36,9 +36,9 @@ helm repo update
 | Chart | Description |
 |-------|-------------|
 | `akash/provider` | Core provider software |
-| `akash/hostname-operator` | Manages ingress hostnames for tenants |
-| `akash/inventory-operator` | Reports cluster resource availability |
-| `akash/ip-operator` | Manages dedicated IP assignments (optional) |
+| `akash/akash-hostname-operator` | Manages ingress hostnames for tenants |
+| `akash/akash-inventory-operator` | Reports cluster resource availability |
+| `akash/akash-ip-operator` | Manages dedicated IP assignments (optional) |
 
 ## Step 3: Create Provider Namespace
 
@@ -59,11 +59,11 @@ kubectl create secret generic akash-provider-keys \
   --from-file=key.json=<PATH_TO_KEY_FILE>
 
 # Option 2: From mnemonic (create key first, then import)
-akash keys add provider-wallet --recover
+provider-services keys add provider-wallet --recover
 # Enter mnemonic when prompted
 
 # Export and create secret
-akash keys export provider-wallet --unarmored-hex --unsafe 2>/dev/null | \
+provider-services keys export provider-wallet --unarmored-hex --unsafe 2>/dev/null | \
   kubectl create secret generic akash-provider-keys \
   --namespace akash-services \
   --from-literal=key-password="" \
@@ -74,13 +74,13 @@ akash keys export provider-wallet --unarmored-hex --unsafe 2>/dev/null | \
 
 ```bash
 # Generate provider certificate
-akash tx cert create server provider.example.com \
+provider-services tx cert create server provider.example.com \
   --from provider-wallet \
   --chain-id akashnet-2 \
   --node https://rpc.akashnet.net:443
 
 # Verify certificate
-akash query cert list --owner $(akash keys show provider-wallet -a) \
+provider-services query cert list --owner $(provider-services keys show provider-wallet -a) \
   --node https://rpc.akashnet.net:443
 ```
 
@@ -91,7 +91,7 @@ Create `provider-values.yaml`:
 ```yaml
 # provider-values.yaml
 image:
-  tag: 0.6.4  # Use latest stable version
+  tag: 0.12.0  # Use latest stable version
 
 # Chain configuration
 chainid: akashnet-2
@@ -182,9 +182,9 @@ kubectl logs -n akash-services -l app=akash-provider -f
 The hostname operator manages ingress routing for tenant deployments.
 
 ```bash
-helm install hostname-operator akash/hostname-operator \
+helm install hostname-operator akash/akash-hostname-operator \
   --namespace akash-services \
-  --set image.tag=0.6.4
+  --set image.tag=0.12.0
 ```
 
 ### Verify Hostname Operator
@@ -199,9 +199,9 @@ kubectl logs -n akash-services -l app=hostname-operator
 The inventory operator monitors and reports cluster resource availability.
 
 ```bash
-helm install inventory-operator akash/inventory-operator \
+helm install inventory-operator akash/akash-inventory-operator \
   --namespace akash-services \
-  --set image.tag=0.6.4
+  --set image.tag=0.12.0
 ```
 
 ### Verify Inventory Operator
@@ -216,9 +216,9 @@ kubectl logs -n akash-services -l app=inventory-operator
 Required only if offering dedicated IP leases:
 
 ```bash
-helm install ip-operator akash/ip-operator \
+helm install ip-operator akash/akash-ip-operator \
   --namespace akash-services \
-  --set image.tag=0.6.4 \
+  --set image.tag=0.12.0 \
   --set provider_address=<PROVIDER_AKASH_ADDRESS>
 ```
 
@@ -245,7 +245,7 @@ info:
 Register the provider:
 
 ```bash
-akash tx provider create provider.yaml \
+provider-services tx provider create provider.yaml \
   --from provider-wallet \
   --chain-id akashnet-2 \
   --node https://rpc.akashnet.net:443 \
@@ -257,7 +257,7 @@ akash tx provider create provider.yaml \
 ### Update Provider Registration
 
 ```bash
-akash tx provider update provider.yaml \
+provider-services tx provider update provider.yaml \
   --from provider-wallet \
   --chain-id akashnet-2 \
   --node https://rpc.akashnet.net:443
@@ -283,11 +283,11 @@ helm upgrade akash-provider akash/provider \
   --values provider-values.yaml
 
 # Upgrade hostname operator
-helm upgrade hostname-operator akash/hostname-operator \
+helm upgrade hostname-operator akash/akash-hostname-operator \
   --namespace akash-services
 
 # Upgrade inventory operator
-helm upgrade inventory-operator akash/inventory-operator \
+helm upgrade inventory-operator akash/akash-inventory-operator \
   --namespace akash-services
 ```
 
@@ -314,11 +314,11 @@ kubectl get pods -n akash-services
 curl -sk https://provider.example.com:8443/status
 
 # 3. Provider registered on chain
-akash query provider get <PROVIDER_ADDRESS> \
+provider-services query provider get <PROVIDER_ADDRESS> \
   --node https://rpc.akashnet.net:443
 
 # 4. Provider certificate valid
-akash query cert list --owner <PROVIDER_ADDRESS> \
+provider-services query cert list --owner <PROVIDER_ADDRESS> \
   --node https://rpc.akashnet.net:443
 
 # 5. Provider accepting bids (check logs)

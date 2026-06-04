@@ -10,7 +10,7 @@ This guide covers installing and running an Akash full node on the `akashnet-2` 
 
 ```bash
 # Set the version (check https://github.com/akash-network/node/releases for latest)
-AKASH_VERSION="v0.36.0"
+AKASH_VERSION="v2.0.1"
 
 # Download the binary
 wget "https://github.com/akash-network/node/releases/download/${AKASH_VERSION}/akash_linux_amd64.zip"
@@ -33,7 +33,7 @@ git clone https://github.com/akash-network/node.git
 cd node
 
 # Checkout the desired version
-AKASH_VERSION="v0.36.0"
+AKASH_VERSION="v2.0.1"
 git checkout "$AKASH_VERSION"
 
 # Build
@@ -171,7 +171,9 @@ Quick overview:
 
 ```bash
 # Get a trust height and hash from a trusted RPC endpoint
-SNAP_RPC="https://rpc.akash.network:443"
+# Use two distinct RPC endpoints so state sync can cross-verify the trust hash
+SNAP_RPC="https://akash-rpc.polkachu.com:443"
+SNAP_RPC_2="https://akash-rpc.publicnode.com:443"
 
 LATEST_HEIGHT=$(curl -s "$SNAP_RPC/block" | jq -r .result.block.header.height)
 TRUST_HEIGHT=$((LATEST_HEIGHT - 2000))
@@ -182,7 +184,7 @@ echo "Trust Hash: $TRUST_HASH"
 
 # Configure state sync in config.toml
 sed -i "s/^enable *=.*/enable = true/" ~/.akash/config/config.toml
-sed -i "s|^rpc_servers *=.*|rpc_servers = \"$SNAP_RPC,$SNAP_RPC\"|" ~/.akash/config/config.toml
+sed -i "s|^rpc_servers *=.*|rpc_servers = \"$SNAP_RPC,$SNAP_RPC_2\"|" ~/.akash/config/config.toml
 sed -i "s/^trust_height *=.*/trust_height = $TRUST_HEIGHT/" ~/.akash/config/config.toml
 sed -i "s/^trust_hash *=.*/trust_hash = \"$TRUST_HASH\"/" ~/.akash/config/config.toml
 sed -i "s/^trust_period *=.*/trust_period = \"168h0m0s\"/" ~/.akash/config/config.toml

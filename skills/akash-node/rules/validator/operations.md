@@ -266,10 +266,10 @@ cosmovisor run version
 │   └── bin/
 │       └── akash         # Initial binary
 ├── upgrades/
-│   ├── upgrade-v0.36.0/
+│   ├── upgrade-v2.0.1/
 │   │   └── bin/
 │   │       └── akash     # Upgrade binary
-│   └── upgrade-v0.38.0/
+│   └── upgrade-<next-version>/
 │       └── bin/
 │           └── akash     # Future upgrade binary
 └── current -> genesis/   # Symlink to active version
@@ -324,8 +324,8 @@ When a governance proposal for a chain upgrade passes:
 akash query gov proposal PROPOSAL_ID --output json | jq '.content'
 
 # 2. Download or build the new binary
-UPGRADE_NAME="v0.38.0"
-NEW_VERSION="v0.38.0"
+UPGRADE_NAME="v2.0.1"
+NEW_VERSION="v2.0.1"
 
 # Download pre-built binary
 wget "https://github.com/akash-network/node/releases/download/${NEW_VERSION}/akash_linux_amd64.zip"

@@ -28,8 +28,8 @@ Managing active leases, handling lifecycle events, troubleshooting stuck leases,
 ### List All Active Leases
 
 ```bash
-# Via Akash CLI
-akash query market lease list \
+# Via provider-services CLI
+provider-services query market lease list \
   --provider <PROVIDER_ADDRESS> \
   --state active \
   --node https://rpc.akashnet.net:443 \
@@ -40,7 +40,7 @@ akash query market lease list \
 
 ```bash
 # Get specific lease details
-akash query market lease get \
+provider-services query market lease get \
   --owner <TENANT_ADDRESS> \
   --dseq <DSEQ> \
   --gseq 1 \
@@ -181,7 +181,7 @@ withdrawalperiod: 720  # Every ~72 minutes
 
 ```bash
 # Manually trigger withdrawal for all leases
-akash tx market lease withdraw \
+provider-services tx market lease withdraw \
   --dseq <DSEQ> \
   --gseq 1 \
   --oseq 1 \
@@ -194,7 +194,7 @@ akash tx market lease withdraw \
 
 ```bash
 # Query transactions for withdrawal events
-akash query txs --events 'message.action=/akash.market.v1beta4.MsgWithdrawLease' \
+provider-services query txs --events 'message.action=/akash.market.v1beta5.MsgWithdrawLease' \
   --events "message.sender=<PROVIDER_ADDRESS>" \
   --node https://rpc.akashnet.net:443
 ```
@@ -216,7 +216,7 @@ Providers can evict tenants under certain conditions.
 
 ```bash
 # Close a specific lease
-akash tx market lease close \
+provider-services tx market lease close \
   --dseq <DSEQ> \
   --gseq 1 \
   --oseq 1 \
@@ -236,7 +236,7 @@ When a tenant's escrow is depleted:
 
 ```bash
 # Check leases with insufficient funds
-akash query market lease list \
+provider-services query market lease list \
   --provider <PROVIDER_ADDRESS> \
   --state insufficient-funds \
   --node https://rpc.akashnet.net:443
@@ -294,13 +294,13 @@ kubectl get namespace <LEASE_NAMESPACE> -o json | \
 
 | Task | Command |
 |------|---------|
-| List active leases | `akash query market lease list --provider <ADDR> --state active` |
-| Lease details | `akash query market lease get --owner <OWNER> --dseq <DSEQ> --gseq 1 --oseq 1 --provider <ADDR>` |
+| List active leases | `provider-services query market lease list --provider <ADDR> --state active` |
+| Lease details | `provider-services query market lease get --owner <OWNER> --dseq <DSEQ> --gseq 1 --oseq 1 --provider <ADDR>` |
 | Lease pods | `kubectl get pods -n <LEASE_NS>` |
 | Lease events | `kubectl get events -n <LEASE_NS> --sort-by='.lastTimestamp'` |
 | Lease logs | `kubectl logs <POD> -n <LEASE_NS>` |
-| Close lease | `akash tx market lease close --dseq <DSEQ> --gseq 1 --oseq 1 --from provider-wallet` |
-| Withdraw funds | `akash tx market lease withdraw --dseq <DSEQ> --gseq 1 --oseq 1 --from provider-wallet` |
+| Close lease | `provider-services tx market lease close --dseq <DSEQ> --gseq 1 --oseq 1 --from provider-wallet` |
+| Withdraw funds | `provider-services tx market lease withdraw --dseq <DSEQ> --gseq 1 --oseq 1 --from provider-wallet` |
 | All lease namespaces | `kubectl get ns -l akash.network=true` |
 | Lease resource usage | `kubectl top pods -n <LEASE_NS>` |
 

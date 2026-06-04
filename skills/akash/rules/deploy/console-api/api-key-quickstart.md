@@ -68,7 +68,7 @@ deployment:
       count: 1
 ```
 
-(See `../../sdl/` for full SDL syntax. Note `denom: uact` — the new native denom; `uakt` is the old name and is no longer recognized.)
+(See `../../sdl/` for full SDL syntax. Note `denom: uact` — the standard SDL-pricing/deposit denom post-Mainnet-17. `uakt` (AKT) and `uact` (ACT) are different denoms, both valid in their roles: `uakt` is the gas/staking denom, while `uact` is the deployment-payment denom used here for SDL pricing and deposits.)
 
 ## Step 2 — Create the deployment
 
@@ -106,7 +106,7 @@ for i in 1 2 3 4 5 6; do
   sleep 5
 done
 
-echo "$BIDS" | jq '.data[] | {provider: .bid_id.provider, price: .price.amount}'
+echo "$BIDS" | jq '.data[] | {provider: .bid.id.provider, price: .bid.price.amount}'
 ```
 
 If you don't get bids, the SDL might not match any provider's resources or pricing. See `rules/bid-matching/` or hit `POST /v1/bid-screening` to diagnose.
@@ -114,9 +114,9 @@ If you don't get bids, the SDL might not match any provider's resources or prici
 ## Step 4 — Accept the cheapest bid (and send the manifest)
 
 ```bash
-PROVIDER=$(echo "$BIDS" | jq -r '.data | sort_by(.price.amount | tonumber) | .[0].bid_id.provider')
-GSEQ=$(echo "$BIDS" | jq -r '.data | sort_by(.price.amount | tonumber) | .[0].bid_id.gseq')
-OSEQ=$(echo "$BIDS" | jq -r '.data | sort_by(.price.amount | tonumber) | .[0].bid_id.oseq')
+PROVIDER=$(echo "$BIDS" | jq -r '.data | sort_by(.bid.price.amount | tonumber) | .[0].bid.id.provider')
+GSEQ=$(echo "$BIDS" | jq -r '.data | sort_by(.bid.price.amount | tonumber) | .[0].bid.id.gseq')
+OSEQ=$(echo "$BIDS" | jq -r '.data | sort_by(.bid.price.amount | tonumber) | .[0].bid.id.oseq')
 
 curl -sX POST https://console-api.akash.network/v1/leases \
   -H "x-api-key: $AKASH_API_KEY" \
@@ -166,7 +166,7 @@ JWT=$(curl -sX POST https://console-api.akash.network/v1/create-jwt-token \
   | jq -r .data.token)
 
 # Resolve the provider's hostUri (cannot be derived from the deployment object)
-HOSTURI=$(curl -s https://console-api.akash.network/v1/providers/$PROVIDER | jq -r .data.hostUri)
+HOSTURI=$(curl -s https://console-api.akash.network/v1/providers/$PROVIDER | jq -r .hostUri)
 
 # Logs are served via WebSocket — use websocat or your language's WS client
 websocat "wss://${HOSTURI#https://}/lease/$DSEQ/$GSEQ/$OSEQ/logs" \
@@ -198,8 +198,8 @@ curl -X DELETE https://console-api.akash.network/v1/deployments/$DSEQ \
 
 ## What you didn't have to do
 
-- Install the `akash` CLI binary
-- Run `akash keys add`
+- Install the `provider-services` CLI binary
+- Run `provider-services keys add`
 - Manage a private key, mnemonic, or hardware wallet
 - Generate or maintain mTLS certificates (those are deprecated for the Console API path — see `../cli/mtls-legacy.md`)
 - Acquire AKT manually — your account is funded with USD via Stripe

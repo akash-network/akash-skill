@@ -9,7 +9,7 @@ How to create and manage AuthZ grants on Akash.
 Grant permission for specific message types:
 
 ```bash
-akash tx authz grant <GRANTEE_ADDRESS> generic \
+provider-services tx authz grant <GRANTEE_ADDRESS> generic \
   --msg-type <MSG_TYPE_URL> \
   --from <GRANTER_KEY> \
   --expiration "2025-12-31T23:59:59Z"
@@ -21,25 +21,25 @@ akash tx authz grant <GRANTEE_ADDRESS> generic \
 GRANTEE="akash1grantee..."
 
 # Full deployment lifecycle
-akash tx authz grant $GRANTEE generic \
-  --msg-type /akash.deployment.v1beta3.MsgCreateDeployment \
+provider-services tx authz grant $GRANTEE generic \
+  --msg-type /akash.deployment.v1beta4.MsgCreateDeployment \
   --from granter
 
-akash tx authz grant $GRANTEE generic \
-  --msg-type /akash.deployment.v1beta3.MsgUpdateDeployment \
+provider-services tx authz grant $GRANTEE generic \
+  --msg-type /akash.deployment.v1beta4.MsgUpdateDeployment \
   --from granter
 
-akash tx authz grant $GRANTEE generic \
-  --msg-type /akash.deployment.v1beta3.MsgCloseDeployment \
+provider-services tx authz grant $GRANTEE generic \
+  --msg-type /akash.deployment.v1beta4.MsgCloseDeployment \
   --from granter
 
-akash tx authz grant $GRANTEE generic \
-  --msg-type /akash.deployment.v1beta3.MsgDepositDeployment \
+provider-services tx authz grant $GRANTEE generic \
+  --msg-type /akash.deployment.v1beta4.MsgDepositDeployment \
   --from granter
 
 # Lease management
-akash tx authz grant $GRANTEE generic \
-  --msg-type /akash.market.v1beta4.MsgCreateLease \
+provider-services tx authz grant $GRANTEE generic \
+  --msg-type /akash.market.v1beta5.MsgCreateLease \
   --from granter
 ```
 
@@ -49,21 +49,21 @@ Allow grantee to use granter's funds for fees:
 
 ```bash
 # Unlimited fee grant
-akash tx feegrant grant $(akash keys show granter -a) $GRANTEE \
+provider-services tx feegrant grant $(provider-services keys show granter -a) $GRANTEE \
   --from granter
 
 # With limit
-akash tx feegrant grant $(akash keys show granter -a) $GRANTEE \
+provider-services tx feegrant grant $(provider-services keys show granter -a) $GRANTEE \
   --spend-limit 10000000uakt \
   --from granter
 
 # With time expiration
-akash tx feegrant grant $(akash keys show granter -a) $GRANTEE \
+provider-services tx feegrant grant $(provider-services keys show granter -a) $GRANTEE \
   --expiration "2025-06-30T00:00:00Z" \
   --from granter
 
 # With both
-akash tx feegrant grant $(akash keys show granter -a) $GRANTEE \
+provider-services tx feegrant grant $(provider-services keys show granter -a) $GRANTEE \
   --spend-limit 10000000uakt \
   --expiration "2025-06-30T00:00:00Z" \
   --from granter
@@ -74,8 +74,8 @@ akash tx feegrant grant $(akash keys show granter -a) $GRANTEE \
 ### Set Expiration on Grant
 
 ```bash
-akash tx authz grant $GRANTEE generic \
-  --msg-type /akash.deployment.v1beta3.MsgCreateDeployment \
+provider-services tx authz grant $GRANTEE generic \
+  --msg-type /akash.deployment.v1beta4.MsgCreateDeployment \
   --expiration "2025-12-31T23:59:59Z" \
   --from granter
 ```
@@ -89,29 +89,29 @@ Omit `--expiration` for indefinite grants (not recommended for production).
 ### List All Grants from Address
 
 ```bash
-akash query authz grants-by-granter $(akash keys show granter -a)
+provider-services query authz grants-by-granter $(provider-services keys show granter -a)
 ```
 
 ### List All Grants to Address
 
 ```bash
-akash query authz grants-by-grantee $(akash keys show grantee -a)
+provider-services query authz grants-by-grantee $(provider-services keys show grantee -a)
 ```
 
 ### Query Specific Grant
 
 ```bash
-akash query authz grants \
-  $(akash keys show granter -a) \
-  $(akash keys show grantee -a) \
-  /akash.deployment.v1beta3.MsgCreateDeployment
+provider-services query authz grants \
+  $(provider-services keys show granter -a) \
+  $(provider-services keys show grantee -a) \
+  /akash.deployment.v1beta4.MsgCreateDeployment
 ```
 
 ### Query Fee Grants
 
 ```bash
-akash query feegrant grants-by-granter $(akash keys show granter -a)
-akash query feegrant grants-by-grantee $(akash keys show grantee -a)
+provider-services query feegrant grants-by-granter $(provider-services keys show granter -a)
+provider-services query feegrant grants-by-grantee $(provider-services keys show grantee -a)
 ```
 
 ## Revoke Grants
@@ -119,15 +119,15 @@ akash query feegrant grants-by-grantee $(akash keys show grantee -a)
 ### Revoke AuthZ Grant
 
 ```bash
-akash tx authz revoke $GRANTEE \
-  /akash.deployment.v1beta3.MsgCreateDeployment \
+provider-services tx authz revoke $GRANTEE \
+  /akash.deployment.v1beta4.MsgCreateDeployment \
   --from granter
 ```
 
 ### Revoke Fee Grant
 
 ```bash
-akash tx feegrant revoke $(akash keys show granter -a) $GRANTEE \
+provider-services tx feegrant revoke $(provider-services keys show granter -a) $GRANTEE \
   --from granter
 ```
 
@@ -148,10 +148,10 @@ Revoke each grant individually - there's no batch revoke.
 
 | Message Type | Purpose |
 |-------------|---------|
-| `/akash.deployment.v1beta3.MsgCreateDeployment` | Create deployment |
-| `/akash.deployment.v1beta3.MsgUpdateDeployment` | Update deployment |
-| `/akash.deployment.v1beta3.MsgCloseDeployment` | Close deployment |
-| `/akash.deployment.v1beta3.MsgDepositDeployment` | Deposit to deployment |
-| `/akash.market.v1beta4.MsgCreateLease` | Create lease |
-| `/akash.cert.v1beta3.MsgCreateCertificate` | Create certificate |
-| `/akash.cert.v1beta3.MsgRevokeCertificate` | Revoke certificate |
+| `/akash.deployment.v1beta4.MsgCreateDeployment` | Create deployment |
+| `/akash.deployment.v1beta4.MsgUpdateDeployment` | Update deployment |
+| `/akash.deployment.v1beta4.MsgCloseDeployment` | Close deployment |
+| `/akash.deployment.v1beta4.MsgDepositDeployment` | Deposit to deployment |
+| `/akash.market.v1beta5.MsgCreateLease` | Create lease |
+| `/akash.cert.v1.MsgCreateCertificate` | Create certificate |
+| `/akash.cert.v1.MsgRevokeCertificate` | Revoke certificate |

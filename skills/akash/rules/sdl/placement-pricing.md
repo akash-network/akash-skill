@@ -93,7 +93,7 @@ signedBy:
 
 ### uact (ACT — the deployment-payment token)
 
-ACT is Akash's deployment-payment token (distinct from AKT, the chain token used for gas/staking). `uact` is its micro-denomination — `1 ACT = 1,000,000 uact`. It is the only denom providers accept for lease payment.
+ACT is Akash's deployment-payment token (distinct from AKT, the chain token used for gas/staking). `uact` is its micro-denomination — `1 ACT = 1,000,000 uact`. `uact` is the standard SDL pricing/deposit denom post-Mainnet-17; the chain still accepts `uakt` deposits as well (`min_deposits` lists both `uact` and `uakt`).
 
 ```yaml
 pricing:
@@ -104,9 +104,9 @@ pricing:
 
 ### Price Calculation
 
-- Prices are per block (approximately every 6 seconds)
-- Monthly cost ≈ amount × 438,000 blocks/month
-- Example: `amount: 1000` uact ≈ 438,000,000 uact/month ≈ 438 ACT/month
+- Prices are set per block, and blocks are produced at a roughly fixed cadence, so the `amount` you set translates into an ongoing per-block spend that accumulates over the lease.
+- The block-based `amount` is a bid ceiling, not the final cost — the actual lease price is whatever a provider bids at or below it.
+- Any monthly estimate derived from the per-block `amount` is illustrative only — rely on live price discovery (the bids you actually receive) and compare against real pricing in the [awesome-akash](https://github.com/akash-network/awesome-akash) example templates rather than a fixed multiplier.
 
 ## Multiple Placements
 
@@ -187,11 +187,13 @@ profiles:
 
 ## Pricing Guidelines
 
-| Workload Type | Suggested uact/block | Notes |
+The ranges below are rough, illustrative starting points for the per-block `amount` (in `uact`) — not exact prices. Treat them as a place to begin, then let live bids and current market conditions guide the real value.
+
+| Workload Type | Illustrative uact/block | Notes |
 |---------------|---------------------|-------|
 | Small web app | 500-1000 | 0.5 CPU, 512Mi RAM |
 | API server | 1000-2000 | 1-2 CPU, 1-2Gi RAM |
 | Database | 2000-5000 | Depends on storage |
 | GPU workload | 10000-50000+ | Varies by GPU model |
 
-Higher pricing increases likelihood of provider acceptance. Start with recommended ranges and adjust based on market conditions.
+Higher pricing increases the likelihood of provider acceptance. Start within these illustrative ranges and adjust based on the bids you receive and current market conditions.

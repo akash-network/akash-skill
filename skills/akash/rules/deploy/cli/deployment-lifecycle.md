@@ -19,13 +19,13 @@ Complete guide to creating, managing, and closing deployments via CLI.
 
 ```bash
 # Verify CLI setup
-akash version
+provider-services version
 
 # Check wallet
-akash keys show wallet -a
+provider-services keys show wallet -a
 
 # Check balance (need ~5 AKT minimum)
-akash query bank balances $(akash keys show wallet -a)
+provider-services query bank balances $(provider-services keys show wallet -a)
 ```
 
 ## Step 1: Create SDL File
@@ -70,35 +70,36 @@ deployment:
 
 ## Step 2: Create Certificate (First Time Only)
 
-Generate and broadcast client certificate:
+Generate and broadcast client certificate (two steps):
 
 ```bash
-akash tx cert create client --from wallet
+provider-services tx cert generate client --from wallet
+provider-services tx cert publish client --from wallet
 ```
 
 Verify certificate:
 
 ```bash
-akash query cert list --owner $(akash keys show wallet -a)
+provider-services query cert list --owner $(provider-services keys show wallet -a)
 ```
 
 ## Step 3: Create Deployment
 
 ```bash
-akash tx deployment create deploy.yaml --from wallet
+provider-services tx deployment create deploy.yaml --from wallet
 ```
 
 Capture the deployment sequence (dseq) from output:
 
 ```bash
 # Or query your deployments
-akash query deployment list --owner $(akash keys show wallet -a)
+provider-services query deployment list --owner $(provider-services keys show wallet -a)
 ```
 
 ### With Explicit Deposit
 
 ```bash
-akash tx deployment create deploy.yaml --deposit 10000000uact --from wallet
+provider-services tx deployment create deploy.yaml --deposit 10000000uact --from wallet
 ```
 
 ## Step 4: Wait for Bids
@@ -106,7 +107,7 @@ akash tx deployment create deploy.yaml --deposit 10000000uact --from wallet
 Query bids for your deployment:
 
 ```bash
-akash query market bid list --owner $(akash keys show wallet -a) --dseq <DSEQ>
+provider-services query market bid list --owner $(provider-services keys show wallet -a) --dseq <DSEQ>
 ```
 
 Wait until bids appear (usually 15-60 seconds).
@@ -117,7 +118,7 @@ Example output:
   "bids": [
     {
       "bid": {
-        "bid_id": {
+        "id": {
           "owner": "akash1...",
           "dseq": "12345678",
           "gseq": 1,
@@ -138,7 +139,7 @@ Example output:
 ## Step 5: Accept Bid (Create Lease)
 
 ```bash
-akash tx market lease create \
+provider-services tx market lease create \
   --dseq <DSEQ> \
   --gseq 1 \
   --oseq 1 \
@@ -149,13 +150,13 @@ akash tx market lease create \
 Verify lease:
 
 ```bash
-akash query market lease list --owner $(akash keys show wallet -a) --dseq <DSEQ>
+provider-services query market lease list --owner $(provider-services keys show wallet -a) --dseq <DSEQ>
 ```
 
 ## Step 6: Send Manifest
 
 ```bash
-akash provider send-manifest deploy.yaml \
+provider-services send-manifest deploy.yaml \
   --dseq <DSEQ> \
   --gseq 1 \
   --oseq 1 \
@@ -168,7 +169,7 @@ akash provider send-manifest deploy.yaml \
 ### Get Lease Status
 
 ```bash
-akash provider lease-status \
+provider-services lease-status \
   --dseq <DSEQ> \
   --gseq 1 \
   --oseq 1 \
@@ -196,7 +197,7 @@ Output includes service URIs:
 ### Get Logs
 
 ```bash
-akash provider lease-logs \
+provider-services lease-logs \
   --dseq <DSEQ> \
   --gseq 1 \
   --oseq 1 \
@@ -207,7 +208,7 @@ akash provider lease-logs \
 ### Follow Logs
 
 ```bash
-akash provider lease-logs \
+provider-services lease-logs \
   --dseq <DSEQ> \
   --gseq 1 \
   --oseq 1 \
@@ -219,7 +220,7 @@ akash provider lease-logs \
 ### Interactive Shell
 
 ```bash
-akash provider lease-shell \
+provider-services lease-shell \
   --dseq <DSEQ> \
   --gseq 1 \
   --oseq 1 \
@@ -234,13 +235,13 @@ akash provider lease-shell \
 When done, close to stop billing and reclaim escrow:
 
 ```bash
-akash tx deployment close --dseq <DSEQ> --from wallet
+provider-services tx deployment close --dseq <DSEQ> --from wallet
 ```
 
 Verify closed:
 
 ```bash
-akash query deployment get --owner $(akash keys show wallet -a) --dseq <DSEQ>
+provider-services query deployment get --owner $(provider-services keys show wallet -a) --dseq <DSEQ>
 ```
 
 ## Managing Deployments
@@ -248,19 +249,19 @@ akash query deployment get --owner $(akash keys show wallet -a) --dseq <DSEQ>
 ### Add Funds
 
 ```bash
-akash tx deployment deposit 5000000uact --dseq <DSEQ> --from wallet
+provider-services tx deployment deposit 5000000uact --dseq <DSEQ> --from wallet
 ```
 
 ### Update Deployment
 
 ```bash
-akash tx deployment update deploy-updated.yaml --dseq <DSEQ> --from wallet
+provider-services tx deployment update deploy-updated.yaml --dseq <DSEQ> --from wallet
 ```
 
 Then send updated manifest:
 
 ```bash
-akash provider send-manifest deploy-updated.yaml \
+provider-services send-manifest deploy-updated.yaml \
   --dseq <DSEQ> \
   --gseq 1 \
   --oseq 1 \
@@ -271,7 +272,7 @@ akash provider send-manifest deploy-updated.yaml \
 ### Close Specific Lease
 
 ```bash
-akash tx market lease close \
+provider-services tx market lease close \
   --dseq <DSEQ> \
   --gseq 1 \
   --oseq 1 \
@@ -290,12 +291,12 @@ SDL_FILE="deploy.yaml"
 WALLET="wallet"
 
 # Get address
-ADDRESS=$(akash keys show $WALLET -a)
+ADDRESS=$(provider-services keys show $WALLET -a)
 
 # Create deployment
 echo "Creating deployment..."
-TX_RESULT=$(akash tx deployment create $SDL_FILE --from $WALLET -y --output json)
-DSEQ=$(echo $TX_RESULT | jq -r '.logs[0].events[] | select(.type=="akash.v1") | .attributes[] | select(.key=="dseq") | .value')
+TX_RESULT=$(provider-services tx deployment create $SDL_FILE --from $WALLET -y --output json)
+DSEQ=$(echo $TX_RESULT | jq -r '.events[] | select(.type=="akash.v1") | .attributes[] | select(.key=="dseq") | .value')
 
 echo "Deployment DSEQ: $DSEQ"
 
@@ -304,14 +305,14 @@ echo "Waiting for bids..."
 sleep 30
 
 # Get first bid
-BID=$(akash query market bid list --owner $ADDRESS --dseq $DSEQ --output json | jq -r '.bids[0]')
-PROVIDER=$(echo $BID | jq -r '.bid.bid_id.provider')
+BID=$(provider-services query market bid list --owner $ADDRESS --dseq $DSEQ --output json | jq -r '.bids[0]')
+PROVIDER=$(echo $BID | jq -r '.bid.id.provider')
 
 echo "Selected provider: $PROVIDER"
 
 # Create lease
 echo "Creating lease..."
-akash tx market lease create \
+provider-services tx market lease create \
   --dseq $DSEQ \
   --gseq 1 \
   --oseq 1 \
@@ -324,7 +325,7 @@ sleep 10
 
 # Send manifest
 echo "Sending manifest..."
-akash provider send-manifest $SDL_FILE \
+provider-services send-manifest $SDL_FILE \
   --dseq $DSEQ \
   --gseq 1 \
   --oseq 1 \
@@ -336,7 +337,7 @@ sleep 15
 
 # Get status
 echo "Getting status..."
-akash provider lease-status \
+provider-services lease-status \
   --dseq $DSEQ \
   --gseq 1 \
   --oseq 1 \
@@ -364,18 +365,18 @@ echo "Deployment complete! DSEQ: $DSEQ"
 
 ```bash
 # Check lease status
-akash provider lease-status --dseq <DSEQ> ...
+provider-services lease-status --dseq <DSEQ> ...
 
 # Check logs for errors
-akash provider lease-logs --dseq <DSEQ> ...
+provider-services lease-logs --dseq <DSEQ> ...
 ```
 
 ### Escrow Depleted
 
 ```bash
 # Check escrow balance
-akash query deployment get --dseq <DSEQ> --owner $(akash keys show wallet -a)
+provider-services query deployment get --dseq <DSEQ> --owner $(provider-services keys show wallet -a)
 
 # Deposit more funds
-akash tx deployment deposit 5000000uact --dseq <DSEQ> --from wallet
+provider-services tx deployment deposit 5000000uact --dseq <DSEQ> --from wallet
 ```

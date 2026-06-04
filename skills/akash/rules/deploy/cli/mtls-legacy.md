@@ -9,7 +9,7 @@ Mutual TLS certificate-based authentication for Akash provider communication.
 >
 > If you are on the Console API path, do **not** create certificates. Authentication is `x-api-key` for the Console API calls, and a JWT minted via `POST /v1/create-jwt-token` for direct calls to the provider (logs, events, status, shell). See **@../console-api/authentication.md** and **@../console-api/operations.md**.
 >
-> The remainder of this file documents the **CLI path**, where mTLS is still used for self-custody clients calling providers directly (e.g. `akash provider lease-status`, `akash provider lease-logs`). AEP-64 JWT auth is gradually replacing mTLS even on the CLI path; new code should prefer JWT.
+> The remainder of this file documents the **CLI path**, where mTLS is still used for self-custody clients calling providers directly (e.g. `provider-services lease-status`, `provider-services lease-logs`). AEP-64 JWT auth is gradually replacing mTLS even on the CLI path; new code should prefer JWT.
 
 ## Overview
 
@@ -29,8 +29,11 @@ mTLS (Mutual TLS) was the original authentication method for Akash provider comm
 ### CLI
 
 ```bash
-# Generate and broadcast certificate
-akash tx cert create client --from wallet
+# Generate certificate locally
+provider-services tx cert generate client --from wallet
+
+# Publish the certificate to the blockchain
+provider-services tx cert publish client --from wallet
 ```
 
 This generates:
@@ -68,7 +71,7 @@ await sdk.akash.cert.v1.createCertificate({
 import { MsgCreateCertificate } from "@akashnetwork/chain-sdk/private-types/akash.v1";
 
 const msg = {
-  typeUrl: "/akash.cert.v1beta3.MsgCreateCertificate",
+  typeUrl: "/akash.cert.v1.MsgCreateCertificate",
   value: {
     owner: address,
     cert: Buffer.from(cert.cert).toString("base64"),
@@ -127,8 +130,10 @@ const response = await fetch(providerUrl, {
 Certificate is used automatically:
 
 ```bash
-akash provider send-manifest deploy.yaml \
+provider-services send-manifest deploy.yaml \
   --dseq <DSEQ> \
+  --gseq 1 \
+  --oseq 1 \
   --provider <PROVIDER> \
   --from wallet
 ```
@@ -137,9 +142,10 @@ akash provider send-manifest deploy.yaml \
 
 | Operation | Command |
 |-----------|---------|
-| Create | `akash tx cert create client --from wallet` |
-| Query | `akash query cert list --owner <address>` |
-| Revoke | `akash tx cert revoke --from wallet` |
+| Generate | `provider-services tx cert generate client --from wallet` |
+| Publish | `provider-services tx cert publish client --from wallet` |
+| Query | `provider-services query cert list --owner <address>` |
+| Revoke | `provider-services tx cert revoke --from wallet` |
 
 ### Certificate States
 
@@ -153,10 +159,11 @@ Only one active certificate per address.
 
 ```bash
 # Revoke old
-akash tx cert revoke --from wallet
+provider-services tx cert revoke --from wallet
 
-# Create new
-akash tx cert create client --from wallet
+# Generate and publish new
+provider-services tx cert generate client --from wallet
+provider-services tx cert publish client --from wallet
 ```
 
 ## Query Certificates
@@ -164,13 +171,13 @@ akash tx cert create client --from wallet
 ### CLI
 
 ```bash
-akash query cert list --owner $(akash keys show wallet -a)
+provider-services query cert list --owner $(provider-services keys show wallet -a)
 ```
 
 ### REST API
 
 ```bash
-curl "https://api.akashnet.net/akash/cert/v1beta3/certificates/list?filter.owner=akash1..."
+curl "https://api.akashnet.net/akash/cert/v1/certificates/list?filter.owner=akash1..."
 ```
 
 ## Troubleshooting

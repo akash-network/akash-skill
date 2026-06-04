@@ -32,12 +32,12 @@ The deployment object gives you the provider's **address**, not the URL. Resolve
 DEPL=$(curl -s https://console-api.akash.network/v1/deployments/$DSEQ \
   -H "x-api-key: $AKASH_API_KEY")
 
-PROVIDER=$(echo "$DEPL" | jq -r '.data.leases[0].lease_id.provider')
-GSEQ=$(echo "$DEPL" | jq -r '.data.leases[0].lease_id.gseq')
-OSEQ=$(echo "$DEPL" | jq -r '.data.leases[0].lease_id.oseq')
+PROVIDER=$(echo "$DEPL" | jq -r '.data.leases[0].id.provider')
+GSEQ=$(echo "$DEPL" | jq -r '.data.leases[0].id.gseq')
+OSEQ=$(echo "$DEPL" | jq -r '.data.leases[0].id.oseq')
 
 HOSTURI=$(curl -s https://console-api.akash.network/v1/providers/$PROVIDER \
-  | jq -r '.data.hostUri')
+  | jq -r '.hostUri')
 
 echo "Provider host: $HOSTURI"
 ```
@@ -146,7 +146,7 @@ const ws = new WebSocket(
     agent: new https.Agent({
       rejectUnauthorized: false,
       // validate the leaf cert's CN/SAN matches the provider's wallet address
-      // see @akashnetwork/chain-sdk's CertificateValidator
+      // see @akashnetwork/chain-sdk's CertificateManager (certificateManager.parsePem)
     }),
   }
 );
@@ -181,23 +181,57 @@ This is what `POST /v1/leases` does under the hood for managed-wallet users. Sel
 
 The provider's TLS leaf cert must match the provider's on-chain wallet address — not a CA. Standard HTTPS clients won't accept it.
 
-**Node.js — Custom HTTPS agent:**
+**Node.js — Custom HTTPS agent.**
+
+> ⚠️ **Illustrative pattern, not copy-paste code.** The exact mTLS verification API is evolving in `@akashnetwork/chain-sdk` (currently `@alpha`); confirm symbols against the [chain-sdk source](https://github.com/akash-network/chain-sdk) before shipping. Two real constraints the SDK forces on you:
+>
+> 1. **`certificateManager.parsePem` is `async`** (it lazy-loads `jsrsasign` and returns `Promise<CertificateInfo>`). Node's `checkServerIdentity` callback is **synchronous** — you cannot `await` inside it. Parse and compare the CN **outside** the TLS callback.
+> 2. **There is no `subjectCommonName` field.** `CertificateInfo` exposes `sSubject` (a DN string such as `/CN=akash1...`), plus `sIssuer`, `hSerial`, `sNotBefore`, `sNotAfter`, `issuedOn`, `expiresOn`. Extract the CN from `sSubject` yourself.
+> 3. **`parsePem` wants a PEM string**, but `checkServerIdentity` hands you `cert.raw` as **DER** — convert DER→PEM first.
+
 ```typescript
 import https from "https";
-import { CertificateValidator } from "@akashnetwork/chain-sdk";
+import tls from "tls";
+// certificateManager is re-exported from the package root in @akashnetwork/chain-sdk@alpha.
+import { certificateManager } from "@akashnetwork/chain-sdk";
 
+// Extract the CN from a DN string like "/CN=akash1abc...".
+function cnFromSubject(sSubject: string): string | undefined {
+  return sSubject
+    .split("/")
+    .map((p) => p.trim())
+    .find((p) => p.startsWith("CN="))
+    ?.slice(3);
+}
+
+// async — cannot run inside the synchronous checkServerIdentity callback.
+async function providerCnMatches(derCert: Buffer, providerAddress: string): Promise<boolean> {
+  const pem =
+    "-----BEGIN CERTIFICATE-----\n" +
+    derCert.toString("base64").match(/.{1,64}/g)!.join("\n") +
+    "\n-----END CERTIFICATE-----\n";
+  const info = await certificateManager.parsePem(pem); // Promise<CertificateInfo>
+  return cnFromSubject(info.sSubject) === providerAddress;
+}
+
+// Pin against the leaf cert captured during the handshake (synchronous),
+// then verify the CN asynchronously BEFORE you trust the response.
+let leafDer: Buffer | undefined;
 const agent = new https.Agent({
   rejectUnauthorized: false,
-  checkServerIdentity: (host, cert) => {
-    // CertificateValidator verifies cert.subject CN matches the provider's wallet address
-    return CertificateValidator.validateProviderCert(cert, providerAddress);
+  checkServerIdentity: (_host, cert: tls.PeerCertificate) => {
+    leafDer = cert.raw; // DER bytes; defer the actual CN check to after connect
+    return undefined;
   },
 });
 
-fetch(`${hostUri}/lease/${dseq}/${gseq}/${oseq}/status`, {
+const res = await fetch(`${hostUri}/lease/${dseq}/${gseq}/${oseq}/status`, {
   headers: { Authorization: `Bearer ${jwt}` },
   agent,
 });
+if (!leafDer || !(await providerCnMatches(leafDer, providerAddress))) {
+  throw new Error("provider cert CN does not match on-chain address");
+}
 ```
 
 **Go — Custom TLS config:**
@@ -222,7 +256,7 @@ The hosted public URL of the Console team's provider-proxy (if any) is not stabl
 ```typescript
 import WebSocket from "ws";
 import https from "https";
-import { CertificateValidator } from "@akashnetwork/chain-sdk";
+import { certificateManager } from "@akashnetwork/chain-sdk";
 
 const API_BASE = "https://console-api.akash.network/v1";
 const apiKey = process.env.AKASH_API_KEY!;
@@ -233,13 +267,13 @@ const depl = await (await fetch(`${API_BASE}/deployments/${dseq}`, {
   headers: { "x-api-key": apiKey },
 })).json();
 const lease = depl.data.leases[0];
-const { provider, gseq, oseq } = lease.lease_id;
+const { provider, gseq, oseq } = lease.id;
 
 // 2. Resolve provider hostUri
 const prov = await (await fetch(`${API_BASE}/providers/${provider}`, {
   headers: { "x-api-key": apiKey },
 })).json();
-const hostUri = prov.data.hostUri;
+const hostUri = prov.hostUri;
 
 // 3. Mint a JWT
 const jwtResp = await (await fetch(`${API_BASE}/create-jwt-token`, {
@@ -252,10 +286,18 @@ const jwtResp = await (await fetch(`${API_BASE}/create-jwt-token`, {
 const jwt = jwtResp.data.token;
 
 // 4. Stream logs from the provider
+//
+// NOTE: certificateManager.parsePem is ASYNC (Promise<CertificateInfo>) and CertificateInfo
+// has no subjectCommonName — extract the CN from its `sSubject` DN string. Because
+// checkServerIdentity is synchronous, capture the leaf cert here and verify the CN once the
+// socket opens (see the "Cert-pinning workaround" section for cnFromSubject/providerCnMatches).
+let leafDer: Buffer | undefined;
 const agent = new https.Agent({
   rejectUnauthorized: false,
-  checkServerIdentity: (_host, cert) =>
-    CertificateValidator.validateProviderCert(cert, provider),
+  checkServerIdentity: (_host, cert) => {
+    leafDer = cert.raw; // DER bytes; CN verified asynchronously below
+    return undefined;
+  },
 });
 
 const wss = hostUri.replace(/^https?:\/\//, "");
@@ -266,6 +308,12 @@ const ws = new WebSocket(
     agent,
   }
 );
+ws.on("open", async () => {
+  if (!leafDer || !(await providerCnMatches(leafDer, provider))) {
+    ws.close();
+    throw new Error("provider cert CN does not match on-chain address");
+  }
+});
 ws.on("message", (chunk) => process.stdout.write(chunk));
 ws.on("close", () => process.exit(0));
 ```

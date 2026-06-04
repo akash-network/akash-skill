@@ -28,18 +28,18 @@ Allow creating and managing deployments:
 
 ```bash
 # Grant deployment creation
-akash tx authz grant <GRANTEE_ADDRESS> generic \
-  --msg-type /akash.deployment.v1beta3.MsgCreateDeployment \
+provider-services tx authz grant <GRANTEE_ADDRESS> generic \
+  --msg-type /akash.deployment.v1beta4.MsgCreateDeployment \
   --from granter
 
 # Grant deployment closure
-akash tx authz grant <GRANTEE_ADDRESS> generic \
-  --msg-type /akash.deployment.v1beta3.MsgCloseDeployment \
+provider-services tx authz grant <GRANTEE_ADDRESS> generic \
+  --msg-type /akash.deployment.v1beta4.MsgCloseDeployment \
   --from granter
 
 # Grant deposit
-akash tx authz grant <GRANTEE_ADDRESS> generic \
-  --msg-type /akash.deployment.v1beta3.MsgDepositDeployment \
+provider-services tx authz grant <GRANTEE_ADDRESS> generic \
+  --msg-type /akash.deployment.v1beta4.MsgDepositDeployment \
   --from granter
 ```
 
@@ -49,8 +49,8 @@ Allow lease operations:
 
 ```bash
 # Grant lease creation
-akash tx authz grant <GRANTEE_ADDRESS> generic \
-  --msg-type /akash.market.v1beta4.MsgCreateLease \
+provider-services tx authz grant <GRANTEE_ADDRESS> generic \
+  --msg-type /akash.market.v1beta5.MsgCreateLease \
   --from granter
 ```
 
@@ -60,16 +60,16 @@ Allow one account to pay fees for another:
 
 ```bash
 # Basic fee grant
-akash tx feegrant grant <GRANTER_ADDRESS> <GRANTEE_ADDRESS> \
+provider-services tx feegrant grant <GRANTER_ADDRESS> <GRANTEE_ADDRESS> \
   --from granter
 
 # With spending limit
-akash tx feegrant grant <GRANTER_ADDRESS> <GRANTEE_ADDRESS> \
+provider-services tx feegrant grant <GRANTER_ADDRESS> <GRANTEE_ADDRESS> \
   --spend-limit 10000000uakt \
   --from granter
 
 # With expiration
-akash tx feegrant grant <GRANTER_ADDRESS> <GRANTEE_ADDRESS> \
+provider-services tx feegrant grant <GRANTER_ADDRESS> <GRANTEE_ADDRESS> \
   --expiration "2025-12-31T23:59:59Z" \
   --from granter
 ```

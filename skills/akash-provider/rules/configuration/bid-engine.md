@@ -49,7 +49,10 @@ bidWaitDuration: 5s
 bidTimeout: 5m
 
 # Minimum deposit required in the order's escrow
-bidMinDeposit: 5000000  # 5 AKT in uakt (1 AKT = 1,000,000 uakt) — bid escrow is in AKT, not ACT
+# Upstream default is 500000 (0.5 AKT in uakt; 1 AKT = 1,000,000 uakt). The bid
+# deposit accepts either uakt or uact — the chain's bid_min_deposits lists both denoms.
+# Set 5000000 (5 AKT) only if you deliberately want a higher minimum (operator choice, not the default).
+bidMinDeposit: 500000  # 0.5 AKT in uakt (upstream default)
 
 # Filter orders by maximum resource request
 bidMaxCPU: 256000       # 256 cores in millicpu
@@ -70,7 +73,7 @@ bidpricescript: |
 | `bidMaxConcurrent` | int | 10 | Maximum simultaneous bids |
 | `bidWaitDuration` | duration | 5s | Delay before submitting bid |
 | `bidTimeout` | duration | 5m | Bid acceptance timeout |
-| `bidMinDeposit` | int | 5000000 | Minimum escrow deposit (uakt — bid escrow is in AKT, not ACT) |
+| `bidMinDeposit` | int | 500000 | Minimum escrow deposit; default 0.5 AKT (accepts either uakt or uact — bid_min_deposits lists both) |
 | `bidMaxCPU` | int | - | Max CPU per order (millicpu) |
 | `bidMaxMemory` | int | - | Max memory per order (bytes) |
 | `bidMaxStorage` | int | - | Max storage per order (bytes) |
@@ -120,8 +123,8 @@ bidMaxGPU: 4                # 4 GPUs max per order
 Reject orders with insufficient escrow deposits:
 
 ```yaml
-# Require at least 5 AKT deposit
-bidMinDeposit: 5000000  # uakt
+# Require at least 0.5 AKT deposit (upstream default; raise to 5000000 for 5 AKT as an operator choice)
+bidMinDeposit: 500000  # uakt (or uact — the chain accepts both)
 ```
 
 This protects against orders that would run out of funds quickly.
@@ -260,13 +263,13 @@ bidMaxConcurrent: 20
 
 ```bash
 # List provider's active bids
-akash query market bid list \
+provider-services query market bid list \
   --provider <PROVIDER_ADDRESS> \
   --state open \
   --node https://rpc.akashnet.net:443
 
 # List provider's won leases
-akash query market lease list \
+provider-services query market lease list \
   --provider <PROVIDER_ADDRESS> \
   --state active \
   --node https://rpc.akashnet.net:443
@@ -308,10 +311,10 @@ kubectl get pods -n akash-services -l app=akash-provider
 kubectl logs -n akash-services -l app=akash-provider --tail=100
 
 # Verify provider is registered on chain
-akash query provider get <PROVIDER_ADDRESS> --node https://rpc.akashnet.net:443
+provider-services query provider get <PROVIDER_ADDRESS> --node https://rpc.akashnet.net:443
 
 # Check wallet balance (need gas for bids)
-akash query bank balances <PROVIDER_ADDRESS> --node https://rpc.akashnet.net:443
+provider-services query bank balances <PROVIDER_ADDRESS> --node https://rpc.akashnet.net:443
 ```
 
 ### Bids Submitted but Never Accepted

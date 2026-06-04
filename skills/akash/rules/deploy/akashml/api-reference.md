@@ -203,6 +203,8 @@ Response shape mirrors Anthropic's list-models response:
 }
 ```
 
+This endpoint is reachable **without** auth (returns `200` even with no key), so it doubles as an unauthenticated reachability probe. (`GET /v1/models` on the OpenAI surface, by contrast, requires a Bearer key.)
+
 **Model ID aliasing on the Anthropic surface.** Slashes in upstream IDs are aliased with `--` (e.g., `anthropic/claude-3-5-sonnet` → `anthropic--claude-3-5-sonnet`) — this exists because Claude Code rejects model IDs containing `/`. The list-models endpoint returns the aliased form. The Messages endpoint accepts either form (the canonical slashed form *and* the aliased form), so use whichever your client tolerates. If in doubt, pass the aliased form to play safe with Claude-Code-shaped clients.
 
 ### `POST /anthropic/v1/messages` — create message
@@ -375,10 +377,10 @@ Prefer `Retry-After` for backoff timing; fall back to `X-RateLimit-Reset` if `Re
 
 Both surfaces expose informal health endpoints (best-effort, not contractual):
 
-- `GET https://api.akashml.com/v1` — base reachability check
+- `GET https://api.akashml.com/anthropic/v1/models` — unauthenticated reachability check (returns `200` with no key)
 - `GET https://api.akashml.com/anthropic` — base reachability check
 
-For a real smoke test, do `GET /v1/models` with your key — it both checks reachability and validates auth.
+For a real smoke test that also validates auth, do `GET /v1/models` with your key — that endpoint requires a Bearer key (`401` without), so it checks both reachability and authentication.
 
 ## Related files
 

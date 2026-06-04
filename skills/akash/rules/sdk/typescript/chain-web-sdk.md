@@ -114,7 +114,7 @@ Most bundlers (Vite, Webpack 5, esbuild) tree-shake properly when you use named 
 |---|---|---|
 | `window.keplr is undefined` | Loaded before extension is injected | Listen for the `keplr_keystorechange` event or poll briefly on load |
 | Tx rejected silently | User dismissed the popup | Check for `userRejected` in the error code |
-| `denom uakt rejected` | Stale SDL | Use `uact` |
+| Deposit/pricing denom rejected | Wrong denom for the context | `uakt` (AKT) is the gas/staking denom; `uact` (ACT) is the deployment-payment denom for SDL pricing/deposits — both valid in their roles |
 | `Failed to fetch` on provider call | Browser CORS / cert pinning | Route through a provider-proxy server |
 | Wrong chain id | Hardcoded mainnet on testnet | Use `"akashnet-2"` for mainnet, `"sandbox-01"` for sandbox |
 

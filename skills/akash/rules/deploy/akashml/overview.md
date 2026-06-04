@@ -37,7 +37,7 @@ Both surfaces use the same Bearer scheme. The API key format starts with `akml-`
 
 The catalog is dynamic — always query `GET /v1/models` (or `GET /anthropic/v1/models`) for the current list rather than hardcoding model IDs in prose. Observed at the time of writing: open-source models from MiniMax, DeepSeek, Moonshot (Kimi), Meta (Llama), and Qwen families.
 
-`GET /v1/models` returns per-model **pricing**, **context length**, **supported features** (chat, tools, streaming, reasoning), and **supported sampling parameters** — read these from the API rather than hardcoding assumptions about a model's capabilities. The Anthropic surface's `GET /anthropic/v1/models` returns IDs with slashes aliased to `--` (because Claude Code-shaped clients reject slashes); both surfaces accept either form on calls.
+`GET /v1/models` returns per-model **pricing**, **context length**, **supported features** (chat, tools, streaming, reasoning), and **supported sampling parameters** — read these from the API rather than hardcoding assumptions about a model's capabilities. Note `GET /v1/models` requires the Bearer key (returns `401` without it), whereas the Anthropic surface's `GET /anthropic/v1/models` is reachable unauthenticated — it returns IDs with slashes aliased to `--` (because Claude Code-shaped clients reject slashes); both surfaces accept either form on calls.
 
 See [@api-reference.md](api-reference.md) for the listing call and example response shape.
 

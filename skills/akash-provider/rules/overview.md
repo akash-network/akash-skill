@@ -114,7 +114,7 @@ The underlying infrastructure where tenant workloads run:
 Providers register on-chain with:
 
 ```bash
-akash tx provider create provider.yaml --from provider-wallet
+provider-services tx provider create provider.yaml --from provider-wallet
 ```
 
 The registration includes:
@@ -153,7 +153,7 @@ Revenue = Sum(lease_price × blocks_active) for all active leases
 ```
 
 - Providers earn per-block payments from each active lease
-- Payments are in `uact` (the only accepted lease-payment denom)
+- Payments are in `uact` (the standard SDL pricing/lease-payment denom post-Mainnet-17; the chain still lists `uakt` in `min_deposits`/`bid_min_deposits`)
 - Providers can withdraw accumulated earnings periodically
 
 ### Cost Considerations

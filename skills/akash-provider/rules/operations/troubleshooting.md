@@ -9,8 +9,8 @@ When troubleshooting provider issues, check these in order:
 ```
 1. Provider pod running?         kubectl get pods -n akash-services
 2. Provider logs clean?          kubectl logs -n akash-services -l app=akash-provider --tail=50
-3. Wallet has funds?             akash query bank balances <PROVIDER_ADDRESS>
-4. Certificate valid?            akash query cert list --owner <PROVIDER_ADDRESS>
+3. Wallet has funds?             provider-services query bank balances <PROVIDER_ADDRESS>
+4. Certificate valid?            provider-services query cert list --owner <PROVIDER_ADDRESS>
 5. RPC node reachable?           curl -s <RPC_URL>/status
 6. DNS resolving?                nslookup provider.example.com
 7. Ports open?                   curl -sk https://provider.example.com:8443/status
@@ -55,11 +55,11 @@ kubectl logs -n akash-services -l app=akash-provider --previous
 kubectl logs -n akash-services -l app=akash-provider --tail=200 | grep -i "order\|bid\|skip"
 
 # Verify provider is registered
-akash query provider get <PROVIDER_ADDRESS> \
+provider-services query provider get <PROVIDER_ADDRESS> \
   --node https://rpc.akashnet.net:443
 
 # Check if provider is in the active set
-akash query provider list \
+provider-services query provider list \
   --node https://rpc.akashnet.net:443 \
   --output json | jq '.providers[] | select(.owner == "<PROVIDER_ADDRESS>")'
 ```
@@ -239,15 +239,15 @@ openssl s_client -connect provider.example.com:8443 </dev/null 2>/dev/null | \
 
 ```bash
 # Check certificate status
-akash query cert list --owner <PROVIDER_ADDRESS> \
+provider-services query cert list --owner <PROVIDER_ADDRESS> \
   --node https://rpc.akashnet.net:443
 
 # Regenerate certificate
-akash tx cert revoke --from provider-wallet \
+provider-services tx cert revoke --from provider-wallet \
   --chain-id akashnet-2 \
   --node https://rpc.akashnet.net:443
 
-akash tx cert create server provider.example.com \
+provider-services tx cert create server provider.example.com \
   --from provider-wallet \
   --chain-id akashnet-2 \
   --node https://rpc.akashnet.net:443
@@ -265,7 +265,7 @@ kubectl rollout restart deployment akash-provider -n akash-services
 # The certificate must match the hostname in provider registration
 
 # Check registered hostname
-akash query provider get <PROVIDER_ADDRESS> \
+provider-services query provider get <PROVIDER_ADDRESS> \
   --node https://rpc.akashnet.net:443 \
   --output json | jq -r '.provider.host_uri'
 
@@ -282,7 +282,7 @@ akash query provider get <PROVIDER_ADDRESS> \
 kubectl logs -n akash-services -l app=akash-provider --tail=200 | grep -iE "bid|order|skip|reject"
 
 # Check wallet balance (need gas for bid transactions)
-akash query bank balances <PROVIDER_ADDRESS> \
+provider-services query bank balances <PROVIDER_ADDRESS> \
   --node https://rpc.akashnet.net:443
 
 # Check if pricing script has errors
@@ -305,13 +305,13 @@ This is typically a pricing issue, not a technical problem:
 
 ```bash
 # Compare your bid prices with winning bids
-akash query market lease list \
+provider-services query market lease list \
   --state active \
   --node https://rpc.akashnet.net:443 \
   --output json | jq '.leases[].lease.price'
 
 # Check market competition
-akash query provider list \
+provider-services query provider list \
   --node https://rpc.akashnet.net:443 \
   --output json | jq '.providers | length'
 ```
@@ -421,9 +421,9 @@ kubectl get ns -l akash.network=true -o name | xargs kubectl delete
 helm install akash-provider akash/provider \
   --namespace akash-services \
   --values provider-values.yaml
-helm install hostname-operator akash/hostname-operator \
+helm install hostname-operator akash/akash-hostname-operator \
   --namespace akash-services
-helm install inventory-operator akash/inventory-operator \
+helm install inventory-operator akash/akash-inventory-operator \
   --namespace akash-services
 ```
 
@@ -439,11 +439,11 @@ helm install inventory-operator akash/inventory-operator \
 | All tenant pods | `kubectl get pods --all-namespaces -l akash.network=true` |
 | Lease namespaces | `kubectl get ns -l akash.network=true` |
 | Pod events | `kubectl get events -n <NS> --sort-by='.lastTimestamp'` |
-| Wallet balance | `akash query bank balances <ADDR>` |
-| Certificate check | `akash query cert list --owner <ADDR>` |
-| Provider registration | `akash query provider get <ADDR>` |
-| Active leases | `akash query market lease list --provider <ADDR> --state active` |
-| Open bids | `akash query market bid list --provider <ADDR> --state open` |
+| Wallet balance | `provider-services query bank balances <ADDR>` |
+| Certificate check | `provider-services query cert list --owner <ADDR>` |
+| Provider registration | `provider-services query provider get <ADDR>` |
+| Active leases | `provider-services query market lease list --provider <ADDR> --state active` |
+| Open bids | `provider-services query market bid list --provider <ADDR> --state open` |
 | GPU status | `kubectl describe nodes \| grep -A 5 "nvidia.com/gpu"` |
 | Ingress controller | `kubectl get pods -n ingress-nginx` |
 | DNS test | `nslookup provider.example.com` |

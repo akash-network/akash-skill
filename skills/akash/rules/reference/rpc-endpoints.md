@@ -25,8 +25,7 @@ akashnet-2
 | Provider | RPC | REST |
 |----------|-----|------|
 | Polkachu | `https://akash-rpc.polkachu.com:443` | `https://akash-api.polkachu.com:443` |
-| Cosmos Directory | `https://rpc-akash.cosmos-spaces.cloud` | `https://api-akash.cosmos-spaces.cloud` |
-| NodeStake | `https://rpc.akash.nodestake.org` | `https://api.akash.nodestake.org` |
+| PublicNode | `https://akash-rpc.publicnode.com:443` | `https://akash-rest.publicnode.com` |
 
 ### Archive Nodes
 
@@ -41,11 +40,12 @@ For historical queries:
 ### CLI Configuration
 
 ```bash
-# Set default node
-akash config node https://rpc.akashnet.net:443
+# Set default node via env vars
+export AKASH_NODE=https://rpc.akashnet.net:443
+export AKASH_CHAIN_ID=akashnet-2
 
 # Or use per-command
-akash query bank balances <address> --node https://rpc.akashnet.net:443
+provider-services query bank balances <address> --node https://rpc.akashnet.net:443
 ```
 
 ### SDK Configuration
@@ -60,7 +60,7 @@ const signer = createStargateClient({
 });
 
 const sdk = createChainNodeSDK({
-  query: { baseUrl: "http://grpc.akashnet.net:9090" },
+  query: { baseUrl: "https://grpc.akashnet.net:443" },
   tx:    { signer },
 });
 ```
@@ -97,7 +97,7 @@ For account and module queries:
 curl https://api.akashnet.net/cosmos/auth/v1beta1/accounts/<address>
 
 # Query deployments
-curl https://api.akashnet.net/akash/deployment/v1beta3/deployments/list
+curl https://api.akashnet.net/akash/deployment/v1beta4/deployments/list
 ```
 
 ### gRPC
@@ -108,7 +108,7 @@ For efficient binary protocol access:
 # Using grpcurl
 grpcurl -d '{"owner": "akash1..."}' \
   grpc.akashnet.net:443 \
-  akash.deployment.v1beta3.Query/Deployments
+  akash.deployment.v1beta4.Query/Deployments
 ```
 
 ## Console API
@@ -149,7 +149,7 @@ Each provider exposes endpoints for lease management:
 Provider URLs are returned in lease info:
 
 ```bash
-akash query market lease get \
+provider-services query market lease get \
   --owner <owner> \
   --dseq <dseq> \
   --gseq 1 \
@@ -225,7 +225,7 @@ Use multiple endpoints with failover:
 const endpoints = [
   "https://rpc.akashnet.net:443",
   "https://akash-rpc.polkachu.com:443",
-  "https://rpc.akash.nodestake.org"
+  "https://akash-rpc.publicnode.com:443"
 ];
 
 async function getRpcWithFallback() {

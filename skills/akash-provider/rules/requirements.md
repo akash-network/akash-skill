@@ -43,7 +43,6 @@ Commonly provided GPU models:
 |-------|------|-------------|
 | T4 | 16 GB | Inference |
 | RTX 3090 | 24 GB | Training, inference |
-| A10 | 24 GB | Inference, training |
 | A100 | 40/80 GB | Large model training |
 | H100 | 80 GB | Large-scale training |
 
@@ -149,7 +148,7 @@ https://rpc-akash.ecostake.com:443
 
 | Requirement | Details |
 |-------------|---------|
-| AKT Balance | Minimum 5 AKT for registration transaction |
+| AKT Balance | Recommended starting balance to cover the registration transaction gas and ongoing on-chain operations (no protocol-enforced minimum for `provider-services tx provider create`) |
 | Ongoing AKT | Small amount for periodic withdrawal transactions |
 | Key Storage | Secure keyring (OS or file backend) |
 
@@ -159,10 +158,10 @@ A valid mTLS certificate is required for provider-tenant communication:
 
 ```bash
 # Create provider certificate
-akash tx cert create server provider.example.com --from provider-wallet
+provider-services tx cert create server provider.example.com --from provider-wallet
 
 # Verify certificate
-akash query cert list --owner $(akash keys show provider-wallet -a)
+provider-services query cert list --owner $(provider-services keys show provider-wallet -a)
 ```
 
 ## Storage Requirements
@@ -173,8 +172,10 @@ Providers should configure at least one storage class:
 
 | Class | Backend | Description |
 |-------|---------|-------------|
-| `beta2` | SSD/NVMe | Standard persistent storage |
-| `beta3` | HDD | Bulk persistent storage |
+| `default` | Cluster default | Default storage class |
+| `beta1` | HDD | Bulk persistent storage |
+| `beta2` | SSD | Standard persistent storage |
+| `beta3` | NVMe | High-performance persistent storage |
 | `ram` | tmpfs | RAM-backed ephemeral storage |
 
 ### Persistent Volume Provisioner

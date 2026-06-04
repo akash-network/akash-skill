@@ -54,12 +54,11 @@ There is no manual type registry; you don't import `MsgCreateDeployment` directl
 - `getAkashTypeRegistry` — gone. `createStargateClient` returns a ready-to-use signer; the SDK proxy handles serialization.
 - `getRpc` — gone. Just pass `baseUrl` strings to `createChainNodeSDK` and `createStargateClient`.
 
-## Go: `github.com/akash-network/akash-api`
+## Go: `pkg.akt.dev/go`
 
-The Go SDK is split across two main modules:
+The current Go bindings live in a single module, `pkg.akt.dev/go` (repo `akash-network/chain-sdk`, `go/` subdir):
 
-- [`github.com/akash-network/akash-api`](https://pkg.go.dev/github.com/akash-network/akash-api) — generated protobuf message types and codecs (`go/node/deployment/v1beta4`, `go/node/market/v1beta5`, `go/node/cert/v1`, `go/node/escrow/v1`).
-- [`github.com/akash-network/node`](https://pkg.go.dev/github.com/akash-network/node) — chain node client utilities, query clients.
+- [`pkg.akt.dev/go`](https://pkg.go.dev/pkg.akt.dev/go) — generated protobuf message types and codecs (`pkg.akt.dev/go/node/deployment/v1beta4`, `pkg.akt.dev/go/node/market/v1beta5`, `pkg.akt.dev/go/node/cert/v1`).
 
 Use the Cosmos SDK (`github.com/cosmos/cosmos-sdk`) for transaction building, signing, and broadcasting.
 
@@ -103,7 +102,7 @@ const signer = createStargateClient({
 });
 
 const sdk = createChainNodeSDK({
-  query: { baseUrl: "http://grpc.akashnet.net:9090" },
+  query: { baseUrl: "https://grpc.akashnet.net:443" },
   tx:    { signer },
 });
 
@@ -122,19 +121,26 @@ const result = await sdk.akash.deployment.v1beta4.createDeployment({
 
 ```go
 import (
-    "github.com/akash-network/akash-api/go/node/deployment/v1beta4"
+    dv1 "pkg.akt.dev/go/node/deployment/v1"        // DeploymentID lives here, NOT in v1beta4
+    "pkg.akt.dev/go/node/deployment/v1beta4"        // MsgCreateDeployment, GroupSpec(s)
+    deposit "pkg.akt.dev/go/node/types/deposit/v1"  // Deposit type
     "github.com/cosmos/cosmos-sdk/client"
 )
 
-msg := &v1beta4.MsgCreateDeployment{
-    Id: v1beta4.DeploymentID{ Owner: address, DSeq: dseq },
-    Groups: groups,
-    Version: manifestHash,
-    Deposit: deposit,
-    Depositor: address,
-}
+// Prefer the constructor — in v1beta4 the message has fields
+// ID / Groups / Hash / Deposit (there is no Version or Depositor field):
+//   func NewMsgCreateDeployment(id dv1.DeploymentID, groups []v1beta4.GroupSpec,
+//                               hash []byte, dep deposit.Deposit) *v1beta4.MsgCreateDeployment
+msg := v1beta4.NewMsgCreateDeployment(
+    dv1.DeploymentID{Owner: address, DSeq: dseq}, // owner bech32 + dseq
+    groups,       // []v1beta4.GroupSpec
+    manifestHash, // []byte — the deployment Hash
+    dep,          // deposit.Deposit
+)
 
-// broadcast using a configured client.Context
+// broadcast msg using a configured client.Context
+// Confirm field/symbol names for your pinned version at
+// https://pkg.go.dev/pkg.akt.dev/go/node/deployment/v1beta4
 ```
 
 ## When to use an SDK vs. the Console API

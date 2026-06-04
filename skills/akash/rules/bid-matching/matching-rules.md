@@ -95,7 +95,7 @@ The matcher implements glob matching via Python `fnmatch.fnmatchcase` in both di
 
 ## Pricing / denom
 
-`uact` is the only denom accepted for SDL pricing on Akash. The providers endpoint does **not** expose accepted denominations, but in practice providers reject anything other than `uact` for lease payment.
+`uact` is the standard denom for SDL pricing and lease payment on Akash post-Mainnet-17, and is the practical choice for new deployments. The providers endpoint does **not** expose accepted denominations, but in practice `uact` is what deployments and providers settle on for lease payment.
 
 The matcher treats only `uact` as recognized. Anything else — including legacy `uakt` and any `ibc/...` denom — gets a note that it's unrecognized, signalling the user to migrate. Do **not** advise switching denoms to "fix bids" beyond migrating to `uact` — beyond that, the bottleneck is almost always GPU model/count/storage class, not denom.
 

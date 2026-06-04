@@ -15,7 +15,7 @@ const signer = createStargateClient({
 });
 
 const sdk = createChainNodeSDK({
-  query: { baseUrl: "http://grpc.akashnet.net:9090" },
+  query: { baseUrl: "https://grpc.akashnet.net:443" },
   tx:    { signer },
 });
 
@@ -215,7 +215,6 @@ try {
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `denom: uakt` rejected | Stale denom name | Use `uact` (rename per chain upgrade) |
 | `MsgCreateDeployment` parse error | Wrong message version | Use `v1beta4`, not `v1beta3` |
 | `MsgCreateLease` parse error | Wrong message version | Use `v1beta5`, not `v1beta4` |
 | Insufficient gas | Default gas too low for SDL with many services | Pass `gas: "auto"` or set a higher limit in tx options |

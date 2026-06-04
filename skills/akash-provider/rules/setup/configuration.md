@@ -100,11 +100,11 @@ Ensure the provider wallet maintains sufficient AKT:
 
 ```bash
 # Check balance
-akash query bank balances $(akash keys show provider-wallet -a) \
+provider-services query bank balances $(provider-services keys show provider-wallet -a) \
   --node https://rpc.akashnet.net:443
 
 # Send funds to provider wallet
-akash tx bank send <SOURCE_WALLET> <PROVIDER_ADDRESS> 10000000uakt \
+provider-services tx bank send <SOURCE_WALLET> <PROVIDER_ADDRESS> 10000000uakt \
   --from <SOURCE_WALLET> \
   --chain-id akashnet-2 \
   --node https://rpc.akashnet.net:443
@@ -233,7 +233,7 @@ bidpricescript: |
 # ---- Image Configuration ----
 image:
   repository: ghcr.io/akash-network/provider
-  tag: 0.6.4
+  tag: 0.12.0
 
 # ---- Resource Limits ----
 resources:

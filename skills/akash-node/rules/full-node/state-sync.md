@@ -47,7 +47,7 @@ You need a recent block height and its hash from a trusted RPC endpoint. The tru
 
 ```bash
 # Set the RPC endpoint (use a trusted, reliable endpoint)
-SNAP_RPC="https://rpc.akash.network:443"
+SNAP_RPC="https://akash-rpc.polkachu.com:443"
 
 # Get the latest block height
 LATEST_HEIGHT=$(curl -s "$SNAP_RPC/block" | jq -r .result.block.header.height)
@@ -68,8 +68,8 @@ echo "Trust Hash: $TRUST_HASH"
 For additional security, verify the trust hash from multiple independent RPC endpoints:
 
 ```bash
-SNAP_RPC_1="https://rpc.akash.network:443"
-SNAP_RPC_2="https://akash-rpc.polkachu.com:443"
+SNAP_RPC_1="https://akash-rpc.polkachu.com:443"
+SNAP_RPC_2="https://akash-rpc.publicnode.com:443"
 
 HASH_1=$(curl -s "$SNAP_RPC_1/block?height=$TRUST_HEIGHT" | jq -r .result.block_id.hash)
 HASH_2=$(curl -s "$SNAP_RPC_2/block?height=$TRUST_HEIGHT" | jq -r .result.block_id.hash)
@@ -90,17 +90,19 @@ fi
 ### Automated Configuration
 
 ```bash
-SNAP_RPC="https://rpc.akash.network:443"
+# Use two distinct RPC endpoints so state sync can cross-verify the trust hash
+SNAP_RPC_1="https://akash-rpc.polkachu.com:443"
+SNAP_RPC_2="https://akash-rpc.publicnode.com:443"
 
 # Calculate trust height and hash
-LATEST_HEIGHT=$(curl -s "$SNAP_RPC/block" | jq -r .result.block.header.height)
+LATEST_HEIGHT=$(curl -s "$SNAP_RPC_1/block" | jq -r .result.block.header.height)
 TRUST_HEIGHT=$((LATEST_HEIGHT - 2000))
-TRUST_HASH=$(curl -s "$SNAP_RPC/block?height=$TRUST_HEIGHT" | jq -r .result.block_id.hash)
+TRUST_HASH=$(curl -s "$SNAP_RPC_1/block?height=$TRUST_HEIGHT" | jq -r .result.block_id.hash)
 
 # Apply state sync configuration to config.toml
 sed -i '/\[statesync\]/,/^\[/{
   s/^enable *=.*/enable = true/
-  s|^rpc_servers *=.*|rpc_servers = "'"$SNAP_RPC"','"$SNAP_RPC"'"|
+  s|^rpc_servers *=.*|rpc_servers = "'"$SNAP_RPC_1"','"$SNAP_RPC_2"'"|
   s/^trust_height *=.*/trust_height = '"$TRUST_HEIGHT"'/
   s/^trust_hash *=.*/trust_hash = "'"$TRUST_HASH"'"/
   s/^trust_period *=.*/trust_period = "168h0m0s"/
@@ -126,7 +128,7 @@ enable = true
 # RPC servers (comma-separated) for light client verification of the
 # synced state machine and target block. Also used for determining
 # trusted block height and hash.
-rpc_servers = "https://rpc.akash.network:443,https://akash-rpc.polkachu.com:443"
+rpc_servers = "https://akash-rpc.polkachu.com:443,https://akash-rpc.publicnode.com:443"
 
 # Trust height - a recent verified block height.
 # Should be within the trust_period from the current time.
@@ -257,7 +259,7 @@ akash status 2>&1 | jq '.SyncInfo'
 
 # Check the latest block height and compare with a public RPC
 LOCAL_HEIGHT=$(akash status 2>&1 | jq -r '.SyncInfo.latest_block_height')
-NETWORK_HEIGHT=$(curl -s "https://rpc.akash.network:443/block" | jq -r .result.block.header.height)
+NETWORK_HEIGHT=$(curl -s "https://akash-rpc.polkachu.com:443/block" | jq -r .result.block.header.height)
 
 echo "Local Height:   $LOCAL_HEIGHT"
 echo "Network Height: $NETWORK_HEIGHT"
