@@ -175,7 +175,7 @@ websocat "wss://${HOSTURI#https://}/lease/$DSEQ/$GSEQ/$OSEQ/logs" \
 
 Note the provider URL is the provider's own host, not `console-api.akash.network`. There is no Console-API passthrough for logs.
 
-Cert-pinning gotcha: the provider's TLS cert is verified against the on-chain wallet address rather than a CA. Standard HTTPS clients will reject it. See **@operations.md** for the Node.js / Go workaround (custom HTTPS agent + cert-fingerprint validation via `@akashnetwork/chain-sdk`).
+Self-signed cert gotcha: the provider's TLS cert is self-signed (not issued by a public CA), so standard HTTPS clients reject it. For now, skip TLS verification on direct server-side calls (`rejectUnauthorized: false` in Node); in the browser, route through a provider proxy. See **@operations.md**.
 
 ## Step 7 — Update or close
 
@@ -216,7 +216,7 @@ This is the value proposition of the Console API. If a step in your workflow eve
 | No bids | SDL resources don't match providers; price too low | Run `POST /v1/bid-screening` or see `rules/bid-matching/` |
 | `404` on lease endpoints | Tried `/lease/{dseq}/{gseq}/{oseq}` | Read lease state from `GET /v1/deployments/{dseq}.leases[]` instead |
 | Logs request times out | Hit `console-api.akash.network` for logs | Logs are served by the provider — see step 6 |
-| Provider TLS cert rejected | Used standard HTTPS verification | Use identity-pinned validation (chain-sdk helper) or run provider-proxy |
+| Provider TLS cert rejected | Provider cert is self-signed | Set `rejectUnauthorized: false` (server-side) or run a provider-proxy (browser) |
 
 ## Related files
 

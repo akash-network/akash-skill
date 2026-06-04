@@ -86,10 +86,10 @@ const providers = await sdkQuery.akash.provider.v1beta4.providers({});
 
 ## Provider proxy considerations
 
-The browser **cannot** call providers directly for logs/events because the provider's TLS cert is pinned to its on-chain wallet address, not signed by a public CA. Browsers will reject the connection.
+The browser **cannot** call providers directly for logs/events because the provider's TLS cert is self-signed (not signed by a public CA). Browsers will reject the connection.
 
 Workarounds:
-1. **Run your own provider-proxy** — the Console monorepo's `apps/provider-proxy/` is a Node service that does identity-pinned cert validation and forwards requests. Host it on infrastructure you control.
+1. **Run your own provider-proxy** — the Console monorepo's `apps/provider-proxy/` is a Node service that validates the provider connection and forwards requests. Host it on infrastructure you control.
 2. **Use Console's public provider-proxy** — if one is published in your Console deployment configuration. Hostname is environment-specific; don't hardcode.
 
 For SSR / Node code embedded in a Next.js app, you can avoid the proxy entirely by calling the provider from a server route with the chain-sdk's auth helpers. See **@provider-sdk.md**.

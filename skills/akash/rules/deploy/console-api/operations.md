@@ -14,15 +14,15 @@ your client  ─────────────────────┐
                                   │ Authorization: Bearer <jwt>
                                   ▼
                           provider hostUri
-                          (TLS cert pinned to provider's wallet address)
+                          (self-signed TLS cert; auth is the JWT)
 ```
 
 What you do **not** do:
 
 - Call `console-api.akash.network/v1/proxy/...` — no such endpoint exists.
-- Call the provider via the browser with standard fetch — the provider's TLS cert is self-signed, and identity is validated against the on-chain wallet address, not a CA. Browsers will reject it.
+- Call the provider via the browser with standard fetch — the provider's TLS cert is self-signed (not issued by a public CA), so browsers reject it.
 
-If you're in a browser, you'll typically route through a separate **provider-proxy** service (the Console runs one at `apps/provider-proxy/` in the [console monorepo](https://github.com/akash-network/console)). For server-side use you can either run your own provider-proxy or call the provider directly using a custom HTTPS agent that does cert-fingerprint validation.
+If you're in a browser, you'll typically route through a separate **provider-proxy** service (the Console runs one at `apps/provider-proxy/` in the [console monorepo](https://github.com/akash-network/console)) — it terminates and validates the provider connection server-side. For server-side use you can either run your own provider-proxy or call the provider directly with TLS verification disabled (`rejectUnauthorized: false`); see below.
 
 ## Step 1 — Resolve the provider's hostUri
 
@@ -143,11 +143,8 @@ const ws = new WebSocket(
   `wss://${hostUri.replace(/^https?:\/\//, "")}/lease/${dseq}/${gseq}/${oseq}/logs?follow=true`,
   {
     headers: { Authorization: `Bearer ${jwt}` },
-    agent: new https.Agent({
-      rejectUnauthorized: false,
-      // validate the leaf cert's CN/SAN matches the provider's wallet address
-      // see @akashnetwork/chain-sdk's CertificateManager (certificateManager.parsePem)
-    }),
+    // Provider serves a self-signed cert; skip TLS verification for now.
+    agent: new https.Agent({ rejectUnauthorized: false }),
   }
 );
 ws.on("message", (chunk) => process.stdout.write(chunk));
@@ -177,77 +174,34 @@ PUT  {hostUri}/deployment/{dseq}/manifest
 
 This is what `POST /v1/leases` does under the hood for managed-wallet users. Self-custody users typically use the SDK helper instead of constructing the call manually.
 
-## Cert-pinning workaround
+## Provider TLS — skip verification for now
 
-The provider's TLS leaf cert must match the provider's on-chain wallet address — not a CA. Standard HTTPS clients won't accept it.
+Providers serve HTTPS with a **self-signed** certificate (not from a public CA), so standard HTTPS clients reject it. Authentication is handled entirely by the **JWT** (`Authorization: Bearer`) — you do **not** need an Akash client certificate; that mTLS flow is deprecated (see **@../cli/mtls-legacy.md**).
 
-**Node.js — Custom HTTPS agent.**
+For direct, server-side provider calls, disable TLS certificate verification:
 
-> ⚠️ **Illustrative pattern, not copy-paste code.** The exact mTLS verification API is evolving in `@akashnetwork/chain-sdk` (currently `@alpha`); confirm symbols against the [chain-sdk source](https://github.com/akash-network/chain-sdk) before shipping. Two real constraints the SDK forces on you:
->
-> 1. **`certificateManager.parsePem` is `async`** (it lazy-loads `jsrsasign` and returns `Promise<CertificateInfo>`). Node's `checkServerIdentity` callback is **synchronous** — you cannot `await` inside it. Parse and compare the CN **outside** the TLS callback.
-> 2. **There is no `subjectCommonName` field.** `CertificateInfo` exposes `sSubject` (a DN string such as `/CN=akash1...`), plus `sIssuer`, `hSerial`, `sNotBefore`, `sNotAfter`, `issuedOn`, `expiresOn`. Extract the CN from `sSubject` yourself.
-> 3. **`parsePem` wants a PEM string**, but `checkServerIdentity` hands you `cert.raw` as **DER** — convert DER→PEM first.
-
+**Node.js:**
 ```typescript
 import https from "https";
-import tls from "tls";
-// certificateManager is re-exported from the package root in @akashnetwork/chain-sdk@alpha.
-import { certificateManager } from "@akashnetwork/chain-sdk";
 
-// Extract the CN from a DN string like "/CN=akash1abc...".
-function cnFromSubject(sSubject: string): string | undefined {
-  return sSubject
-    .split("/")
-    .map((p) => p.trim())
-    .find((p) => p.startsWith("CN="))
-    ?.slice(3);
-}
-
-// async — cannot run inside the synchronous checkServerIdentity callback.
-async function providerCnMatches(derCert: Buffer, providerAddress: string): Promise<boolean> {
-  const pem =
-    "-----BEGIN CERTIFICATE-----\n" +
-    derCert.toString("base64").match(/.{1,64}/g)!.join("\n") +
-    "\n-----END CERTIFICATE-----\n";
-  const info = await certificateManager.parsePem(pem); // Promise<CertificateInfo>
-  return cnFromSubject(info.sSubject) === providerAddress;
-}
-
-// Pin against the leaf cert captured during the handshake (synchronous),
-// then verify the CN asynchronously BEFORE you trust the response.
-let leafDer: Buffer | undefined;
-const agent = new https.Agent({
-  rejectUnauthorized: false,
-  checkServerIdentity: (_host, cert: tls.PeerCertificate) => {
-    leafDer = cert.raw; // DER bytes; defer the actual CN check to after connect
-    return undefined;
-  },
-});
+const agent = new https.Agent({ rejectUnauthorized: false });
 
 const res = await fetch(`${hostUri}/lease/${dseq}/${gseq}/${oseq}/status`, {
   headers: { Authorization: `Bearer ${jwt}` },
   agent,
 });
-if (!leafDer || !(await providerCnMatches(leafDer, providerAddress))) {
-  throw new Error("provider cert CN does not match on-chain address");
-}
 ```
 
-**Go — Custom TLS config:**
+**Go:**
 ```go
-tlsConfig := &tls.Config{
-    InsecureSkipVerify: true,
-    VerifyPeerCertificate: func(rawCerts [][]byte, _ [][]*x509.Certificate) error {
-        // parse rawCerts[0] and verify subject CN matches providerAddress
-        return validateProviderCert(rawCerts[0], providerAddress)
-    },
-}
+tlsConfig := &tls.Config{InsecureSkipVerify: true}
 transport := &http.Transport{TLSClientConfig: tlsConfig}
 client := &http.Client{Transport: transport}
 ```
 
-**Browser — Use a proxy.** The browser cannot do identity-pinned verification with arbitrary host certs. Run `provider-proxy` (the Node service in the Console monorepo at `apps/provider-proxy/`) or your own equivalent that handles the cert validation server-side and exposes a CORS-friendly endpoint to the browser.
+Don't hand-roll CN-matching of the provider's cert against its on-chain address — first-class provider-certificate verification is coming to `@akashnetwork/chain-sdk`. Until it ships, disabling verification is the supported approach for server-side code.
+
+**Browser — use the provider proxy.** You can't disable TLS verification in a browser. Route through `provider-proxy` (the Node service in the Console monorepo at `apps/provider-proxy/`) or your own equivalent, which validates the provider connection server-side and exposes a CORS-friendly endpoint. This is what Console does today.
 
 The hosted public URL of the Console team's provider-proxy (if any) is not stable in the docs; check the current Console environment configuration. Do not hardcode a URL you can't verify.
 
@@ -256,7 +210,6 @@ The hosted public URL of the Console team's provider-proxy (if any) is not stabl
 ```typescript
 import WebSocket from "ws";
 import https from "https";
-import { certificateManager } from "@akashnetwork/chain-sdk";
 
 const API_BASE = "https://console-api.akash.network/v1";
 const apiKey = process.env.AKASH_API_KEY!;
@@ -285,20 +238,8 @@ const jwtResp = await (await fetch(`${API_BASE}/create-jwt-token`, {
 })).json();
 const jwt = jwtResp.data.token;
 
-// 4. Stream logs from the provider
-//
-// NOTE: certificateManager.parsePem is ASYNC (Promise<CertificateInfo>) and CertificateInfo
-// has no subjectCommonName — extract the CN from its `sSubject` DN string. Because
-// checkServerIdentity is synchronous, capture the leaf cert here and verify the CN once the
-// socket opens (see the "Cert-pinning workaround" section for cnFromSubject/providerCnMatches).
-let leafDer: Buffer | undefined;
-const agent = new https.Agent({
-  rejectUnauthorized: false,
-  checkServerIdentity: (_host, cert) => {
-    leafDer = cert.raw; // DER bytes; CN verified asynchronously below
-    return undefined;
-  },
-});
+// 4. Stream logs from the provider (self-signed cert; skip TLS verification for now)
+const agent = new https.Agent({ rejectUnauthorized: false });
 
 const wss = hostUri.replace(/^https?:\/\//, "");
 const ws = new WebSocket(
@@ -308,12 +249,6 @@ const ws = new WebSocket(
     agent,
   }
 );
-ws.on("open", async () => {
-  if (!leafDer || !(await providerCnMatches(leafDer, provider))) {
-    ws.close();
-    throw new Error("provider cert CN does not match on-chain address");
-  }
-});
 ws.on("message", (chunk) => process.stdout.write(chunk));
 ws.on("close", () => process.exit(0));
 ```
@@ -325,7 +260,7 @@ ws.on("close", () => process.exit(0));
 | 401 from provider | Wrong JWT or scope missing | Re-mint with the right scope (e.g. include `"logs"`) |
 | 404 on `/events` | Used `events` path — alias is client-side only | Use `/kubeevents` |
 | Connection refused | Wrong `hostUri` | Always resolve from `GET /v1/providers/{address}` |
-| TLS cert rejected | Standard CA validation | Use identity-pinned validation or a proxy |
+| TLS cert rejected | Provider cert is self-signed | Set `rejectUnauthorized: false` (Node) / `InsecureSkipVerify` (Go), or use the provider proxy |
 | Logs empty | Deployment hasn't started | Wait; check `/status` first |
 | JWT expired mid-stream | `ttl` too short | Re-mint and reconnect |
 | Tried to hit Console API for logs | No passthrough exists | Provider serves logs, Console API only mints the JWT |
