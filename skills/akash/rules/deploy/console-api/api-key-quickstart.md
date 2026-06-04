@@ -68,7 +68,7 @@ deployment:
       count: 1
 ```
 
-(See `../../sdl/` for full SDL syntax. Note `denom: uact` — the standard SDL-pricing/deposit denom post-Mainnet-17. `uakt` (AKT) and `uact` (ACT) are different denoms, both valid in their roles: `uakt` is the gas/staking denom, while `uact` is the deployment-payment denom used here for SDL pricing and deposits.)
+(See `../../sdl/` for full SDL syntax. Note `denom: uact` — the SDL-pricing and deposit denom. `uakt` (AKT) and `uact` (ACT) are different denoms: `uakt` is the gas/staking denom, while `uact` is the deployment-payment denom used here for SDL pricing and deposits.)
 
 ## Step 2 — Create the deployment
 

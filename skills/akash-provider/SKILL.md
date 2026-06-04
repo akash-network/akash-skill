@@ -33,8 +33,8 @@ The Akash chain uses the same vocabulary across all three roles; these are the t
 - **Bid engine** — the component that decides whether to bid and at what price. Configurable via attributes, pricing scripts, and CPU/GPU/memory rate tables.
 - **AKT** (`uakt`) — chain token. Used for gas (`--gas-prices`, `minimum-gas-prices`), staking, and validator rewards. The provider's wallet uses AKT to pay gas on its bid transactions.
 - **ACT** (`uact`) — deployment-payment token. Used for SDL pricing, bid prices, lease payments. The provider's **bid prices** (output of your pricing script) are in uact/block. Lease revenue arrives as ACT.
-- **Bid escrow deposit accepts either `uakt` or `uact`** (the chain `bid_min_deposits` lists both); the `bidMinDeposit` config value (and the deposit field on `MsgCreateBid`) is anti-spam collateral, not a compute payment. Default minimum is `500000` of either denom (0.5 AKT).
-- Both denoms coexist in your workflow: gas commands use `uakt`; bid prices, lease revenue, and pricing-script output use `uact`; the bid escrow deposit accepts either denom. Don't conflate the gas denom and the pricing denom.
+- **Bid escrow deposit defaults to `uakt`** — the `bidMinDeposit` config value (and the `deposit` field on `MsgCreateBid`) is anti-spam collateral posted from the provider's balance, not a compute payment. Default is `500000 uakt` (0.5 AKT); `uact` is accepted only via a rare burn-mint fallback.
+- Both denoms coexist in your workflow: gas commands and the bid escrow deposit use `uakt`; bid prices, lease revenue, and pricing-script output use `uact`. Don't conflate the gas denom and the pricing denom.
 - **Manifest** — the rendered runtime config the tenant pushes to your provider after a lease is created. The provider applies it as Kubernetes resources.
 
 For a fuller chain-side vocabulary (deployer view), see the `akash-network:akash` skill's `rules/terminology.md`.
@@ -83,7 +83,7 @@ The provider does three jobs:
 
 ## Critical rules
 
-- **Use `uact` in your bid pricing script** (the script's output becomes the `price` field on `MsgCreateBid`). Use `uakt` for `--gas-prices` and `minimum-gas-prices` (chain gas). The `bidMinDeposit` / `deposit` field on `MsgCreateBid` accepts either `uakt` or `uact` (the chain `bid_min_deposits` lists both); default minimum is `500000` of either denom. The pricing-script `price` denom and the gas denom aren't interchangeable; the chain enforces both.
+- **Use `uact` in your bid pricing script** (the script's output becomes the `price` field on `MsgCreateBid`). Use `uakt` for `--gas-prices` and `minimum-gas-prices` (chain gas). The `bidMinDeposit` / `deposit` field on `MsgCreateBid` defaults to `uakt` (`500000` = 0.5 AKT, posted from the provider's balance); `uact` is accepted only via a rare burn-mint fallback. The pricing-script `price` denom and the gas denom aren't interchangeable; the chain enforces both.
 - **Provider TLS identity is your on-chain wallet.** The provider's TLS certificate must have a CN/SAN matching its on-chain Akash address. Tenants validate it that way.
 - **Keep `provider-services` up to date.** Chain upgrades regularly break older provider releases. Subscribe to the Akash Discord / GitHub releases.
 - **Audit attributes are trust signals.** If you advertise `signedBy` claims (e.g. "trusted by AkashNetwork"), you must arrange the on-chain signature from the auditor. Don't claim unverified audits.

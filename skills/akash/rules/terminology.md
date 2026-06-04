@@ -156,7 +156,7 @@ Akash has two separate tokens. Don't conflate them.
 | Token | Denom | Purpose |
 |---|---|---|
 | **AKT** | `uakt` | Chain token — gas, staking, validator rewards. `1 AKT = 1,000,000 uakt`. |
-| **ACT** | `uact` | Deployment-payment token — SDL pricing, bid *prices*, deployment escrow/deposit, lease payments. `1 ACT = 1,000,000 uact`. The provider-side bid *deposit* (`MsgCreateBid.deposit`, the anti-spam collateral) accepts either uakt or uact — the chain's `bid_min_deposits` lists both, with a default minimum of 500000 (0.5 AKT) of either denom. |
+| **ACT** | `uact` | Deployment-payment token — SDL pricing, bid *prices*, deployment escrow/deposit, lease payments. `1 ACT = 1,000,000 uact`. The provider-side bid *deposit* (`MsgCreateBid.deposit`, the anti-spam collateral) defaults to `uakt` — the provider posts 500000 uakt (0.5 AKT) from its balance; `uact` only via a rare burn-mint fallback. |
 
 Self-custody deployers must mint ACT by burning AKT before depositing to a deployment. Console API users skip this — Console funds the managed wallet with ACT directly.
 

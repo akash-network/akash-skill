@@ -310,7 +310,7 @@ profiles:
 ```
 
 ### Payment Options
-- **uact** — Micro-denomination of ACT (the deployment-payment token, separate from AKT). The standard SDL pricing (`amount: 1000`) and lease-payment denom post-Mainnet-17. For the deployment deposit the chain accepts `uakt` as well — `min_deposits` lists both `uact:500000` and `uakt:500000` — so deposits are not uact-only.
+- **uact** — Micro-denomination of ACT (the deployment-payment token, separate from AKT). The denom for SDL pricing (`amount: 1000`), deployment deposits, and lease payments. `uakt` is only accepted via a rare burn-mint (BME) fallback, not a normal alternative.
 - Note: the Console API expresses deposits as a **USD number**, not a denom string — translation happens server-side.
 
 ## Additional Resources

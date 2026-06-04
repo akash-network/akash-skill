@@ -92,7 +92,7 @@ http_options:
 
 | Field | Valid Values |
 |-------|--------------|
-| `denom` | `uact` (standard SDL pricing denom) |
+| `denom` | `uact` (the SDL pricing denom) |
 | `amount` | Positive integer |
 
 ```yaml
@@ -418,7 +418,7 @@ deployment:
 | Timeout range | 0-60000ms |
 | Body size | 0-104857600 bytes (100MB) |
 | next_cases | All values must be strings (quote HTTP status codes) |
-| Price denom | `uact` (standard SDL pricing denom) |
+| Price denom | `uact` (the SDL pricing denom) |
 | Price amount | Positive integer |
 | RAM storage | Cannot be persistent |
 | Non-RAM + attributes | Requires persistent=true |

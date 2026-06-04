@@ -93,7 +93,7 @@ signedBy:
 
 ### uact (ACT — the deployment-payment token)
 
-ACT is Akash's deployment-payment token (distinct from AKT, the chain token used for gas/staking). `uact` is its micro-denomination — `1 ACT = 1,000,000 uact`. `uact` is the standard SDL pricing/deposit denom post-Mainnet-17; the chain still accepts `uakt` deposits as well (`min_deposits` lists both `uact` and `uakt`).
+ACT is Akash's deployment-payment token (distinct from AKT, the chain token used for gas/staking). `uact` is its micro-denomination — `1 ACT = 1,000,000 uact`. `uact` is the SDL pricing, deposit, and lease-payment denom; `uakt` is only accepted via a rare burn-mint (BME) fallback.
 
 ```yaml
 pricing:

@@ -50,7 +50,7 @@ bidTimeout: 5m
 
 # Minimum deposit required in the order's escrow
 # Upstream default is 500000 (0.5 AKT in uakt; 1 AKT = 1,000,000 uakt). The bid
-# deposit accepts either uakt or uact — the chain's bid_min_deposits lists both denoms.
+# deposit is posted in uakt from the provider's balance; uact only via a rare burn-mint fallback.
 # Set 5000000 (5 AKT) only if you deliberately want a higher minimum (operator choice, not the default).
 bidMinDeposit: 500000  # 0.5 AKT in uakt (upstream default)
 
@@ -73,7 +73,7 @@ bidpricescript: |
 | `bidMaxConcurrent` | int | 10 | Maximum simultaneous bids |
 | `bidWaitDuration` | duration | 5s | Delay before submitting bid |
 | `bidTimeout` | duration | 5m | Bid acceptance timeout |
-| `bidMinDeposit` | int | 500000 | Minimum escrow deposit; default 0.5 AKT (accepts either uakt or uact — bid_min_deposits lists both) |
+| `bidMinDeposit` | int | 500000 | Escrow deposit (anti-spam collateral), default 0.5 AKT in `uakt`; `uact` only via burn-mint fallback |
 | `bidMaxCPU` | int | - | Max CPU per order (millicpu) |
 | `bidMaxMemory` | int | - | Max memory per order (bytes) |
 | `bidMaxStorage` | int | - | Max storage per order (bytes) |

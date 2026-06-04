@@ -9,7 +9,7 @@ Akash has **two tokens**. Don't conflate them:
 | Token | Denom | What it's for |
 |---|---|---|
 | **AKT** | `uakt` | Chain token — gas (`--gas-prices`), staking, validator rewards. `1 AKT = 1,000,000 uakt`. |
-| **ACT** | `uact` | Deployment-payment token — SDL pricing, bid *prices* (the rate providers offer), deployment escrow/deposit, lease payments. `1 ACT = 1,000,000 uact`. Note: the provider-side bid *deposit* (`MsgCreateBid.deposit`, anti-spam collateral) accepts either uakt or uact — the chain `bid_min_deposits` lists both, default minimum 500000 (0.5 AKT) of either denom. |
+| **ACT** | `uact` | Deployment-payment token — SDL pricing, bid *prices* (the rate providers offer), deployment escrow/deposit, lease payments. `1 ACT = 1,000,000 uact`. Note: the provider-side bid *deposit* (`MsgCreateBid.deposit`, anti-spam collateral) defaults to `uakt` — the provider posts `500000 uakt` (0.5 AKT) from its balance; `uact` is accepted only via a rare burn-mint (BME) fallback. |
 
 **AKT and ACT are separate tokens.** Self-custody deployers must mint ACT by burning AKT before depositing to a deployment. Console API users skip this — Console funds the managed wallet with ACT directly (Stripe → USD → ACT server-side).
 
@@ -24,7 +24,7 @@ pricing:
     amount: 1000
 ```
 
-`1 ACT = 1,000,000 uact`. Values in deployment messages (`MsgDepositDeployment`, escrow balances, bid amounts) are denominated in `uact`. `uact` is the standard SDL pricing/deposit denom post-Mainnet-17; the chain still accepts `uakt` deposits as well (`min_deposits` lists both `uact` and `uakt`).
+`1 ACT = 1,000,000 uact`. Values in deployment messages (`MsgDepositDeployment`, escrow balances, bid amounts) are denominated in `uact`. `uact` is the SDL pricing, deposit, and lease-payment denom; `uakt` is only accepted via a rare burn-mint (BME) fallback.
 
 ## Pricing Model
 
@@ -150,7 +150,7 @@ Providers will bid at or below this amount.
 
 ### Payment Denomination
 
-`uact` is the standard SDL pricing/deposit denom post-Mainnet-17; the chain still accepts `uakt` deposits as well (`min_deposits` lists both `uact` and `uakt`). Console-API users get `uact` funded automatically (Stripe → USD → ACT, server-side). Self-custody deployers mint ACT by burning AKT before depositing.
+`uact` is the SDL pricing, deposit, and lease-payment denom; `uakt` is only accepted via a rare burn-mint (BME) fallback. Console-API users get `uact` funded automatically (Stripe → USD → ACT, server-side). Self-custody deployers mint ACT by burning AKT before depositing.
 
 ### Persistent vs Ephemeral Storage
 

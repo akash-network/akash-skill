@@ -153,7 +153,7 @@ Revenue = Sum(lease_price × blocks_active) for all active leases
 ```
 
 - Providers earn per-block payments from each active lease
-- Payments are in `uact` (the standard SDL pricing/lease-payment denom post-Mainnet-17; the chain still lists `uakt` in `min_deposits`/`bid_min_deposits`)
+- Payments are in `uact` (the SDL pricing/lease-payment denom; `uakt` is only accepted via a rare burn-mint fallback)
 - Providers can withdraw accumulated earnings periodically
 
 ### Cost Considerations
