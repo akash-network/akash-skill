@@ -373,7 +373,6 @@ deployment:
 | T4 | 16GB | Inference | 10000-20000 |
 | RTX 3080 | 10GB | Light training, inference | 15000-25000 |
 | RTX 3090 | 24GB | Training, inference | 18000-30000 |
-| A10 | 24GB | Training, inference | 25000-40000 |
 | RTX A6000 | 48GB | Heavy training | 35000-50000 |
 | A100 40GB | 40GB | Large models | 40000-60000 |
 | A100 80GB | 80GB | Very large models | 60000-100000 |

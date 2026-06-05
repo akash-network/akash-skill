@@ -7,14 +7,14 @@ Managing active leases, monitoring deployments, and handling lease lifecycle.
 ### List Active Leases
 
 ```bash
-akash query market lease list --owner $(akash keys show wallet -a) --state active
+provider-services query market lease list --owner $(provider-services keys show wallet -a) --state active
 ```
 
 ### Get Specific Lease
 
 ```bash
-akash query market lease get \
-  --owner $(akash keys show wallet -a) \
+provider-services query market lease get \
+  --owner $(provider-services keys show wallet -a) \
   --dseq <DSEQ> \
   --gseq 1 \
   --oseq 1 \
@@ -24,7 +24,7 @@ akash query market lease get \
 ### Get Lease Status (from Provider)
 
 ```bash
-akash provider lease-status \
+provider-services lease-status \
   --dseq <DSEQ> \
   --gseq 1 \
   --oseq 1 \
@@ -38,7 +38,7 @@ akash provider lease-status \
 
 ```bash
 # Check service availability
-akash provider lease-status \
+provider-services lease-status \
   --dseq <DSEQ> --gseq 1 --oseq 1 \
   --provider <PROVIDER> --from wallet | \
   jq '.services | to_entries[] | {name: .key, available: .value.available, total: .value.total}'
@@ -48,18 +48,18 @@ akash provider lease-status \
 
 ```bash
 # All service logs
-akash provider lease-logs \
+provider-services lease-logs \
   --dseq <DSEQ> --gseq 1 --oseq 1 \
   --provider <PROVIDER> --from wallet
 
 # Specific service
-akash provider lease-logs \
+provider-services lease-logs \
   --dseq <DSEQ> --gseq 1 --oseq 1 \
   --provider <PROVIDER> --from wallet \
   --service web
 
 # Follow logs in real-time
-akash provider lease-logs \
+provider-services lease-logs \
   --dseq <DSEQ> --gseq 1 --oseq 1 \
   --provider <PROVIDER> --from wallet \
   --follow --tail 100
@@ -68,7 +68,7 @@ akash provider lease-logs \
 ### View Events
 
 ```bash
-akash provider lease-events \
+provider-services lease-events \
   --dseq <DSEQ> --gseq 1 --oseq 1 \
   --provider <PROVIDER> --from wallet
 ```
@@ -80,7 +80,7 @@ akash provider lease-events \
 Close a single lease without closing the entire deployment:
 
 ```bash
-akash tx market lease close \
+provider-services tx market lease close \
   --dseq <DSEQ> \
   --gseq 1 \
   --oseq 1 \
@@ -94,7 +94,7 @@ After closing, new bids will come in. Accept a new bid to create a fresh lease.
 Close deployment and all associated leases:
 
 ```bash
-akash tx deployment close --dseq <DSEQ> --from wallet
+provider-services tx deployment close --dseq <DSEQ> --from wallet
 ```
 
 ### Migrate Provider
@@ -103,22 +103,22 @@ To move a deployment to a different provider:
 
 ```bash
 # 1. Close current lease
-akash tx market lease close \
+provider-services tx market lease close \
   --dseq <DSEQ> --gseq 1 --oseq 1 --from wallet
 
 # 2. Wait for new bids
 sleep 30
 
 # 3. List bids
-akash query market bid list --owner $(akash keys show wallet -a) --dseq <DSEQ>
+provider-services query market bid list --owner $(provider-services keys show wallet -a) --dseq <DSEQ>
 
 # 4. Accept new bid
-akash tx market lease create \
+provider-services tx market lease create \
   --dseq <DSEQ> --gseq 1 --oseq 2 \
   --provider <NEW_PROVIDER> --from wallet
 
 # 5. Send manifest to new provider
-akash provider send-manifest deploy.yaml \
+provider-services send-manifest deploy.yaml \
   --dseq <DSEQ> --gseq 1 --oseq 2 \
   --provider <NEW_PROVIDER> --from wallet
 ```
@@ -130,23 +130,23 @@ Note: OSEQ increments when creating a new lease for the same group.
 ### Check Escrow Balance
 
 ```bash
-akash query deployment get \
-  --owner $(akash keys show wallet -a) \
+provider-services query deployment get \
+  --owner $(provider-services keys show wallet -a) \
   --dseq <DSEQ> | jq '.escrow_account'
 ```
 
 ### Deposit More Funds
 
 ```bash
-akash tx deployment deposit 5000000uact --dseq <DSEQ> --from wallet
+provider-services tx deployment deposit 5000000uact --dseq <DSEQ> --from wallet
 ```
 
 ### Check Remaining Time
 
 ```bash
 # Get current balance and price
-BALANCE=$(akash query deployment get --owner $(akash keys show wallet -a) --dseq <DSEQ> -o json | jq -r '.escrow_account.balance.amount')
-PRICE=$(akash query market lease get --owner $(akash keys show wallet -a) --dseq <DSEQ> --gseq 1 --oseq 1 --provider <PROVIDER> -o json | jq -r '.lease.price.amount')
+BALANCE=$(provider-services query deployment get --owner $(provider-services keys show wallet -a) --dseq <DSEQ> -o json | jq -r '.escrow_account.balance.amount')
+PRICE=$(provider-services query market lease get --owner $(provider-services keys show wallet -a) --dseq <DSEQ> --gseq 1 --oseq 1 --provider <PROVIDER> -o json | jq -r '.lease.price.amount')
 
 echo "Blocks remaining: $(( $BALANCE / $PRICE ))"
 echo "Hours remaining: $(( $BALANCE / $PRICE / 600 ))"
@@ -159,14 +159,14 @@ Access containers directly:
 
 ```bash
 # Open shell
-akash provider lease-shell \
+provider-services lease-shell \
   --dseq <DSEQ> --gseq 1 --oseq 1 \
   --provider <PROVIDER> --from wallet \
   --service web \
   -- /bin/sh
 
 # Run specific command
-akash provider lease-shell \
+provider-services lease-shell \
   --dseq <DSEQ> --gseq 1 --oseq 1 \
   --provider <PROVIDER> --from wallet \
   --service web \
@@ -179,7 +179,7 @@ akash provider lease-shell \
 
 ```bash
 # Check lease state
-akash query market lease get --dseq <DSEQ> ... -o json | jq '.lease.state'
+provider-services query market lease get --dseq <DSEQ> ... -o json | jq '.lease.state'
 ```
 
 Possible states:
@@ -191,10 +191,10 @@ Possible states:
 
 ```bash
 # Check events for errors
-akash provider lease-events --dseq <DSEQ> ...
+provider-services lease-events --dseq <DSEQ> ...
 
 # Check logs for crash loops
-akash provider lease-logs --dseq <DSEQ> ... --tail 50
+provider-services lease-logs --dseq <DSEQ> ... --tail 50
 ```
 
 ### Cannot Send Manifest
@@ -207,10 +207,10 @@ akash provider lease-logs --dseq <DSEQ> ... --tail 50
 
 ```bash
 # Deposit immediately
-akash tx deployment deposit 10000000uact --dseq <DSEQ> --from wallet
+provider-services tx deployment deposit 10000000uact --dseq <DSEQ> --from wallet
 
 # If deployment closed, create new one
-akash tx deployment create deploy.yaml --from wallet
+provider-services tx deployment create deploy.yaml --from wallet
 ```
 
 ## Best Practices

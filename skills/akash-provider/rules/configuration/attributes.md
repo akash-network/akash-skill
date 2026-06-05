@@ -96,7 +96,7 @@ info:
 
 ```bash
 # Create provider with attributes
-akash tx provider create provider.yaml \
+provider-services tx provider create provider.yaml \
   --from provider-wallet \
   --chain-id akashnet-2 \
   --node https://rpc.akashnet.net:443 \
@@ -109,7 +109,7 @@ akash tx provider create provider.yaml \
 
 ```bash
 # Update provider attributes
-akash tx provider update provider.yaml \
+provider-services tx provider update provider.yaml \
   --from provider-wallet \
   --chain-id akashnet-2 \
   --node https://rpc.akashnet.net:443 \
@@ -122,11 +122,11 @@ akash tx provider update provider.yaml \
 
 ```bash
 # View provider registration
-akash query provider get <PROVIDER_ADDRESS> \
+provider-services query provider get <PROVIDER_ADDRESS> \
   --node https://rpc.akashnet.net:443
 
 # List all providers
-akash query provider list \
+provider-services query provider list \
   --node https://rpc.akashnet.net:443
 ```
 
@@ -158,7 +158,7 @@ Auditors are trusted entities that verify provider claims. Tenants can require a
 
 ```bash
 # Auditor command to sign provider attributes
-akash tx audit attr create \
+provider-services tx audit attr create \
   <PROVIDER_ADDRESS> \
   region=us-west host=akash tier=community \
   --from auditor-wallet \
@@ -170,7 +170,7 @@ akash tx audit attr create \
 
 ```bash
 # Check which auditors have signed a provider
-akash query audit attr list \
+provider-services query audit attr list \
   --provider <PROVIDER_ADDRESS> \
   --node https://rpc.akashnet.net:443
 ```

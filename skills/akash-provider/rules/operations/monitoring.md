@@ -31,19 +31,19 @@ curl -sk https://provider.example.com:8443/version
 
 ```bash
 # Verify provider registration
-akash query provider get <PROVIDER_ADDRESS> \
+provider-services query provider get <PROVIDER_ADDRESS> \
   --node https://rpc.akashnet.net:443 \
   --output json
 
 # Check provider's active leases
-akash query market lease list \
+provider-services query market lease list \
   --provider <PROVIDER_ADDRESS> \
   --state active \
   --node https://rpc.akashnet.net:443 \
   --output json | jq '.leases | length'
 
 # Check provider's open bids
-akash query market bid list \
+provider-services query market bid list \
   --provider <PROVIDER_ADDRESS> \
   --state open \
   --node https://rpc.akashnet.net:443 \
@@ -112,14 +112,14 @@ df -h /var/lib/akash-storage/
 
 ```bash
 # Count active leases
-akash query market lease list \
+provider-services query market lease list \
   --provider <PROVIDER_ADDRESS> \
   --state active \
   --node https://rpc.akashnet.net:443 \
   --output json | jq '.leases | length'
 
 # List active leases with prices
-akash query market lease list \
+provider-services query market lease list \
   --provider <PROVIDER_ADDRESS> \
   --state active \
   --node https://rpc.akashnet.net:443 \
@@ -151,11 +151,11 @@ kubectl get ingress -n <LEASE_NAMESPACE>
 
 ```bash
 # Check provider wallet balance
-akash query bank balances <PROVIDER_ADDRESS> \
+provider-services query bank balances <PROVIDER_ADDRESS> \
   --node https://rpc.akashnet.net:443
 
 # Calculate total revenue per block from active leases
-akash query market lease list \
+provider-services query market lease list \
   --provider <PROVIDER_ADDRESS> \
   --state active \
   --node https://rpc.akashnet.net:443 \
@@ -342,8 +342,8 @@ spec:
 | Provider pods status | `kubectl get pods -n akash-services` |
 | Provider logs | `kubectl logs -n akash-services -l app=akash-provider -f` |
 | Node resources | `kubectl top nodes` |
-| Active leases count | `akash query market lease list --provider <ADDR> --state active -o json \| jq '.leases \| length'` |
-| Wallet balance | `akash query bank balances <ADDR>` |
+| Active leases count | `provider-services query market lease list --provider <ADDR> --state active -o json \| jq '.leases \| length'` |
+| Wallet balance | `provider-services query bank balances <ADDR>` |
 | All tenant pods | `kubectl get pods --all-namespaces -l akash.network=true` |
 | Events (recent) | `kubectl get events --all-namespaces --sort-by='.lastTimestamp' --field-selector type=Warning` |
 | GPU status | `kubectl describe nodes \| grep -A 5 "nvidia.com/gpu"` |

@@ -67,7 +67,7 @@ pruning-keep-every = "0"
 
 | Software | Version | Purpose |
 |----------|---------|---------|
-| Go | 1.21+ | Required if building from source |
+| Go | 1.25+ | Required if building from source |
 | make | Any | Build tooling |
 | git | Any | Cloning repositories |
 | curl / wget | Any | Downloading files |
@@ -93,7 +93,7 @@ sudo apt install -y \
   gcc
 
 # Install Go (check for latest version)
-GO_VERSION="1.22.5"
+GO_VERSION="1.25.5"
 wget "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz"
 sudo rm -rf /usr/local/go
 sudo tar -C /usr/local -xzf "go${GO_VERSION}.linux-amd64.tar.gz"

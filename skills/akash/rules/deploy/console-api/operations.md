@@ -14,15 +14,15 @@ your client  ─────────────────────┐
                                   │ Authorization: Bearer <jwt>
                                   ▼
                           provider hostUri
-                          (TLS cert pinned to provider's wallet address)
+                          (self-signed TLS cert; auth is the JWT)
 ```
 
 What you do **not** do:
 
 - Call `console-api.akash.network/v1/proxy/...` — no such endpoint exists.
-- Call the provider via the browser with standard fetch — the provider's TLS cert is self-signed, and identity is validated against the on-chain wallet address, not a CA. Browsers will reject it.
+- Call the provider via the browser with standard fetch — the provider's TLS cert is self-signed (not issued by a public CA), so browsers reject it.
 
-If you're in a browser, you'll typically route through a separate **provider-proxy** service (the Console runs one at `apps/provider-proxy/` in the [console monorepo](https://github.com/akash-network/console)). For server-side use you can either run your own provider-proxy or call the provider directly using a custom HTTPS agent that does cert-fingerprint validation.
+If you're in a browser, you'll typically route through a separate **provider-proxy** service (the Console runs one at `apps/provider-proxy/` in the [console monorepo](https://github.com/akash-network/console)) — it terminates and validates the provider connection server-side. For server-side use you can either run your own provider-proxy or call the provider directly with TLS verification disabled (`rejectUnauthorized: false`); see below.
 
 ## Step 1 — Resolve the provider's hostUri
 
@@ -32,12 +32,12 @@ The deployment object gives you the provider's **address**, not the URL. Resolve
 DEPL=$(curl -s https://console-api.akash.network/v1/deployments/$DSEQ \
   -H "x-api-key: $AKASH_API_KEY")
 
-PROVIDER=$(echo "$DEPL" | jq -r '.data.leases[0].lease_id.provider')
-GSEQ=$(echo "$DEPL" | jq -r '.data.leases[0].lease_id.gseq')
-OSEQ=$(echo "$DEPL" | jq -r '.data.leases[0].lease_id.oseq')
+PROVIDER=$(echo "$DEPL" | jq -r '.data.leases[0].id.provider')
+GSEQ=$(echo "$DEPL" | jq -r '.data.leases[0].id.gseq')
+OSEQ=$(echo "$DEPL" | jq -r '.data.leases[0].id.oseq')
 
 HOSTURI=$(curl -s https://console-api.akash.network/v1/providers/$PROVIDER \
-  | jq -r '.data.hostUri')
+  | jq -r '.hostUri')
 
 echo "Provider host: $HOSTURI"
 ```
@@ -143,11 +143,8 @@ const ws = new WebSocket(
   `wss://${hostUri.replace(/^https?:\/\//, "")}/lease/${dseq}/${gseq}/${oseq}/logs?follow=true`,
   {
     headers: { Authorization: `Bearer ${jwt}` },
-    agent: new https.Agent({
-      rejectUnauthorized: false,
-      // validate the leaf cert's CN/SAN matches the provider's wallet address
-      // see @akashnetwork/chain-sdk's CertificateValidator
-    }),
+    // Provider serves a self-signed cert; skip TLS verification for now.
+    agent: new https.Agent({ rejectUnauthorized: false }),
   }
 );
 ws.on("message", (chunk) => process.stdout.write(chunk));
@@ -177,43 +174,34 @@ PUT  {hostUri}/deployment/{dseq}/manifest
 
 This is what `POST /v1/leases` does under the hood for managed-wallet users. Self-custody users typically use the SDK helper instead of constructing the call manually.
 
-## Cert-pinning workaround
+## Provider TLS — skip verification for now
 
-The provider's TLS leaf cert must match the provider's on-chain wallet address — not a CA. Standard HTTPS clients won't accept it.
+Providers serve HTTPS with a **self-signed** certificate (not from a public CA), so standard HTTPS clients reject it. Authentication is handled entirely by the **JWT** (`Authorization: Bearer`) — you do **not** need an Akash client certificate; that mTLS flow is deprecated (see **@../cli/mtls-legacy.md**).
 
-**Node.js — Custom HTTPS agent:**
+For direct, server-side provider calls, disable TLS certificate verification:
+
+**Node.js:**
 ```typescript
 import https from "https";
-import { CertificateValidator } from "@akashnetwork/chain-sdk";
 
-const agent = new https.Agent({
-  rejectUnauthorized: false,
-  checkServerIdentity: (host, cert) => {
-    // CertificateValidator verifies cert.subject CN matches the provider's wallet address
-    return CertificateValidator.validateProviderCert(cert, providerAddress);
-  },
-});
+const agent = new https.Agent({ rejectUnauthorized: false });
 
-fetch(`${hostUri}/lease/${dseq}/${gseq}/${oseq}/status`, {
+const res = await fetch(`${hostUri}/lease/${dseq}/${gseq}/${oseq}/status`, {
   headers: { Authorization: `Bearer ${jwt}` },
   agent,
 });
 ```
 
-**Go — Custom TLS config:**
+**Go:**
 ```go
-tlsConfig := &tls.Config{
-    InsecureSkipVerify: true,
-    VerifyPeerCertificate: func(rawCerts [][]byte, _ [][]*x509.Certificate) error {
-        // parse rawCerts[0] and verify subject CN matches providerAddress
-        return validateProviderCert(rawCerts[0], providerAddress)
-    },
-}
+tlsConfig := &tls.Config{InsecureSkipVerify: true}
 transport := &http.Transport{TLSClientConfig: tlsConfig}
 client := &http.Client{Transport: transport}
 ```
 
-**Browser — Use a proxy.** The browser cannot do identity-pinned verification with arbitrary host certs. Run `provider-proxy` (the Node service in the Console monorepo at `apps/provider-proxy/`) or your own equivalent that handles the cert validation server-side and exposes a CORS-friendly endpoint to the browser.
+Don't hand-roll CN-matching of the provider's cert against its on-chain address — first-class provider-certificate verification is coming to `@akashnetwork/chain-sdk`. Until it ships, disabling verification is the supported approach for server-side code.
+
+**Browser — use the provider proxy.** You can't disable TLS verification in a browser. Route through `provider-proxy` (the Node service in the Console monorepo at `apps/provider-proxy/`) or your own equivalent, which validates the provider connection server-side and exposes a CORS-friendly endpoint. This is what Console does today.
 
 The hosted public URL of the Console team's provider-proxy (if any) is not stable in the docs; check the current Console environment configuration. Do not hardcode a URL you can't verify.
 
@@ -222,7 +210,6 @@ The hosted public URL of the Console team's provider-proxy (if any) is not stabl
 ```typescript
 import WebSocket from "ws";
 import https from "https";
-import { CertificateValidator } from "@akashnetwork/chain-sdk";
 
 const API_BASE = "https://console-api.akash.network/v1";
 const apiKey = process.env.AKASH_API_KEY!;
@@ -233,13 +220,13 @@ const depl = await (await fetch(`${API_BASE}/deployments/${dseq}`, {
   headers: { "x-api-key": apiKey },
 })).json();
 const lease = depl.data.leases[0];
-const { provider, gseq, oseq } = lease.lease_id;
+const { provider, gseq, oseq } = lease.id;
 
 // 2. Resolve provider hostUri
 const prov = await (await fetch(`${API_BASE}/providers/${provider}`, {
   headers: { "x-api-key": apiKey },
 })).json();
-const hostUri = prov.data.hostUri;
+const hostUri = prov.hostUri;
 
 // 3. Mint a JWT
 const jwtResp = await (await fetch(`${API_BASE}/create-jwt-token`, {
@@ -251,12 +238,8 @@ const jwtResp = await (await fetch(`${API_BASE}/create-jwt-token`, {
 })).json();
 const jwt = jwtResp.data.token;
 
-// 4. Stream logs from the provider
-const agent = new https.Agent({
-  rejectUnauthorized: false,
-  checkServerIdentity: (_host, cert) =>
-    CertificateValidator.validateProviderCert(cert, provider),
-});
+// 4. Stream logs from the provider (self-signed cert; skip TLS verification for now)
+const agent = new https.Agent({ rejectUnauthorized: false });
 
 const wss = hostUri.replace(/^https?:\/\//, "");
 const ws = new WebSocket(
@@ -277,7 +260,7 @@ ws.on("close", () => process.exit(0));
 | 401 from provider | Wrong JWT or scope missing | Re-mint with the right scope (e.g. include `"logs"`) |
 | 404 on `/events` | Used `events` path — alias is client-side only | Use `/kubeevents` |
 | Connection refused | Wrong `hostUri` | Always resolve from `GET /v1/providers/{address}` |
-| TLS cert rejected | Standard CA validation | Use identity-pinned validation or a proxy |
+| TLS cert rejected | Provider cert is self-signed | Set `rejectUnauthorized: false` (Node) / `InsecureSkipVerify` (Go), or use the provider proxy |
 | Logs empty | Deployment hasn't started | Wait; check `/status` first |
 | JWT expired mid-stream | `ttl` too short | Re-mint and reconnect |
 | Tried to hit Console API for logs | No passthrough exists | Provider serves logs, Console API only mints the JWT |

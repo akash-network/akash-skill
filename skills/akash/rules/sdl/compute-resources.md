@@ -114,7 +114,7 @@ profiles:
 | Attribute | Values | Description |
 |-----------|--------|-------------|
 | `persistent` | `true`/`false` | Data survives restarts |
-| `class` | `beta2`, `beta3`, `ram` | Storage class type |
+| `class` | `default`, `beta1`, `beta2`, `beta3`, `ram` | Storage class type |
 
 ```yaml
 storage:
@@ -175,8 +175,7 @@ gpu:
 
 Common NVIDIA models:
 - `a100` - NVIDIA A100
-- `a10` - NVIDIA A10
-- `a6000` - NVIDIA RTX A6000
+- `rtxa6000` - NVIDIA RTX A6000
 - `rtx3080` - NVIDIA RTX 3080
 - `rtx3090` - NVIDIA RTX 3090
 - `t4` - NVIDIA T4

@@ -9,7 +9,7 @@ Akash has **two tokens**. Don't conflate them:
 | Token | Denom | What it's for |
 |---|---|---|
 | **AKT** | `uakt` | Chain token — gas (`--gas-prices`), staking, validator rewards. `1 AKT = 1,000,000 uakt`. |
-| **ACT** | `uact` | Deployment-payment token — SDL pricing, bid *prices* (the rate providers offer), deployment escrow/deposit, lease payments. `1 ACT = 1,000,000 uact`. Note: the provider-side bid *deposit* (anti-spam collateral on `MsgCreateBid`) is uakt, not uact. |
+| **ACT** | `uact` | Deployment-payment token — SDL pricing, bid *prices* (the rate providers offer), deployment escrow/deposit, lease payments. `1 ACT = 1,000,000 uact`. Note: the provider-side bid *deposit* (`MsgCreateBid.deposit`, anti-spam collateral) defaults to `uakt` — the provider posts `500000 uakt` (0.5 AKT) from its balance; `uact` is accepted only via a rare burn-mint (BME) fallback. |
 
 **AKT and ACT are separate tokens.** Self-custody deployers must mint ACT by burning AKT before depositing to a deployment. Console API users skip this — Console funds the managed wallet with ACT directly (Stripe → USD → ACT server-side).
 
@@ -24,7 +24,7 @@ pricing:
     amount: 1000
 ```
 
-`1 ACT = 1,000,000 uact`. Values in deployment messages (`MsgDepositDeployment`, escrow balances, bid amounts) are denominated in `uact`. `uact` is the only denom providers accept for lease payment.
+`1 ACT = 1,000,000 uact`. Values in deployment messages (`MsgDepositDeployment`, escrow balances, bid amounts) are denominated in `uact`. `uact` is the SDL pricing, deposit, and lease-payment denom; `uakt` is only accepted via a rare burn-mint (BME) fallback.
 
 ## Pricing Model
 
@@ -45,39 +45,43 @@ Blocks per month: ~438,000
 Monthly Cost = bid_amount × blocks_per_month
 ```
 
-**Example with uact:**
+**Illustrative example with uact** (multiply the per-block `amount` by blocks-per-month to estimate cost — actual rates come from live bids, not this figure):
 ```yaml
 pricing:
   web:
     denom: uact
     amount: 1000
 
-# Monthly cost: 1000 × 438,000 = 438,000,000 uact = 438 ACT
+# Monthly cost ≈ amount × blocks_per_month (uact). Convert to ACT by dividing by 1,000,000.
+# Use live price discovery and real awesome-akash templates for realistic numbers.
 ```
 
 ## Pricing Guidelines
 
+These are illustrative starting points only. Real market rates come from live bids — use price discovery (Akash Console or CLI) and current awesome-akash templates rather than treating these as quotes.
+
 ### By Workload Type
 
-| Workload | CPU | Memory | Storage | uact/block | ~Monthly ACT |
-|----------|-----|--------|---------|------------|--------------|
-| Static Site | 0.25 | 256Mi | 512Mi | 300-500 | 130-220 |
-| Web App | 0.5 | 512Mi | 1Gi | 500-1000 | 220-438 |
-| API Server | 1-2 | 1-2Gi | 5Gi | 1000-2000 | 438-876 |
-| Database | 2 | 2-4Gi | 20Gi+ | 2000-5000 | 876-2190 |
-| ML Inference | 4 | 8Gi | 20Gi | 3000-5000 | 1314-2190 |
+| Workload | CPU | Memory | Storage |
+|----------|-----|--------|---------|
+| Static Site | 0.25 | 256Mi | 512Mi |
+| Web App | 0.5 | 512Mi | 1Gi |
+| API Server | 1-2 | 1-2Gi | 5Gi |
+| Database | 2 | 2-4Gi | 20Gi+ |
+| ML Inference | 4 | 8Gi | 20Gi |
 
 ### GPU Pricing
 
-| GPU Model | VRAM | uact/block | ~Monthly ACT |
-|-----------|------|------------|--------------|
-| T4 | 16GB | 10000-20000 | 4380-8760 |
-| RTX 3080 | 10GB | 15000-25000 | 6570-10950 |
-| RTX 3090 | 24GB | 18000-30000 | 7884-13140 |
-| A10 | 24GB | 25000-40000 | 10950-17520 |
-| RTX A6000 | 48GB | 35000-50000 | 15330-21900 |
-| A100 40GB | 40GB | 40000-60000 | 17520-26280 |
-| A100 80GB | 80GB | 60000-100000 | 26280-43800 |
+GPU per-block rates vary widely by model, VRAM, and provider. Discover current rates from live bids rather than relying on fixed figures:
+
+| GPU Model | VRAM |
+|-----------|------|
+| T4 | 16GB |
+| RTX 3080 | 10GB |
+| RTX 3090 | 24GB |
+| RTX A6000 | 48GB |
+| A100 40GB | 40GB |
+| A100 80GB | 80GB |
 
 ## Escrow System
 
@@ -95,23 +99,20 @@ Recommended escrow for deployment stability:
 Minimum Escrow = bid_amount × blocks_per_day × 7
 ```
 
-For a 1000 uact/block deployment:
-```
-1000 × 14400 × 7 = 100,800,000 uact = 100.8 ACT
-```
+Multiply your per-block `amount` (in uact) by blocks-per-day and your desired runway in days; divide by 1,000,000 to express the result in ACT. Size this against your actual bid amount rather than a fixed figure.
 
 ### Escrow Monitoring
 
 Check escrow balance regularly:
 
 ```bash
-akash query deployment get --owner <address> --dseq <dseq>
+provider-services query deployment get --owner <address> --dseq <dseq>
 ```
 
 Add funds before depletion:
 
 ```bash
-akash tx deployment deposit <amount>uact --owner <address> --dseq <dseq>
+provider-services tx deployment deposit <amount>uact --owner <address> --dseq <dseq>
 ```
 
 ## Cost Optimization
@@ -149,7 +150,7 @@ Providers will bid at or below this amount.
 
 ### Payment Denomination
 
-Lease payments are always made in `uact` — providers reject other denoms. Console-API users get `uact` funded automatically (Stripe → USD → ACT, server-side). Self-custody deployers mint ACT by burning AKT before depositing.
+`uact` is the SDL pricing, deposit, and lease-payment denom; `uakt` is only accepted via a rare burn-mint (BME) fallback. Console-API users get `uact` funded automatically (Stripe → USD → ACT, server-side). Self-custody deployers mint ACT by burning AKT before depositing.
 
 ### Persistent vs Ephemeral Storage
 
@@ -200,7 +201,7 @@ Use Akash Console or CLI to see current market rates:
 
 ```bash
 # Query active leases for pricing data
-akash query market lease list --state active
+provider-services query market lease list --state active
 ```
 
 ## IP Endpoint Costs

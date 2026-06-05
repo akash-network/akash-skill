@@ -30,7 +30,7 @@ AkashML sits *outside* the deploy/self-custody axis entirely: it is a managed co
 | Method | Wallet | Auth | Language surface | When to pick it |
 |---|---|---|---|---|
 | **Console API** | Managed | `x-api-key` header | HTTP + JSON | CI/CD, server-to-server, integrations, anything where you have a deploy account but no private keys |
-| **Akash CLI** | Self-custody | Local key + signature | `akash` binary | Shell scripting, manual workflows, full local control |
+| **Akash CLI** | Self-custody | Local key + signature | `provider-services` binary | Shell scripting, manual workflows, full local control |
 | **TypeScript SDK** | Self-custody | Wallet adapter (Keplr or mnemonic) | `@akashnetwork/chain-sdk` | dApps, Node.js services, any TS/JS integration |
 | **Go SDK** | Self-custody | Local key | Go modules | Backend Go services, custom tooling |
 
@@ -62,7 +62,7 @@ See **@console-api/** for full reference.
 
 ## Akash CLI
 
-Command-line `akash` binary against a self-custody wallet.
+Command-line `provider-services` binary against a self-custody wallet.
 
 **Strengths**
 - Full control
@@ -147,23 +147,24 @@ curl -X POST https://console-api.akash.network/v1/deployments \
 
 ```bash
 # Install
-curl -sSfL https://get.akash.network/install.sh | sh
+curl -sfL https://raw.githubusercontent.com/akash-network/provider/main/install.sh | bash
+sudo mv ./bin/provider-services /usr/local/bin/
 
 # Create a wallet
-akash keys add deploy
+provider-services keys add deploy
 
 # Fund it (acquire AKT externally), then create the deployment
-akash tx deployment create deploy.yaml --from deploy --gas auto --gas-adjustment 1.3
+provider-services tx deployment create deploy.yaml --from deploy --gas auto --gas-adjustment 1.3
 
 # After bids arrive
-akash tx market lease create --dseq <dseq> --provider <provider> --from deploy
+provider-services tx market lease create --dseq <dseq> --provider <provider> --from deploy
 ```
 
 ### TypeScript SDK (self-custody)
 
 ```typescript
 import { SigningStargateClient } from "@cosmjs/stargate";
-import { MsgCreateDeployment } from "@akashnetwork/akash-api/akash/deployment/v1beta4";
+import { MsgCreateDeployment } from "@akashnetwork/chain-sdk/private-types/akash.v1beta4";
 
 const client = await SigningStargateClient.connectWithSigner(rpcUrl, wallet);
 const result = await client.signAndBroadcast(address, [{
@@ -176,13 +177,12 @@ const result = await client.signAndBroadcast(address, [{
 
 ```go
 import (
-    "github.com/akash-network/node/client"
-    "github.com/akash-network/akash-api/go/node/deployment/v1beta4"
+    "pkg.akt.dev/go/node/deployment/v1beta4"
+    "github.com/cosmos/cosmos-sdk/client"
 )
 
-txClient := client.NewTxClient(ctx, ...)
 msg := &v1beta4.MsgCreateDeployment{ ... }
-resp, err := txClient.Broadcast(ctx, msg)
+// build, sign, and broadcast with a configured cosmos-sdk client.Context
 ```
 
 ### AkashML (consumption, not deployment)

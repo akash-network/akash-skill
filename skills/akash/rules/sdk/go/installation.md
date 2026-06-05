@@ -6,8 +6,8 @@ Install and configure the Akash Go SDK for backend services.
 
 ```go
 // Akash API types and clients
-import "github.com/akash-network/akash-api/go/node/deployment/v1beta3"
-import "github.com/akash-network/akash-api/go/node/market/v1beta4"
+import "pkg.akt.dev/go/node/deployment/v1beta4"
+import "pkg.akt.dev/go/node/market/v1beta5"
 
 // Cosmos SDK for client operations
 import "github.com/cosmos/cosmos-sdk/client"
@@ -17,7 +17,7 @@ import "github.com/cosmos/cosmos-sdk/crypto/keyring"
 ## Installation
 
 ```bash
-go get github.com/akash-network/akash-api@latest
+go get pkg.akt.dev/go@latest
 go get github.com/cosmos/cosmos-sdk@v0.47.x
 ```
 
@@ -36,7 +36,7 @@ import (
     "github.com/cosmos/cosmos-sdk/crypto/keyring"
     sdk "github.com/cosmos/cosmos-sdk/types"
 
-    deploymentv1beta3 "github.com/akash-network/akash-api/go/node/deployment/v1beta3"
+    deploymentv1beta4 "pkg.akt.dev/go/node/deployment/v1beta4"
 )
 
 func main() {
@@ -65,6 +65,7 @@ import (
     "github.com/cosmos/cosmos-sdk/codec"
     codectypes "github.com/cosmos/cosmos-sdk/codec/types"
     "google.golang.org/grpc"
+    "google.golang.org/grpc/credentials"
 )
 
 func createClientContext() (client.Context, error) {
@@ -73,9 +74,10 @@ func createClientContext() (client.Context, error) {
     cdc := codec.NewProtoCodec(interfaceRegistry)
 
     // Create gRPC connection
-    grpcConn, err := grpc.Dial(
-        "grpc.akashnet.net:443",
-        grpc.WithInsecure(),
+    grpcConn, err := grpc.NewClient(
+        "akash-grpc.publicnode.com:443",
+        // Public mainnet gRPC is TLS on :443 — use TLS creds (system roots), not insecure.
+        grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(nil, "")),
     )
     if err != nil {
         return client.Context{}, err
@@ -122,7 +124,8 @@ func setupKeyring(homeDir string) (keyring.Keyring, error) {
 import (
     "context"
 
-    deploymentv1beta3 "github.com/akash-network/akash-api/go/node/deployment/v1beta3"
+    deploymentv1 "pkg.akt.dev/go/node/deployment/v1"
+    deploymentv1beta4 "pkg.akt.dev/go/node/deployment/v1beta4"
 )
 
 func queryDeployment(
@@ -130,11 +133,13 @@ func queryDeployment(
     clientCtx client.Context,
     owner string,
     dseq uint64,
-) (*deploymentv1beta3.QueryDeploymentResponse, error) {
-    queryClient := deploymentv1beta3.NewQueryClient(clientCtx.GRPCClient)
+) (*deploymentv1beta4.QueryDeploymentResponse, error) {
+    queryClient := deploymentv1beta4.NewQueryClient(clientCtx.GRPCClient)
 
-    return queryClient.Deployment(ctx, &deploymentv1beta3.QueryDeploymentRequest{
-        Id: deploymentv1beta3.DeploymentID{
+    // DeploymentID lives in the deployment/v1 package; the query request
+    // field is `ID` (capital D).
+    return queryClient.Deployment(ctx, &deploymentv1beta4.QueryDeploymentRequest{
+        ID: deploymentv1.DeploymentID{
             Owner: owner,
             DSeq:  dseq,
         },
@@ -146,18 +151,19 @@ func queryDeployment(
 
 ```go
 import (
-    marketv1beta4 "github.com/akash-network/akash-api/go/node/market/v1beta4"
+    marketv1 "pkg.akt.dev/go/node/market/v1"             // LeaseFilters lives here
+    marketv1beta5 "pkg.akt.dev/go/node/market/v1beta5"   // Query client + request/response types
 )
 
 func queryLeases(
     ctx context.Context,
     clientCtx client.Context,
     owner string,
-) (*marketv1beta4.QueryLeasesResponse, error) {
-    queryClient := marketv1beta4.NewQueryClient(clientCtx.GRPCClient)
+) (*marketv1beta5.QueryLeasesResponse, error) {
+    queryClient := marketv1beta5.NewQueryClient(clientCtx.GRPCClient)
 
-    return queryClient.Leases(ctx, &marketv1beta4.QueryLeasesRequest{
-        Filters: marketv1beta4.LeaseFilters{
+    return queryClient.Leases(ctx, &marketv1beta5.QueryLeasesRequest{
+        Filters: marketv1.LeaseFilters{
             Owner: owner,
             State: "active",
         },
@@ -174,7 +180,9 @@ import (
     "github.com/cosmos/cosmos-sdk/client/tx"
     sdk "github.com/cosmos/cosmos-sdk/types"
 
-    deploymentv1beta3 "github.com/akash-network/akash-api/go/node/deployment/v1beta3"
+    deploymentv1 "pkg.akt.dev/go/node/deployment/v1"
+    deploymentv1beta4 "pkg.akt.dev/go/node/deployment/v1beta4"
+    depositv1 "pkg.akt.dev/go/node/types/deposit/v1"
 )
 
 func createDeployment(
@@ -183,15 +191,16 @@ func createDeployment(
     dseq uint64,
     deposit sdk.Coin,
 ) error {
-    msg := &deploymentv1beta3.MsgCreateDeployment{
-        ID: deploymentv1beta3.DeploymentID{
+    // In v1beta4 MsgCreateDeployment has no Version or Depositor fields, and
+    // Deposit is a deposit/v1.Deposit (which wraps the coin), not a bare sdk.Coin.
+    // DeploymentID lives in the deployment/v1 package.
+    msg := &deploymentv1beta4.MsgCreateDeployment{
+        ID: deploymentv1.DeploymentID{
             Owner: owner,
             DSeq:  dseq,
         },
-        Groups:    []deploymentv1beta3.GroupSpec{}, // Add your groups
-        Version:   []byte{},
-        Deposit:   deposit,
-        Depositor: owner,
+        Groups:  deploymentv1beta4.GroupSpecs{}, // Add your groups
+        Deposit: depositv1.Deposit{Amount: deposit},
     }
 
     txf := tx.Factory{}.

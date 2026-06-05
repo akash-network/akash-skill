@@ -1,130 +1,98 @@
 # Akash CLI Installation
 
-Install the Akash CLI for command-line deployments and management.
+Install the `provider-services` CLI for command-line deployments and provider interaction.
 
 ## Quick Install
 
 ### Linux/macOS (Recommended)
 
 ```bash
-curl -sSfL https://get.akash.network | sh
+curl -sfL https://raw.githubusercontent.com/akash-network/provider/main/install.sh | bash
+sudo mv ./bin/provider-services /usr/local/bin/
+```
+
+Or install straight to a directory:
+
+```bash
+curl -sfL https://raw.githubusercontent.com/akash-network/provider/main/install.sh | sudo bash -s -- -b /usr/local/bin
 ```
 
 ### Homebrew (macOS)
 
 ```bash
 brew tap akash-network/tap
-brew install akash
+brew install akash-provider-services
 ```
 
 ### From Binary
 
-Download from [GitHub Releases](https://github.com/akash-network/node/releases):
+Download the latest release from [GitHub Releases](https://github.com/akash-network/provider/releases). Replace `0.12.0` with the latest release tag:
 
 ```bash
 # Linux AMD64
-wget https://github.com/akash-network/node/releases/download/v0.36.0/akash_0.36.0_linux_amd64.zip
-unzip akash_0.36.0_linux_amd64.zip
-sudo mv akash /usr/local/bin/
+wget https://github.com/akash-network/provider/releases/download/v0.12.0/provider-services_0.12.0_linux_amd64.zip
+unzip provider-services_0.12.0_linux_amd64.zip
+sudo mv provider-services /usr/local/bin/
 
-# macOS AMD64
-wget https://github.com/akash-network/node/releases/download/v0.36.0/akash_0.36.0_darwin_amd64.zip
-unzip akash_0.36.0_darwin_amd64.zip
-sudo mv akash /usr/local/bin/
+# Linux ARM64
+wget https://github.com/akash-network/provider/releases/download/v0.12.0/provider-services_0.12.0_linux_arm64.zip
+unzip provider-services_0.12.0_linux_arm64.zip
+sudo mv provider-services /usr/local/bin/
 
-# macOS ARM64 (Apple Silicon)
-wget https://github.com/akash-network/node/releases/download/v0.36.0/akash_0.36.0_darwin_arm64.zip
-unzip akash_0.36.0_darwin_arm64.zip
-sudo mv akash /usr/local/bin/
+# macOS (universal — Intel and Apple Silicon)
+wget https://github.com/akash-network/provider/releases/download/v0.12.0/provider-services_0.12.0_darwin_all.zip
+unzip provider-services_0.12.0_darwin_all.zip
+sudo mv provider-services /usr/local/bin/
 ```
 
 ### From Source
 
 ```bash
-git clone https://github.com/akash-network/node
-cd node
-git checkout v0.36.0
+git clone https://github.com/akash-network/provider
+cd provider
+make deps-install
 make install
 ```
 
 ## Verify Installation
 
 ```bash
-akash version
-```
-
-Expected output:
-```
-v0.36.0
+provider-services version
 ```
 
 ## Initial Configuration
 
-### Set Default Node
+`provider-services` has no `config` subcommand. Configure it with environment variables and/or per-command flags.
 
-```bash
-akash config node https://rpc.akashnet.net:443
-```
-
-### Set Chain ID
-
-```bash
-akash config chain-id akashnet-2
-```
-
-### Set Output Format
-
-```bash
-akash config output json
-```
-
-### Set Keyring Backend
-
-```bash
-# For development (stores keys unencrypted)
-akash config keyring-backend test
-
-# For production (requires password)
-akash config keyring-backend os
-```
-
-### View Configuration
-
-```bash
-akash config
-```
-
-## Environment Variables
-
-Alternative to `akash config`:
+### Environment Variables
 
 ```bash
 export AKASH_NODE="https://rpc.akashnet.net:443"
 export AKASH_CHAIN_ID="akashnet-2"
-export AKASH_KEYRING_BACKEND="os"
-export AKASH_OUTPUT="json"
+export AKASH_KEYRING_BACKEND="os"     # use "test" for development (keys stored unencrypted)
+export AKASH_GAS_PRICES="0.025uakt"
 ```
 
 Add to `~/.bashrc` or `~/.zshrc` for persistence.
 
-## Configuration File
+### Per-command Flags
 
-Settings are stored in `~/.akash/config/client.toml`:
-
-```toml
-chain-id = "akashnet-2"
-keyring-backend = "os"
-output = "json"
-node = "https://rpc.akashnet.net:443"
-broadcast-mode = "sync"
-```
-
-## Provider Proxy (Optional)
-
-For provider communication, install the provider proxy:
+Alternatively, pass values on each command:
 
 ```bash
-curl -sSfL https://get.akash.network/provider | sh
+--node https://rpc.akashnet.net:443
+--chain-id akashnet-2
+--keyring-backend os
+--gas-prices 0.025uakt
+```
+
+## Provider Interaction
+
+Provider communication is handled by `provider-services` itself (installed above):
+
+```bash
+curl -sfL https://raw.githubusercontent.com/akash-network/provider/main/install.sh | bash
+sudo mv ./bin/provider-services /usr/local/bin/
 ```
 
 This enables:
@@ -137,19 +105,19 @@ This enables:
 ### Bash
 
 ```bash
-akash completion bash > /etc/bash_completion.d/akash
+provider-services completion bash > /etc/bash_completion.d/provider-services
 ```
 
 ### Zsh
 
 ```bash
-akash completion zsh > "${fpath[1]}/_akash"
+provider-services completion zsh > "${fpath[1]}/_provider-services"
 ```
 
 ### Fish
 
 ```bash
-akash completion fish > ~/.config/fish/completions/akash.fish
+provider-services completion fish > ~/.config/fish/completions/provider-services.fish
 ```
 
 ## Troubleshooting
@@ -161,13 +129,13 @@ akash completion fish > ~/.config/fish/completions/akash.fish
 export PATH=$PATH:$(go env GOPATH)/bin
 
 # Or move binary
-sudo mv akash /usr/local/bin/
+sudo mv provider-services /usr/local/bin/
 ```
 
 ### Permission Denied
 
 ```bash
-chmod +x akash
+chmod +x provider-services
 ```
 
 ### Version Mismatch
@@ -176,10 +144,11 @@ Ensure CLI version matches network version:
 
 ```bash
 # Check network version
-akash query upgrade current-plan --node https://rpc.akashnet.net:443
+provider-services query upgrade plan --node https://rpc.akashnet.net:443
 
 # Update CLI if needed
-curl -sSfL https://get.akash.network | sh
+curl -sfL https://raw.githubusercontent.com/akash-network/provider/main/install.sh | bash
+sudo mv ./bin/provider-services /usr/local/bin/
 ```
 
 ### Connection Refused
@@ -189,7 +158,8 @@ curl -sSfL https://get.akash.network | sh
 curl https://rpc.akashnet.net:443/status
 
 # Try alternative endpoints
-akash config node https://akash-rpc.polkachu.com:443
+export AKASH_NODE=https://akash-rpc.polkachu.com:443
+# or pass --node https://akash-rpc.polkachu.com:443 per command
 ```
 
 ## Multiple Environments
@@ -198,10 +168,10 @@ Use environment variables or aliases for different networks:
 
 ```bash
 # Mainnet
-alias akash-main='akash --node https://rpc.akashnet.net:443 --chain-id akashnet-2'
+alias akash-main='provider-services --node https://rpc.akashnet.net:443 --chain-id akashnet-2'
 
 # Testnet/Sandbox
-alias akash-test='akash --node https://rpc.sandbox-01.aksh.pw:443 --chain-id sandbox-01'
+alias akash-test='provider-services --node https://rpc.sandbox-01.aksh.pw:443 --chain-id sandbox-01'
 ```
 
 ## Next Steps

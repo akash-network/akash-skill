@@ -57,8 +57,7 @@ profiles:
 | Model | VRAM | Architecture | Best For |
 |-------|------|--------------|----------|
 | `a100` | 40GB/80GB | Ampere | Large model training, HPC |
-| `a10` | 24GB | Ampere | Inference, training |
-| `a6000` | 48GB | Ampere | Professional visualization, training |
+| `rtxa6000` | 48GB | Ampere | Professional visualization, training |
 | `a40` | 48GB | Ampere | Professional visualization |
 | `v100` | 16GB/32GB | Volta | Training, HPC |
 | `t4` | 16GB | Turing | Inference, light training |
@@ -258,8 +257,8 @@ GPU pricing varies by model and market conditions:
 | GPU Tier | Examples | uact/block Range |
 |----------|----------|------------------|
 | Entry | T4, RTX 3060 | 5,000 - 15,000 |
-| Mid | RTX 3080/3090, A10 | 15,000 - 30,000 |
-| High | A100 40GB, A6000 | 30,000 - 60,000 |
+| Mid | RTX 3080/3090 | 15,000 - 30,000 |
+| High | A100 40GB, rtxa6000 | 30,000 - 60,000 |
 | Top | A100 80GB, H100 | 60,000 - 150,000+ |
 
 ## Validation Rules

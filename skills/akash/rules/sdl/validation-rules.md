@@ -61,9 +61,11 @@ expose:
 | `max_body_size` | 0-104857600 (100MB) | 1048576 (1MB) |
 | `read_timeout` | 0-60000 ms | 60000 |
 | `send_timeout` | 0-60000 ms | 60000 |
-| `next_tries` | 0-10 | 3 |
-| `next_timeout` | 0-60000 ms | 0 |
+| `next_tries` | Not range-validated | 3 |
+| `next_timeout` | Not range-validated | 0 |
 | `next_cases` | Array of strings | `["error", "timeout"]` |
+
+> Only `read_timeout` and `send_timeout` are range-capped (0-60000 ms) by the SDL parser. `next_timeout` and `next_tries` are not range-validated.
 
 ```yaml
 # Valid
@@ -90,7 +92,7 @@ http_options:
 
 | Field | Valid Values |
 |-------|--------------|
-| `denom` | `uact` (only accepted denom) |
+| `denom` | `uact` (the SDL pricing denom) |
 | `amount` | Positive integer |
 
 ```yaml
@@ -416,7 +418,7 @@ deployment:
 | Timeout range | 0-60000ms |
 | Body size | 0-104857600 bytes (100MB) |
 | next_cases | All values must be strings (quote HTTP status codes) |
-| Price denom | `uact` (only accepted denom) |
+| Price denom | `uact` (the SDL pricing denom) |
 | Price amount | Positive integer |
 | RAM storage | Cannot be persistent |
 | Non-RAM + attributes | Requires persistent=true |

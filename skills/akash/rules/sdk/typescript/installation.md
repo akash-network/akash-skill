@@ -96,7 +96,7 @@ const signer = createStargateClient({
 });
 
 const sdk = createChainNodeSDK({
-  query: { baseUrl: "http://grpc.akashnet.net:9090" },
+  query: { baseUrl: "https://akash-grpc.publicnode.com:443" },
   tx:    { signer },
 });
 
@@ -133,7 +133,7 @@ Retries are off by default. To enable on queries (never on tx):
 
 ```typescript
 const sdk = createChainNodeSDK({
-  query: { baseUrl: "http://grpc.akashnet.net:9090" },
+  query: { baseUrl: "https://akash-grpc.publicnode.com:443" },
   tx:    { signer },
   transportOptions: {
     retry: { maxAttempts: 3, maxDelayMs: 2000 },

@@ -7,7 +7,7 @@ Create and manage wallets for Akash CLI operations.
 ### Generate New Key
 
 ```bash
-akash keys add wallet
+provider-services keys add wallet
 ```
 
 Output:
@@ -28,8 +28,8 @@ word1 word2 word3 ... word24
 ### With Custom Name
 
 ```bash
-akash keys add production-wallet
-akash keys add staging-wallet
+provider-services keys add production-wallet
+provider-services keys add staging-wallet
 ```
 
 ## Import Existing Wallet
@@ -37,7 +37,7 @@ akash keys add staging-wallet
 ### From Mnemonic
 
 ```bash
-akash keys add wallet --recover
+provider-services keys add wallet --recover
 ```
 
 Enter your 24-word mnemonic when prompted.
@@ -45,19 +45,19 @@ Enter your 24-word mnemonic when prompted.
 ### From Keystore File
 
 ```bash
-akash keys import wallet keyfile.json
+provider-services keys import wallet keyfile.json
 ```
 
 ### From Ledger
 
 ```bash
-akash keys add wallet --ledger
+provider-services keys add wallet --ledger
 ```
 
 ## List Wallets
 
 ```bash
-akash keys list
+provider-services keys list
 ```
 
 Output:
@@ -75,25 +75,25 @@ Output:
 ## Show Wallet Details
 
 ```bash
-akash keys show wallet
+provider-services keys show wallet
 ```
 
 ### Show Address Only
 
 ```bash
-akash keys show wallet -a
+provider-services keys show wallet -a
 ```
 
 ### Show Public Key Only
 
 ```bash
-akash keys show wallet --pubkey
+provider-services keys show wallet --pubkey
 ```
 
 ## Delete Wallet
 
 ```bash
-akash keys delete wallet
+provider-services keys delete wallet
 ```
 
 **Warning:** This removes the key from your keyring. Ensure you have the mnemonic backed up.
@@ -103,35 +103,37 @@ akash keys delete wallet
 ### Export Private Key (Encrypted)
 
 ```bash
-akash keys export wallet > wallet.key
+provider-services keys export wallet > wallet.key
 ```
 
 ### Export Unencrypted (Dangerous)
 
 ```bash
-akash keys unsafe-export-eth-key wallet
+provider-services keys export wallet --unarmored-hex --unsafe
 ```
 
-**Only use for specific integrations. Never share this key.**
+(Both flags are required together and the command prompts for confirmation.)
+
+**Outputs the raw private key in plaintext hex. Never share it or store it unencrypted.**
 
 ## Fund Wallet
 
 ### Check Balance
 
 ```bash
-akash query bank balances $(akash keys show wallet -a)
+provider-services query bank balances $(provider-services keys show wallet -a)
 ```
 
 ### Get Tokens
 
 1. **Purchase AKT** from exchanges (Kraken, Coinbase, etc.)
-2. **Withdraw to your address** shown by `akash keys show wallet -a`
+2. **Withdraw to your address** shown by `provider-services keys show wallet -a`
 3. **Or use testnet faucet** for sandbox network
 
 ### Verify Funds
 
 ```bash
-akash query bank balances $(akash keys show wallet -a) --node https://rpc.akashnet.net:443
+provider-services query bank balances $(provider-services keys show wallet -a) --node https://rpc.akashnet.net:443
 ```
 
 ## Multiple Wallets
@@ -140,17 +142,17 @@ akash query bank balances $(akash keys show wallet -a) --node https://rpc.akashn
 
 ```bash
 # Default wallet
-akash tx bank send ... --from wallet
+provider-services tx bank send ... --from wallet
 
 # Specific wallet
-akash tx bank send ... --from production-wallet
+provider-services tx bank send ... --from production-wallet
 ```
 
 ### Environment Variable
 
 ```bash
 export AKASH_FROM=wallet
-akash tx deployment create deploy.yaml  # Uses $AKASH_FROM
+provider-services tx deployment create deploy.yaml  # Uses $AKASH_FROM
 ```
 
 ## Security Best Practices
@@ -163,15 +165,20 @@ akash tx deployment create deploy.yaml  # Uses $AKASH_FROM
 | `file` | Medium | Servers (encrypted file) |
 | `test` | Low | Development only |
 
+There is no `config` subcommand. Set the keyring backend with an environment variable or a per-command flag:
+
 ```bash
 # Production
-akash config keyring-backend os
+export AKASH_KEYRING_BACKEND=os
 
 # Server deployment
-akash config keyring-backend file
+export AKASH_KEYRING_BACKEND=file
 
 # Development
-akash config keyring-backend test
+export AKASH_KEYRING_BACKEND=test
+
+# Or pass it per command
+provider-services keys list --keyring-backend os
 ```
 
 ### Password Management
@@ -179,7 +186,7 @@ akash config keyring-backend test
 With `os` or `file` backend, you'll be prompted for password:
 
 ```bash
-akash keys add wallet --keyring-backend file
+provider-services keys add wallet --keyring-backend file
 # Enter and confirm password
 ```
 
@@ -187,7 +194,7 @@ For scripting, use environment:
 
 ```bash
 export AKASH_KEYRING_BACKEND=file
-echo "password" | akash tx deployment create deploy.yaml --from wallet
+echo "password" | provider-services tx deployment create deploy.yaml --from wallet
 ```
 
 ### Hardware Wallets
@@ -196,10 +203,10 @@ For maximum security, use Ledger:
 
 ```bash
 # Create Ledger-backed key
-akash keys add wallet --ledger
+provider-services keys add wallet --ledger
 
 # Sign transaction (requires physical confirmation)
-akash tx deployment create deploy.yaml --from wallet --ledger
+provider-services tx deployment create deploy.yaml --from wallet --ledger
 ```
 
 ## Wallet Permissions
@@ -208,14 +215,14 @@ akash tx deployment create deploy.yaml --from wallet --ledger
 
 ```bash
 # Anyone can query
-akash query deployment list --owner akash1abc...
+provider-services query deployment list --owner akash1abc...
 ```
 
 ### Transaction Operations (Key Required)
 
 ```bash
 # Requires key for signing
-akash tx deployment create deploy.yaml --from wallet
+provider-services tx deployment create deploy.yaml --from wallet
 ```
 
 ## Troubleshooting
@@ -229,8 +236,8 @@ Error: wallet.info: key not found
 **Solution:** Check keyring backend matches where key was created:
 
 ```bash
-akash keys list --keyring-backend os
-akash keys list --keyring-backend test
+provider-services keys list --keyring-backend os
+provider-services keys list --keyring-backend test
 ```
 
 ### Wrong Password
@@ -242,8 +249,8 @@ Error: invalid passphrase
 **Solution:** Re-enter correct password or recover from mnemonic:
 
 ```bash
-akash keys delete wallet
-akash keys add wallet --recover
+provider-services keys delete wallet
+provider-services keys add wallet --recover
 ```
 
 ### Insufficient Funds
@@ -255,7 +262,7 @@ Error: insufficient funds
 **Solution:** Check balance and fund wallet:
 
 ```bash
-akash query bank balances $(akash keys show wallet -a)
+provider-services query bank balances $(provider-services keys show wallet -a)
 # Fund from exchange or transfer from another wallet
 ```
 
@@ -272,13 +279,13 @@ You can derive multiple accounts:
 
 ```bash
 # Account 0 (default)
-akash keys add wallet
+provider-services keys add wallet
 
 # Account 1
-akash keys add wallet2 --account 1
+provider-services keys add wallet2 --account 1
 
 # Account 2
-akash keys add wallet3 --account 2
+provider-services keys add wallet3 --account 2
 ```
 
 ## Next Steps

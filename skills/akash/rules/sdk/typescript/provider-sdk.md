@@ -103,20 +103,16 @@ curl https://console-api.akash.network/v1/providers/$PROVIDER \
   | jq -r .data.hostUri
 ```
 
-## Cert pinning — required for direct provider calls
+## Provider TLS — skip verification for now
 
-Provider TLS certs are self-signed and validated against the provider's on-chain wallet address (not a public CA). Standard HTTPS clients will reject them. Use a custom HTTPS agent:
+Provider TLS certs are self-signed (not issued by a public CA), so standard HTTPS clients reject them. Authentication is the JWT — there's no client certificate to manage. For direct, server-side provider calls, disable TLS verification:
 
 ```typescript
 import https from "node:https";
 import { fetch, Agent } from "undici";
 
 const agent = new Agent({
-  connect: {
-    rejectUnauthorized: false,
-    // Validate cert subject CN/SAN against providerAddress here
-    // chain-sdk exposes helpers for this — see CertificateValidator pattern
-  },
+  connect: { rejectUnauthorized: false },
 });
 
 // Then pass `dispatcher: agent` to undici fetch.
@@ -125,17 +121,10 @@ const agent = new Agent({
 For Node's built-in `https` module:
 
 ```typescript
-const httpsAgent = new https.Agent({
-  rejectUnauthorized: false,
-  checkServerIdentity: (host, cert) => {
-    // Verify cert.subject CN matches providerAddress
-    if (!cert.subject.CN.startsWith("akash1") || cert.subject.CN !== providerAddress) {
-      return new Error("Provider cert does not match expected address");
-    }
-    return undefined;
-  },
-});
+const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 ```
+
+Don't hand-roll CN-matching against the provider's on-chain address — first-class provider-certificate verification is coming to `@akashnetwork/chain-sdk`. In the browser, route through a provider proxy instead (see **@chain-web-sdk.md**).
 
 ## Stream logs
 
@@ -155,7 +144,7 @@ const ws = new WebSocket(
   `wss://${wss}/lease/${dseq}/${gseq}/${oseq}/logs?follow=true&tail=200`,
   {
     headers: { Authorization: `Bearer ${jwt}` },
-    agent: httpsAgent,  // identity-pinned agent from above
+    agent: httpsAgent,  // TLS-verification-disabled agent from above
   }
 );
 
@@ -237,7 +226,7 @@ POST {hostUri}/lease/{dseq}/{gseq}/{oseq}/services/{service}/restart
 |---|---|---|
 | 401 from provider | Wrong JWT or scope missing | Re-mint with the right scope, set `Authorization: Bearer` |
 | 404 on `/events` | Used the alias | Use `/kubeevents` |
-| Cert rejected | Standard CA validation | Use identity-pinned agent + `rejectUnauthorized: false` + manual CN check |
+| Cert rejected | Provider cert is self-signed | Set `rejectUnauthorized: false` (server-side) or use a provider proxy (browser) |
 | Logs hang then close | `follow=true` plus an idle service | Normal; reconnect on close |
 | Stream stops mid-session | JWT expired | Increase `ttl` or refresh by minting a new JWT |
 | 403 on `send-manifest` | JWT lacks scope | Re-mint with `scope: ["send-manifest", ...]` |

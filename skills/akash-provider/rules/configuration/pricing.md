@@ -180,10 +180,7 @@ if [ "$gpu" -gt 0 ]; then
     "rtx4090")
       gpu_unit_price=195    # ~$300/month
       ;;
-    "a10")
-      gpu_unit_price=160    # ~$246/month
-      ;;
-    "a6000")
+    "rtxa6000")
       gpu_unit_price=230    # ~$354/month
       ;;
     "a100")
@@ -341,7 +338,7 @@ kubectl logs -n akash-services -l app=akash-provider -f | grep -i "bid\|price"
 
 ```bash
 # Query active leases to see current market prices
-akash query market lease list --state active \
+provider-services query market lease list --state active \
   --node https://rpc.akashnet.net:443 \
   --output json | jq '.leases[].lease.price'
 ```

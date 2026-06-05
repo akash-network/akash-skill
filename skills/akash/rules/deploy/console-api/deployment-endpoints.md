@@ -91,20 +91,23 @@ GET /v1/deployments/{dseq}
 ```json
 {
   "data": {
-    "deployment": { "deployment_id": {...}, "state": "active", ... },
+    "deployment": { "id": {...}, "state": "active", ... },
     "leases": [
       {
-        "lease_id": { "owner": "akash1...", "dseq": "12345678", "gseq": 1, "oseq": 1, "provider": "akash1prov..." },
+        "id": { "owner": "akash1...", "dseq": "12345678", "gseq": 1, "oseq": 1, "provider": "akash1prov..." },
         "state": "active",
         "price": { "denom": "uact", "amount": "1000" },
         "status": {
           "services": { "web": { "available": 1, "total": 1, "uris": [...] } },
-          "forwarded_ports": { "web": [{ "host": "...", "port": 80, "external_port": 31234, "proto": "TCP" }] },
+          "forwarded_ports": { "web": [{ "host": "...", "port": 80, "externalPort": 31234 }] },
           "ips": [...]
         }
       }
     ],
-    "escrow_account": { "balance": {...}, "settled_at": "..." }
+    "escrow_account": {
+      "id": { "scope": "deployment", "xid": "..." },
+      "state": { "owner": "akash1...", "state": "open", "funds": [{ "denom": "uact", "amount": "..." }], "settled_at": "..." }
+    }
   }
 }
 ```
@@ -236,24 +239,36 @@ GET /v1/bids?dseq={dseq}
 
 This is the canonical form documented in the official API reference. A path-parameter variant (`GET /v1/bids/{dseq}`) may be exposed by the running service but is **not in the official docs** — use the query-string form.
 
-**Response:** an array of bids. Each bid contains:
+**Response:** an array of items under `data[]`. Each item in `data[]` contains a `bid` object (and an `escrow_account`):
 
 ```json
 {
-  "bid_id": { "owner": "akash1...", "dseq": "...", "gseq": 1, "oseq": 1, "provider": "akash1prov..." },
-  "state": "open",
-  "price": { "denom": "uact", "amount": "1500" },
-  "resources_offer": [
-    {
-      "resources": {
-        "cpu": { "units": { "val": "500" } },
-        "memory": { "quantity": { "val": "536870912" } },
-        "storage": [{ "quantity": { "val": "1073741824" } }],
-        "gpu": { "units": { "val": "0" } }
-      },
-      "count": 1
+  "bid": {
+    "id": { "owner": "akash1...", "dseq": "...", "gseq": 1, "oseq": 1, "provider": "akash1prov..." },
+    "state": "open",
+    "price": { "denom": "uact", "amount": "1500" },
+    "created_at": "...",
+    "resources_offer": [
+      {
+        "resources": {
+          "cpu": { "units": { "val": "500" } },
+          "memory": { "quantity": { "val": "536870912" } },
+          "storage": [{ "quantity": { "val": "1073741824" } }],
+          "gpu": { "units": { "val": "0" } }
+        },
+        "count": 1
+      }
+    ]
+  },
+  "escrow_account": {
+    "id": { "scope": "bid", "xid": "..." },
+    "state": {
+      "owner": "akash1...",
+      "state": "open",
+      "funds": [{ "denom": "uact", "amount": "..." }],
+      "settled_at": "..."
     }
-  ]
+  }
 }
 ```
 

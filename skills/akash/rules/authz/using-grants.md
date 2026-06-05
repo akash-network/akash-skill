@@ -10,7 +10,7 @@ Wrap any authorized message in `MsgExec`:
 
 ```bash
 # Create deployment on behalf of granter
-akash tx authz exec <(akash tx deployment create deploy.yaml \
+provider-services tx authz exec <(provider-services tx deployment create deploy.yaml \
   --from <GRANTER_ADDRESS> \
   --generate-only) \
   --from grantee
@@ -23,12 +23,12 @@ GRANTER="akash1granter..."
 GRANTEE_KEY="grantee"
 
 # 1. Generate unsigned deployment tx (from granter's perspective)
-akash tx deployment create deploy.yaml \
+provider-services tx deployment create deploy.yaml \
   --from $GRANTER \
   --generate-only > unsigned_tx.json
 
 # 2. Execute as grantee
-akash tx authz exec unsigned_tx.json \
+provider-services tx authz exec unsigned_tx.json \
   --from $GRANTEE_KEY
 
 # Clean up
@@ -39,7 +39,7 @@ rm unsigned_tx.json
 
 ```bash
 # Execute and use granter's fees
-akash tx authz exec unsigned_tx.json \
+provider-services tx authz exec unsigned_tx.json \
   --from $GRANTEE_KEY \
   --fee-granter $GRANTER
 ```
@@ -50,7 +50,7 @@ akash tx authz exec unsigned_tx.json \
 
 ```typescript
 import { MsgExec } from "cosmjs-types/cosmos/authz/v1beta1/tx";
-import { MsgCreateDeployment } from "@akashnetwork/akash-api/akash/deployment/v1beta3";
+import { MsgCreateDeployment, MsgCloseDeployment } from "@akashnetwork/chain-sdk/private-types/akash.v1beta4";
 
 async function executeAsGrantee(
   client: SigningStargateClient,
@@ -77,7 +77,7 @@ async function executeAsGrantee(
       grantee: granteeAddress,
       msgs: [
         {
-          typeUrl: "/akash.deployment.v1beta3.MsgCreateDeployment",
+          typeUrl: "/akash.deployment.v1beta4.MsgCreateDeployment",
           value: MsgCreateDeployment.encode(innerMsg).finish()
         }
       ]
@@ -169,7 +169,7 @@ class AkashAutomation {
       value: MsgExec.fromPartial({
         grantee: this.granteeAddress,
         msgs: [{
-          typeUrl: "/akash.deployment.v1beta3.MsgCreateDeployment",
+          typeUrl: "/akash.deployment.v1beta4.MsgCreateDeployment",
           value: MsgCreateDeployment.encode(innerMsg).finish()
         }]
       })
@@ -194,7 +194,7 @@ class AkashAutomation {
       value: MsgExec.fromPartial({
         grantee: this.granteeAddress,
         msgs: [{
-          typeUrl: "/akash.deployment.v1beta3.MsgCloseDeployment",
+          typeUrl: "/akash.deployment.v1beta4.MsgCloseDeployment",
           value: MsgCloseDeployment.encode(innerMsg).finish()
         }]
       })
@@ -247,9 +247,9 @@ authorization expired
 
 ```bash
 # Verify grant exists
-akash query authz grants \
-  $(akash keys show granter -a) \
-  $(akash keys show grantee -a)
+provider-services query authz grants \
+  $(provider-services keys show granter -a) \
+  $(provider-services keys show grantee -a)
 ```
 
 ### Automated Monitoring

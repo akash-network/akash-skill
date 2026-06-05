@@ -40,7 +40,7 @@ For deployer-side terminology, see `akash-network:akash`'s `rules/terminology.md
 
 ### Full node
 - **@rules/full-node/requirements.md** — Hardware, network, OS
-- **@rules/full-node/installation.md** — `akashd` binary install, genesis, config
+- **@rules/full-node/installation.md** — `akash` binary install, genesis, config
 - **@rules/full-node/state-sync.md** — Bootstrap from a recent snapshot
 
 ### Validator
@@ -93,26 +93,26 @@ validator host ──► tmkms (signing service) ──► HSM / YubiHSM
 
 ```bash
 # Install (Linux x86_64)
-curl -sSfL https://get.akash.network/install.sh | sh
+curl -sSfL https://raw.githubusercontent.com/akash-network/node/main/install.sh | sh
 
 # Initialize a node
-akashd init <moniker> --chain-id akashnet-2
+akash init <moniker> --chain-id akashnet-2
 
 # Start
-akashd start
+akash start
 
 # Check status
-akashd status
+akash status
 
 # Validator info
-akashd query staking validator <akashvaloper1...>
+akash query staking validator <akashvaloper1...>
 
 # Stake more
-akashd tx staking delegate <akashvaloper1...> 1000000uact \
+akash tx staking delegate <akashvaloper1...> 1000000uakt \
   --from <key-name> --gas auto --gas-adjustment 1.3
 
 # Unjail (after downtime)
-akashd tx slashing unjail --from <operator-key>
+akash tx slashing unjail --from <operator-key>
 ```
 
 ## Companion skills

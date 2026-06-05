@@ -20,11 +20,18 @@ import (
     "github.com/cosmos/cosmos-sdk/crypto/hd"
     "github.com/cosmos/cosmos-sdk/crypto/keyring"
     sdk "github.com/cosmos/cosmos-sdk/types"
+    "github.com/cosmos/cosmos-sdk/types/tx/signing"
     authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
     "google.golang.org/grpc"
-    "google.golang.org/grpc/credentials/insecure"
+    "google.golang.org/grpc/credentials"
 
-    akashcodec "github.com/akash-network/akash-api/go/node/codec"
+    // Codec registration is per-module in pkg.akt.dev/go (there is no
+    // aggregate "node/codec" package). Each module exposes its own
+    // RegisterInterfaces(registry). Verify exports at:
+    // https://pkg.go.dev/pkg.akt.dev/go
+    certv1 "pkg.akt.dev/go/node/cert/v1"
+    deploymentv1beta4 "pkg.akt.dev/go/node/deployment/v1beta4"
+    marketv1beta5 "pkg.akt.dev/go/node/market/v1beta5"
 )
 
 type AkashClient struct {
@@ -46,9 +53,12 @@ func NewAkashClient(
     config.SetBech32PrefixForAccount("akash", "akashpub")
     config.Seal()
 
-    // Create codec
+    // Create codec — register each Akash module's interfaces individually
+    // (no single aggregate registration helper exists).
     interfaceRegistry := codectypes.NewInterfaceRegistry()
-    akashcodec.RegisterInterfaces(interfaceRegistry)
+    deploymentv1beta4.RegisterInterfaces(interfaceRegistry)
+    marketv1beta5.RegisterInterfaces(interfaceRegistry)
+    certv1.RegisterInterfaces(interfaceRegistry)
     cdc := codec.NewProtoCodec(interfaceRegistry)
 
     // Setup keyring
@@ -75,9 +85,10 @@ func NewAkashClient(
     }
 
     // Create gRPC connection
-    grpcConn, err := grpc.Dial(
+    grpcConn, err := grpc.NewClient(
         nodeURI,
-        grpc.WithTransportCredentials(insecure.NewCredentials()),
+        // Public mainnet gRPC is TLS on :443 — use TLS creds (system roots), not insecure.
+        grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(nil, "")),
     )
     if err != nil {
         return nil, fmt.Errorf("failed to connect to node: %w", err)
@@ -127,27 +138,39 @@ func (c *AkashClient) Close() error {
 
 ## Deployment Operations
 
+In `pkg.akt.dev/go` v0.2.14 the message/ID types span several packages: the
+deployment messages live in `deployment/v1beta4`, but `DeploymentID` (and the
+`Deployment`/`DeploymentReclamation` types) live in `deployment/v1`, and the
+`Deposit` value type lives in `types/deposit/v1`. Verify every symbol below at
+<https://pkg.go.dev/pkg.akt.dev/go>.
+
 ```go
 import (
-    deploymentv1beta3 "github.com/akash-network/akash-api/go/node/deployment/v1beta3"
+    deploymentv1 "pkg.akt.dev/go/node/deployment/v1"
+    deploymentv1beta4 "pkg.akt.dev/go/node/deployment/v1beta4"
+    depositv1 "pkg.akt.dev/go/node/types/deposit/v1"
 )
 
 func (c *AkashClient) CreateDeployment(
     ctx context.Context,
     dseq uint64,
-    groups []deploymentv1beta3.GroupSpec,
-    version []byte,
-    deposit sdk.Coin,
+    groups deploymentv1beta4.GroupSpecs,
+    hash []byte,
+    amount sdk.Coin,
 ) (*sdk.TxResponse, error) {
-    msg := &deploymentv1beta3.MsgCreateDeployment{
-        ID: deploymentv1beta3.DeploymentID{
+    // MsgCreateDeployment v1beta4 fields are ID/Groups/Hash/Deposit/Reclamation.
+    // There is no Version or Depositor field, and Deposit is a deposit/v1.Deposit
+    // (which wraps the sdk.Coin), not a bare sdk.Coin.
+    msg := &deploymentv1beta4.MsgCreateDeployment{
+        ID: deploymentv1.DeploymentID{
             Owner: c.address.String(),
             DSeq:  dseq,
         },
-        Groups:    groups,
-        Version:   version,
-        Deposit:   deposit,
-        Depositor: c.address.String(),
+        Groups: groups,
+        Hash:   hash,
+        Deposit: depositv1.Deposit{
+            Amount: amount,
+        },
     }
 
     return c.broadcastTx(ctx, msg)
@@ -157,8 +180,8 @@ func (c *AkashClient) CloseDeployment(
     ctx context.Context,
     dseq uint64,
 ) (*sdk.TxResponse, error) {
-    msg := &deploymentv1beta3.MsgCloseDeployment{
-        ID: deploymentv1beta3.DeploymentID{
+    msg := &deploymentv1beta4.MsgCloseDeployment{
+        ID: deploymentv1.DeploymentID{
             Owner: c.address.String(),
             DSeq:  dseq,
         },
@@ -167,31 +190,20 @@ func (c *AkashClient) CloseDeployment(
     return c.broadcastTx(ctx, msg)
 }
 
-func (c *AkashClient) DepositDeployment(
-    ctx context.Context,
-    dseq uint64,
-    amount sdk.Coin,
-) (*sdk.TxResponse, error) {
-    msg := &deploymentv1beta3.MsgDepositDeployment{
-        ID: deploymentv1beta3.DeploymentID{
-            Owner: c.address.String(),
-            DSeq:  dseq,
-        },
-        Amount:    amount,
-        Depositor: c.address.String(),
-    }
-
-    return c.broadcastTx(ctx, msg)
-}
+// NOTE: MsgDepositDeployment was removed in deployment/v1beta4 (it only exists
+// in the older v1beta3). To add funds to an existing deployment's escrow
+// account on current chains, deposit via the escrow module / `provider-services
+// tx deployment deposit` rather than a deployment Msg. Check the current
+// message set at https://pkg.go.dev/pkg.akt.dev/go before relying on this.
 
 func (c *AkashClient) QueryDeployment(
     ctx context.Context,
     dseq uint64,
-) (*deploymentv1beta3.QueryDeploymentResponse, error) {
-    queryClient := deploymentv1beta3.NewQueryClient(c.clientCtx.GRPCClient)
+) (*deploymentv1beta4.QueryDeploymentResponse, error) {
+    queryClient := deploymentv1beta4.NewQueryClient(c.clientCtx.GRPCClient)
 
-    return queryClient.Deployment(ctx, &deploymentv1beta3.QueryDeploymentRequest{
-        ID: deploymentv1beta3.DeploymentID{
+    return queryClient.Deployment(ctx, &deploymentv1beta4.QueryDeploymentRequest{
+        ID: deploymentv1.DeploymentID{
             Owner: c.address.String(),
             DSeq:  dseq,
         },
@@ -201,9 +213,14 @@ func (c *AkashClient) QueryDeployment(
 
 ## Market Operations
 
+As with deployments, the market `Msg`/query types live in `market/v1beta5` while
+the `BidID` identifier lives in `market/v1`. Verify at
+<https://pkg.go.dev/pkg.akt.dev/go>.
+
 ```go
 import (
-    marketv1beta4 "github.com/akash-network/akash-api/go/node/market/v1beta4"
+    marketv1 "pkg.akt.dev/go/node/market/v1"
+    marketv1beta5 "pkg.akt.dev/go/node/market/v1beta5"
 )
 
 func (c *AkashClient) CreateLease(
@@ -213,8 +230,8 @@ func (c *AkashClient) CreateLease(
     oseq uint32,
     provider string,
 ) (*sdk.TxResponse, error) {
-    msg := &marketv1beta4.MsgCreateLease{
-        BidID: marketv1beta4.BidID{
+    msg := &marketv1beta5.MsgCreateLease{
+        BidID: marketv1.BidID{
             Owner:    c.address.String(),
             DSeq:     dseq,
             GSeq:     gseq,
@@ -229,11 +246,11 @@ func (c *AkashClient) CreateLease(
 func (c *AkashClient) QueryBids(
     ctx context.Context,
     dseq uint64,
-) (*marketv1beta4.QueryBidsResponse, error) {
-    queryClient := marketv1beta4.NewQueryClient(c.clientCtx.GRPCClient)
+) (*marketv1beta5.QueryBidsResponse, error) {
+    queryClient := marketv1beta5.NewQueryClient(c.clientCtx.GRPCClient)
 
-    return queryClient.Bids(ctx, &marketv1beta4.QueryBidsRequest{
-        Filters: marketv1beta4.BidFilters{
+    return queryClient.Bids(ctx, &marketv1beta5.QueryBidsRequest{
+        Filters: marketv1beta5.BidFilters{
             Owner: c.address.String(),
             DSeq:  dseq,
         },
@@ -242,11 +259,11 @@ func (c *AkashClient) QueryBids(
 
 func (c *AkashClient) QueryLeases(
     ctx context.Context,
-) (*marketv1beta4.QueryLeasesResponse, error) {
-    queryClient := marketv1beta4.NewQueryClient(c.clientCtx.GRPCClient)
+) (*marketv1beta5.QueryLeasesResponse, error) {
+    queryClient := marketv1beta5.NewQueryClient(c.clientCtx.GRPCClient)
 
-    return queryClient.Leases(ctx, &marketv1beta4.QueryLeasesRequest{
-        Filters: marketv1beta4.LeaseFilters{
+    return queryClient.Leases(ctx, &marketv1beta5.QueryLeasesRequest{
+        Filters: marketv1.LeaseFilters{
             Owner: c.address.String(),
         },
     })
@@ -297,7 +314,7 @@ func (c *AkashClient) broadcastTx(
 ```go
 func main() {
     client, err := NewAkashClient(
-        "grpc.akashnet.net:443",
+        "akash-grpc.publicnode.com:443",
         "akashnet-2",
         "file",
         os.ExpandEnv("$HOME/.akash"),
@@ -314,7 +331,9 @@ func main() {
     dseq := uint64(time.Now().Unix())
     deposit := sdk.NewCoin("uact", sdk.NewInt(5000000))
 
-    txRes, err := client.CreateDeployment(ctx, dseq, groups, version, deposit)
+    // groups is a deploymentv1beta4.GroupSpecs built from your SDL; hash is the
+    // manifest version hash (sha256 of the manifest).
+    txRes, err := client.CreateDeployment(ctx, dseq, groups, hash, deposit)
     if err != nil {
         log.Fatal(err)
     }
