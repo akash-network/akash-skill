@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.1](https://github.com/akash-network/akash-skill/compare/v3.1.0...v3.1.1) (2026-06-08)
+
+
+### Bug Fixes
+
+* **akash/console-api:** correct provider shell endpoint protocol ([#20](https://github.com/akash-network/akash-skill/issues/20)) ([f2c518a](https://github.com/akash-network/akash-skill/commit/f2c518a280e807fc84a40c227cfa91156aac242d))
+
 ## [3.1.0](https://github.com/akash-network/akash-skill/compare/v3.0.2...v3.1.0) (2026-05-26)
 
 
