@@ -168,6 +168,8 @@ Interactive exec. **Required** query params: `service`, `podIndex`, `tty` (`1`/`
 
 The protocol is a binary multiplexed stream. Each frame's **first byte is the stream code**: server→client `100`=stdout, `101`=stderr, `102`=result (JSON, e.g. `{"exit_code":0}`), `103`=failure; client→server `104`=stdin, `105`=terminal-resize. Strip the first byte before writing payload to your own stdout. The Console UI uses `xterm.js` on the client side. For programmatic shells, the SDK helpers wrap this framing for you.
 
+The sample below is a **one-shot command** (`tty=0&stdin=0`). For an **interactive session**, set `tty=1&stdin=1`, stream keystrokes as `104`-prefixed binary frames, and send terminal resizes as `105` frames. Most users should reach for the Akash CLI (`provider-services lease-shell --tty`) or the SDK helpers instead of driving this by hand.
+
 **Minimal Node.js one-shot:**
 ```typescript
 import WebSocket from "ws";
