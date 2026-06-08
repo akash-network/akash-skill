@@ -161,10 +161,37 @@ These are the Kubernetes events for the pods running your deployment. **Importan
 ### Shell (WebSocket)
 
 ```
-WSS  {hostUri}/lease/{dseq}/{gseq}/{oseq}/shell?service=<svc>&podIndex=<n>&cmd=<base64-encoded-cmd>
+WSS  {hostUri}/lease/{dseq}/{gseq}/{oseq}/shell?service=<svc>&podIndex=<n>&tty=0&stdin=0&cmd0=<arg0>&cmd1=<arg1>&...
 ```
 
-Interactive exec. The protocol is a binary multiplexed stream (stdin / stdout / stderr / resize). The Console UI uses `xterm.js` on the client side. For programmatic shells, use the provider's `kubectl exec`-style protocol via the SDK helpers.
+Interactive exec. **Required** query params: `service`, `podIndex`, `tty` (`1`/`0`), `stdin` (`1`/`0`), and the command as **separate numbered params** `cmd0`, `cmd1`, … (e.g. `cmd0=/bin/sh&cmd1=-c&cmd2=ls`). There is no single base64-encoded `cmd` param — the provider does not base64-decode anything.
+
+The protocol is a binary multiplexed stream. Each frame's **first byte is the stream code**: server→client `100`=stdout, `101`=stderr, `102`=result (JSON, e.g. `{"exit_code":0}`), `103`=failure; client→server `104`=stdin, `105`=terminal-resize. Strip the first byte before writing payload to your own stdout. The Console UI uses `xterm.js` on the client side. For programmatic shells, the SDK helpers wrap this framing for you.
+
+**Minimal Node.js one-shot:**
+```typescript
+import WebSocket from "ws";
+import https from "https";
+
+const agent = new https.Agent({ rejectUnauthorized: false });
+const params = new URLSearchParams();
+["/bin/sh", "-c", "echo hello && hostname"].forEach((arg, i) => params.append(`cmd${i}`, arg));
+params.append("tty", "0");
+params.append("stdin", "0");
+params.append("service", service);
+params.append("podIndex", "0");
+
+const ws = new WebSocket(
+  `wss://${hostUri.replace(/^https?:\/\//, "")}/lease/${dseq}/${gseq}/${oseq}/shell?${params}`,
+  { headers: { Authorization: `Bearer ${jwt}` }, agent }
+);
+ws.on("message", (frame) => {
+  const code = frame[0], data = frame.subarray(1);
+  if (code === 100) process.stdout.write(data);
+  else if (code === 101) process.stderr.write(data);
+  else if (code === 102) { console.log("result:", data.toString()); ws.close(); }
+});
+```
 
 ### Push a manifest (HTTP PUT)
 
