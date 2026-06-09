@@ -162,10 +162,10 @@ If the user asks to **switch** ("can we do this via the API instead?"), acknowle
 
 ### SDL Structure
 
-Every SDL has four required sections (plus optional `endpoints` for IP leases):
+Every SDL has four required sections (plus optional `endpoints` for IP leases and `reclamation` for resource reclamation):
 
 ```yaml
-version: "2.0"  # or "2.1" for IP endpoints
+version: "2.0"  # or "2.1" for IP endpoints or the reclamation block
 
 services:       # Container definitions
 profiles:       # Compute resources & placement
@@ -224,6 +224,7 @@ deployment:
 - **@rules/sdl/placement-pricing.md** — Provider selection and pricing (uact)
 - **@rules/sdl/deployment.md** — Service-to-profile mapping
 - **@rules/sdl/endpoints.md** — IP endpoint configuration (v2.1)
+- **@rules/sdl/reclamation.md** — Resource reclamation `reclamation` block (v2.1, AEP-82)
 - **@rules/sdl/validation-rules.md** — All constraints and validation rules
 
 ### SDL Examples
@@ -231,6 +232,7 @@ deployment:
 - **@rules/sdl/examples/wordpress-db.md** — Multi-service with persistent storage
 - **@rules/sdl/examples/gpu-workload.md** — GPU deployment with NVIDIA
 - **@rules/sdl/examples/ip-lease.md** — IP endpoint configuration
+- **@rules/sdl/examples/reclamation.md** — Resource reclamation grace window (v2.1)
 
 ### Deployment Methods
 - **@rules/deploy/overview.md** — Method selection (start here)

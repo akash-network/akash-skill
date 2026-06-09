@@ -262,9 +262,38 @@ Closed: No longer accepting bids
 
 ```
 Active: Workload running
+Reclaiming: Provider has started resource reclamation (AEP-82); deadline = block_time + reclamation window
 Closed: Lease terminated
 Insufficient Funds: Escrow depleted
 ```
+
+`Reclaiming` and the paused-group state below only appear on v2.1.0+ leases; pre-2.1
+leases never enter them.
+
+### Group States
+
+```
+Open: Group active, orders may be created
+Paused: Group has no active lease and will not auto-create new orders (e.g. after a reclamation window expires); resume with MsgStartGroup
+```
+
+## Resource Reclamation (AEP-82)
+
+**Resource Reclamation** is the v2.1.0 protocol mechanism by which a **provider**
+reclaims the resources of an *active* lease after a tenant-declared grace window. It
+is distinct from the provider-side Kubernetes cleanup that runs *after* a lease
+closes (see the akash-provider skill's "Resource Cleanup on Lease Close").
+
+| Term | Meaning |
+|------|---------|
+| `MsgLeaseStartReclaim` | Provider-signed message that starts reclamation on an `Active` lease, moving it to `Reclaiming`. Carries `{ id: LeaseID, reason: LeaseClosedReason }`. |
+| Reclamation deadline | `block_time + reclamation window`. The provider may close the lease **only after** this deadline; closing before it is rejected. |
+| `MsgStartGroup` | Resumes a **paused** group, creating new orders (which inherit the deployment's reclamation requirement). |
+| `MsgCloseLease` | Closes a **single lease**. Tenant-initiated close auto-re-orders (the new order inherits the reclamation requirement). |
+| `MsgCloseDeployment` | Closes the **whole deployment**; this escrow-level close bypasses the reclamation window. |
+
+See [deploy/cli/deployment-lifecycle.md](deploy/cli/deployment-lifecycle.md) for the
+full flow and [sdl/reclamation.md](sdl/reclamation.md) for the SDL field.
 
 ## Common Abbreviations
 

@@ -211,11 +211,25 @@ func (c *AkashClient) QueryDeployment(
 }
 ```
 
+### Resource reclamation field (v2.1.0+)
+
+The `Reclamation` field on `MsgCreateDeployment` (a `deploymentv1.DeploymentReclamation`)
+is the AEP-82 minimum grace window — see **@../../sdl/reclamation.md** for what it
+means. Leave it nil to keep pre-2.1 behavior; populate it (`MinWindow`, a
+`time.Duration` within the governance bounds 1h–720h) to require a reclamation
+window. The field is ignored by pre-2.1.0 nodes, so gate on discovery
+(`node_version >= 2.1.0`) before relying on it — see below.
+
 ## Market Operations
 
 As with deployments, the market `Msg`/query types live in `market/v1beta5` while
 the `BidID` identifier lives in `market/v1`. Verify at
 <https://pkg.go.dev/pkg.akt.dev/go>.
+
+`MsgLeaseStartReclaim` (provider-signed; starts reclamation on an `Active` lease)
+also lives in `pkg.akt.dev/go/node/market/v1beta5`, with `LeaseID` in
+`pkg.akt.dev/go/node/market/v1`. Tenants do not send it; resume a paused group with
+`MsgStartGroup` from `pkg.akt.dev/go/node/deployment/v1beta4`.
 
 ```go
 import (

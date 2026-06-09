@@ -244,6 +244,49 @@ Verify closed:
 provider-services query deployment get --owner $(provider-services keys show wallet -a) --dseq <DSEQ>
 ```
 
+## Resource Reclamation Lifecycle (v2.1.0+)
+
+When a deployment declares a [`reclamation` block](../../sdl/reclamation.md), a
+**provider** may reclaim the lease's resources — but only after honoring the
+tenant's grace window. This is opt-in: deployments without a `reclamation` block,
+and all SDL 2.0 deployments, never enter this flow.
+
+```
+Active ──MsgLeaseStartReclaim (provider)──▶ Reclaiming
+                                              │  deadline = block_time + window
+                                              │
+   provider close BEFORE deadline ──▶ rejected
+   provider close AFTER  deadline ──▶ group PAUSED (no auto-re-order)
+```
+
+1. **Provider starts reclamation** — the provider signs `MsgLeaseStartReclaim` on an
+   `Active` lease with a `reason` (a `LeaseClosedReason` in the provider range
+   10000–19999). The lease moves to `Reclaiming` and a deadline is set at
+   `block_time + window`.
+2. **Tenant reacts within the window** — drain, snapshot, or migrate. The provider
+   **cannot** close the lease before the deadline; an early close is rejected.
+3. **After the deadline** — the provider may close the lease. The group is left
+   **paused**: there is **no automatic re-order**. Recover by resuming the group
+   (`MsgStartGroup`) or by closing and redeploying.
+
+### Tenant-initiated vs provider-initiated close
+
+| Action | Effect |
+|--------|--------|
+| `MsgLeaseStartReclaim` (provider) | Starts the window; close only allowed after the deadline; post-deadline close pauses the group. |
+| `MsgCloseLease` (tenant, single lease) | Allowed anytime; **auto-re-orders** — the new order inherits the deployment's reclamation requirement. |
+| `MsgCloseDeployment` (tenant, whole deployment) | Escrow-level close; **bypasses** the reclamation window. |
+
+### Recovering a paused group
+
+A paused group does not re-order on its own. Resume it with `MsgStartGroup` (new
+orders inherit the reclamation requirement), or close the deployment and redeploy.
+Reclamation of a lease is terminal — there is no "restart" of the reclaimed lease
+itself.
+
+See [terminology.md](../../terminology.md#resource-reclamation-aep-82) for the
+message and state glossary.
+
 ## Managing Deployments
 
 ### Add Funds

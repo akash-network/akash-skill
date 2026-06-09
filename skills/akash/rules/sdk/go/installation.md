@@ -14,6 +14,13 @@ import "github.com/cosmos/cosmos-sdk/client"
 import "github.com/cosmos/cosmos-sdk/crypto/keyring"
 ```
 
+For v2.1.0 (resource reclamation, Oracle V2, discovery), pull the version-matched
+`pkg.akt.dev/go` and verify symbols at <https://pkg.go.dev/pkg.akt.dev/go>. Relevant
+packages: `node/market/v1beta5` holds `MsgLeaseStartReclaim`; `node/deployment/v1`
+holds `DeploymentReclamation`; the discovery `GetInfo` query client lives under
+`node/discovery/v1` (confirm the exact path for your pinned version). See
+**@client-setup.md** for usage.
+
 ## Installation
 
 ```bash

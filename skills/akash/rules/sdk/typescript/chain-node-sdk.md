@@ -178,6 +178,43 @@ await sdk.akash.deployment.v1beta4.depositDeployment({
 });
 ```
 
+## Capability detection (v2.1.0)
+
+Before relying on v2.1.0 features, check the node via discovery:
+
+```typescript
+import semver from "semver";
+
+const info = await sdk.akash.discovery.v1.getInfo();
+const supportsReclamation = semver.gte(semver.coerce(info.nodeVersion)!, "2.1.0");
+// pre-2.1 nodes throw UNIMPLEMENTED / return HTTP 501 — treat as unsupported
+```
+
+See **@../overview.md** ("Discovery & capability detection") for the full response
+shape and fallback handling.
+
+## Resource reclamation (v2.1.0)
+
+A tenant opts in to reclamation by including a `reclamation` block in the SDL (see
+**@../../sdl/reclamation.md**) — `createDeployment` carries it through automatically
+from the generated manifest; no extra SDK argument is needed.
+
+`MsgLeaseStartReclaim` is **provider-signed** and starts reclamation on an `Active`
+lease. Tenants do not send it; it is documented here for surface completeness:
+
+```typescript
+// provider-side — reason is a LeaseClosedReason in the provider range 10000–19999
+await sdk.akash.market.v1beta5.leaseStartReclaim({
+  id: { owner, dseq, gseq, oseq, provider },  // LeaseID
+  reason: 10001,
+});
+```
+
+After the reclamation deadline the provider may close the lease, leaving the group
+paused; the tenant resumes with `MsgStartGroup`
+(`sdk.akash.deployment.v1beta4.startGroup({ id })`). See
+**@../../deploy/cli/deployment-lifecycle.md** for the full lifecycle.
+
 ## Multi-message transactions
 
 If you want to batch (e.g. accept a lease and create a cert in one tx):
