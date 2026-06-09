@@ -9,8 +9,10 @@ This guide covers installing and running an Akash full node on the `akashnet-2` 
 ### Option A: Download Pre-built Binary
 
 ```bash
-# Set the version (check https://github.com/akash-network/node/releases for latest)
-AKASH_VERSION="v2.1.0"
+# Resolve the latest stable release automatically (skips rc/pre-releases).
+# Requires curl + jq. To pin instead: AKASH_VERSION="v2.1.0"
+AKASH_VERSION=$(curl -s https://api.github.com/repos/akash-network/node/releases/latest | jq -r .tag_name)
+echo "Installing Akash ${AKASH_VERSION}"
 
 # Download the binary
 wget "https://github.com/akash-network/node/releases/download/${AKASH_VERSION}/akash_linux_amd64.zip"
@@ -32,8 +34,8 @@ akash version
 git clone https://github.com/akash-network/node.git
 cd node
 
-# Checkout the desired version
-AKASH_VERSION="v2.1.0"
+# Checkout the latest stable release (or pin: AKASH_VERSION="v2.1.0")
+AKASH_VERSION=$(curl -s https://api.github.com/repos/akash-network/node/releases/latest | jq -r .tag_name)
 git checkout "$AKASH_VERSION"
 
 # Build
