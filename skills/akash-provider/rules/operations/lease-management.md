@@ -242,9 +242,11 @@ provider-services query market lease list \
   --node https://rpc.akashnet.net:443
 ```
 
-## Resource Reclamation
+## Resource Cleanup on Lease Close
 
-When a lease is closed, resources are reclaimed:
+When a lease is closed, its Kubernetes resources are cleaned up. (This is distinct
+from **Resource Reclamation (AEP-82)** below, which is the on-chain mechanism for a
+provider to reclaim an *active* lease's resources.)
 
 ### Automatic Cleanup
 
@@ -289,6 +291,34 @@ kubectl get namespace <LEASE_NAMESPACE> -o json | \
   jq '.spec.finalizers = []' | \
   kubectl replace --raw "/api/v1/namespaces/<LEASE_NAMESPACE>/finalize" -f -
 ```
+
+## Resource Reclamation (AEP-82)
+
+> Requires node v2.1.0 / provider-services v0.13.0+. This is **provider-initiated**
+> reclamation of an **active** lease — not the post-close Kubernetes cleanup above.
+
+A tenant may declare a minimum grace window in the SDL (the `reclamation.min_window`
+block). A provider that bids on such an order offers its own `reclamation_window`
+(see [bid-engine.md](../configuration/bid-engine.md)). When the provider needs the
+resources back, it **initiates reclamation** rather than closing the lease outright:
+
+1. **Start reclamation** — the provider signs `MsgLeaseStartReclaim` on an `Active`
+   lease, supplying a `reason` (a `LeaseClosedReason` in the **provider range
+   10000–19999**). The lease moves to `Reclaiming` and a deadline is set at
+   `block_time + window`.
+2. **Honor the window** — the provider may **not** close the lease before the
+   deadline; an early close is rejected on-chain. This is the guarantee the tenant
+   paid for: time to drain, snapshot, or migrate.
+3. **Close after the deadline** — once the window elapses, the provider may close the
+   lease. The tenant's group is left **paused** (no automatic re-order); the tenant
+   resumes it with `MsgStartGroup` or redeploys.
+
+Notes:
+
+- Tenant-initiated `MsgCloseLease` and deployment-level `MsgCloseDeployment` are
+  unaffected by the window — only provider-initiated reclamation is gated.
+- The offered `reclamation_window` must satisfy the order's required `min_window` and
+  stay within the governance bounds (1h–720h), or the bid is invalid.
 
 ## Lease Summary Commands
 

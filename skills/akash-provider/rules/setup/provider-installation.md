@@ -91,7 +91,10 @@ Create `provider-values.yaml`:
 ```yaml
 # provider-values.yaml
 image:
-  tag: 0.12.0  # Use latest stable version
+  # Use the latest released provider-services version. For node v2.1.0, use
+  # v0.13.0 or later (the paired build, required for AEP-82 reclamation).
+  # See https://github.com/akash-network/provider/releases — do not pin an rc.
+  tag: <PROVIDER_VERSION>
 
 # Chain configuration
 chainid: akashnet-2
@@ -184,7 +187,7 @@ The hostname operator manages ingress routing for tenant deployments.
 ```bash
 helm install hostname-operator akash/akash-hostname-operator \
   --namespace akash-services \
-  --set image.tag=0.12.0
+  --set image.tag=<PROVIDER_VERSION>
 ```
 
 ### Verify Hostname Operator
@@ -201,7 +204,7 @@ The inventory operator monitors and reports cluster resource availability.
 ```bash
 helm install inventory-operator akash/akash-inventory-operator \
   --namespace akash-services \
-  --set image.tag=0.12.0
+  --set image.tag=<PROVIDER_VERSION>
 ```
 
 ### Verify Inventory Operator
@@ -218,7 +221,7 @@ Required only if offering dedicated IP leases:
 ```bash
 helm install ip-operator akash/akash-ip-operator \
   --namespace akash-services \
-  --set image.tag=0.12.0 \
+  --set image.tag=<PROVIDER_VERSION> \
   --set provider_address=<PROVIDER_AKASH_ADDRESS>
 ```
 

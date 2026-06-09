@@ -233,7 +233,9 @@ bidpricescript: |
 # ---- Image Configuration ----
 image:
   repository: ghcr.io/akash-network/provider
-  tag: 0.12.0
+  # Latest released provider-services; for node v2.1.0 use v0.13.0+ (paired build).
+  # See https://github.com/akash-network/provider/releases — do not pin an rc.
+  tag: <PROVIDER_VERSION>
 
 # ---- Resource Limits ----
 resources:

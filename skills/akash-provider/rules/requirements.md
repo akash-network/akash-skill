@@ -72,6 +72,16 @@ Commonly provided GPU models:
 | containerd | 1.6+ | Recommended for most setups |
 | NVIDIA Container Toolkit | Latest | Required for GPU providers |
 
+### Provider Software
+
+| Component | Version | Notes |
+|-----------|---------|-------|
+| provider-services | v0.13.0 or later | The build paired with node **v2.1.0**. Required for AEP-82 resource reclamation (the `--reclamation-window` bid offer). Earlier builds run against v2.1.0 but cannot offer reclamation. |
+
+> Use the latest v0.13.x release rather than pinning a specific patch — check
+> <https://github.com/akash-network/provider/releases>. Do not pin a release
+> candidate in production.
+
 ### Networking Software
 
 | Component | Purpose |

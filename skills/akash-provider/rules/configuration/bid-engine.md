@@ -79,6 +79,7 @@ bidpricescript: |
 | `bidMaxStorage` | int | - | Max storage per order (bytes) |
 | `bidMaxGPU` | int | - | Max GPUs per order |
 | `bidpricescript` | string | - | Pricing script content |
+| `--reclamation-window` | duration | 0 | Resource-reclamation window offered in bids (AEP-82, v0.13.0+); `0` = no reclamation offered. See below. |
 
 ## Order Filtering
 
@@ -128,6 +129,29 @@ bidMinDeposit: 500000  # uakt (or uact — the chain accepts both)
 ```
 
 This protects against orders that would run out of funds quickly.
+
+### Resource Reclamation Window (AEP-82, v0.13.0+)
+
+The provider advertises a reclamation window in its bids via the
+`--reclamation-window` run flag (a Go duration; set it in the provider's run
+configuration / Helm values, the same place other provider flags are set):
+
+```yaml
+# Offer a 24h reclamation window on bids. 0 (default) = no reclamation offered.
+reclamation-window: 24h
+```
+
+- The value is attached to each bid as the bid's `reclamation_window`.
+- It must satisfy the order's required `min_window` and stay within the chain's
+  governance bounds (default **1h–720h**); otherwise the bid is rejected on-chain.
+- Offering `0` (the default) means the provider does not offer reclamation and will
+  not bid on orders that *require* a reclamation window.
+- When a window is offered, the provider can later reclaim an active lease's
+  resources via `MsgLeaseStartReclaim` — workloads keep running until the window
+  elapses. See [../operations/lease-management.md](../operations/lease-management.md)
+  ("Resource Reclamation (AEP-82)").
+
+Requires provider-services v0.13.0 or later (the build paired with node v2.1.0).
 
 ## Pricing Strategies
 
