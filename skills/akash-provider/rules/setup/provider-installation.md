@@ -90,11 +90,15 @@ Create `provider-values.yaml`:
 
 ```yaml
 # provider-values.yaml
-image:
-  # Use the latest released provider-services version. For node v2.1.0, use
-  # v0.13.0 or later (the paired build, required for AEP-82 reclamation).
-  # See https://github.com/akash-network/provider/releases — do not pin an rc.
-  tag: <PROVIDER_VERSION>
+
+# image.tag is OPTIONAL. Omit it (as below) and the chart uses its bundled
+# default — `{{ .Values.image.tag | default .Chart.AppVersion }}` — so a plain
+# `helm repo update` keeps you on the version that ships with the chart.
+# For node v2.1.0 you need provider-services v0.13.0+, so use a chart whose
+# appVersion is already v0.13.0+, OR override the tag explicitly:
+#   image:
+#     tag: "0.13.0"   # only to override the chart default; don't pin an rc
+# Releases: https://github.com/akash-network/provider/releases
 
 # Chain configuration
 chainid: akashnet-2
@@ -185,9 +189,10 @@ kubectl logs -n akash-services -l app=akash-provider -f
 The hostname operator manages ingress routing for tenant deployments.
 
 ```bash
+# No image.tag override — the chart uses its bundled appVersion (run
+# `helm repo update` first for the latest). Add `--set image.tag=0.13.0` only to override.
 helm install hostname-operator akash/akash-hostname-operator \
-  --namespace akash-services \
-  --set image.tag=<PROVIDER_VERSION>
+  --namespace akash-services
 ```
 
 ### Verify Hostname Operator
@@ -203,8 +208,7 @@ The inventory operator monitors and reports cluster resource availability.
 
 ```bash
 helm install inventory-operator akash/akash-inventory-operator \
-  --namespace akash-services \
-  --set image.tag=<PROVIDER_VERSION>
+  --namespace akash-services
 ```
 
 ### Verify Inventory Operator
@@ -221,7 +225,6 @@ Required only if offering dedicated IP leases:
 ```bash
 helm install ip-operator akash/akash-ip-operator \
   --namespace akash-services \
-  --set image.tag=<PROVIDER_VERSION> \
   --set provider_address=<PROVIDER_AKASH_ADDRESS>
 ```
 
