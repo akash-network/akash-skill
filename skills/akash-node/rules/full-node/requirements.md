@@ -67,7 +67,7 @@ pruning-keep-every = "0"
 
 | Software | Version | Purpose |
 |----------|---------|---------|
-| Go | 1.25+ | Required if building from source |
+| Go | 1.26+ | Required if building from source (node v2.1.0 `go.mod` requires `go 1.26.2`) |
 | make | Any | Build tooling |
 | git | Any | Cloning repositories |
 | curl / wget | Any | Downloading files |
@@ -92,8 +92,8 @@ sudo apt install -y \
   make \
   gcc
 
-# Install Go (check for latest version)
-GO_VERSION="1.25.5"
+# Install Go (node v2.1.0 requires Go 1.26.2+; check go.dev for the latest patch)
+GO_VERSION="1.26.2"
 wget "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz"
 sudo rm -rf /usr/local/go
 sudo tar -C /usr/local -xzf "go${GO_VERSION}.linux-amd64.tar.gz"

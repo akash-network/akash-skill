@@ -9,6 +9,7 @@ The Akash Network is a decentralized cloud computing marketplace built on the Co
 | Property | Value |
 |----------|-------|
 | Chain ID | `akashnet-2` |
+| Current Network Version | `v2.1.0` (Oracle V2 + AEP-82 resource reclamation) |
 | Coin Denomination | `uakt` (1 AKT = 1,000,000 uakt) |
 | Framework | Cosmos SDK |
 | Consensus Engine | Tendermint / CometBFT |
