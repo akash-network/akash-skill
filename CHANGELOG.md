@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.2.0](https://github.com/akash-network/akash-skill/compare/v3.1.1...v3.2.0) (2026-06-11)
+
+
+### Features
+
+* document v2.1.0 network upgrade (resource reclamation, Oracle V2, discovery) ([#23](https://github.com/akash-network/akash-skill/issues/23)) ([9da0c86](https://github.com/akash-network/akash-skill/commit/9da0c86238fdb18697d1156751c528af0c43f8ac))
+
 ## [3.1.1](https://github.com/akash-network/akash-skill/compare/v3.1.0...v3.1.1) (2026-06-08)
 
 
