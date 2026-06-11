@@ -26,24 +26,26 @@ brew install akash-provider-services
 
 ### From Binary
 
-Download the latest release from [GitHub Releases](https://github.com/akash-network/provider/releases). Replace `0.12.0` with the latest release tag:
+This resolves the latest stable release automatically — no version to keep in sync.
+(`/releases/latest` skips pre-releases/rc builds. Requires `curl` + `jq`.)
 
 ```bash
-# Linux AMD64
-wget https://github.com/akash-network/provider/releases/download/v0.12.0/provider-services_0.12.0_linux_amd64.zip
-unzip provider-services_0.12.0_linux_amd64.zip
-sudo mv provider-services /usr/local/bin/
+# Resolve the latest stable tag (e.g. v0.12.0) and the bare number (0.12.0)
+VERSION=$(curl -s https://api.github.com/repos/akash-network/provider/releases/latest | jq -r .tag_name)
+NUM=${VERSION#v}
 
-# Linux ARM64
-wget https://github.com/akash-network/provider/releases/download/v0.12.0/provider-services_0.12.0_linux_arm64.zip
-unzip provider-services_0.12.0_linux_arm64.zip
-sudo mv provider-services /usr/local/bin/
+# Pick your platform asset
+ASSET="provider-services_${NUM}_linux_amd64.zip"   # Linux AMD64
+# ASSET="provider-services_${NUM}_linux_arm64.zip" # Linux ARM64
+# ASSET="provider-services_${NUM}_darwin_all.zip"  # macOS (universal)
 
-# macOS (universal — Intel and Apple Silicon)
-wget https://github.com/akash-network/provider/releases/download/v0.12.0/provider-services_0.12.0_darwin_all.zip
-unzip provider-services_0.12.0_darwin_all.zip
+wget "https://github.com/akash-network/provider/releases/download/${VERSION}/${ASSET}"
+unzip "$ASSET"
 sudo mv provider-services /usr/local/bin/
 ```
+
+To pin a specific release instead, set `VERSION=v0.12.0` (and `NUM=0.12.0`) manually
+— see [GitHub Releases](https://github.com/akash-network/provider/releases).
 
 ### From Source
 

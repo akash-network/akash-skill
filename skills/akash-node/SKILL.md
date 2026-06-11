@@ -57,7 +57,7 @@ For deployer-side terminology, see `akash-network:akash`'s `rules/terminology.md
 - **Back up `priv_validator_key.json`.** But also: protect it like a private key. Encrypt at rest, restrict to one user, never log it.
 - **Watch your peer count and block height.** A validator that falls more than ~10,000 blocks behind risks downtime jailing. Set up alerts.
 - **Sentry node your validator if you accept external delegations.** Direct exposure of the validator's RPC/p2p ports is a DDoS target.
-- **Test upgrades on a sandbox network first.** Cosmos chain upgrades occasionally require new binaries with specific migration logic; running the wrong binary can corrupt state.
+- **Test upgrades on a sandbox network first.** Cosmos chain upgrades occasionally require new binaries with specific migration logic; running the wrong binary can corrupt state. The current network version is **v2.1.0** (Oracle V2 + AEP-82 resource reclamation); building it from source requires **Go 1.26.2+**, and the cosmovisor upgrade directory must be named `v2.1.0` exactly. See **@rules/validator/operations.md**.
 - **Set `minimum-gas-prices` correctly.** Validators that accept zero-fee transactions get spammed.
 
 ## Architectural patterns

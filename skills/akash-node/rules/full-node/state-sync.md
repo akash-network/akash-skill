@@ -24,6 +24,10 @@ State sync is a feature in Tendermint/CometBFT that allows a new node to bootstr
 - Queries for historical transactions or blocks before the snapshot height will fail.
 - State sync depends on peers having snapshots available and enabled.
 - The trust height must be within the `trust_period` (typically 7 days).
+- **Across a chain upgrade (e.g. v2.1.0):** state-sync from a peer already running the
+  post-upgrade binary, and pick a **trust height above the upgrade height** so the
+  snapshot reflects post-upgrade (v2.1.0) state. Syncing below the upgrade height
+  requires the pre-upgrade binary and a cosmovisor handoff at the upgrade height.
 
 ## Prerequisites
 

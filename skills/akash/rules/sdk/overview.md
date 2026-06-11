@@ -3,8 +3,8 @@
 Akash provides official SDKs for programmatic integration with the network.
 
 > **Chain message versions** (verify against your installed package — these change with chain upgrades):
-> - `akash.deployment.v1beta4.*` — `MsgCreateDeployment`, `MsgUpdateDeployment`, `MsgCloseDeployment`, `MsgDepositDeployment`
-> - `akash.market.v1beta5.*` — `MsgCreateBid`, `MsgCreateLease`, `MsgCloseBid`, `MsgCloseLease`
+> - `akash.deployment.v1beta4.*` — `MsgCreateDeployment` (carries an optional `reclamation` field, AEP-82, on v2.1.0+), `MsgUpdateDeployment`, `MsgCloseDeployment`, `MsgDepositDeployment`, `MsgStartGroup`
+> - `akash.market.v1beta5.*` — `MsgCreateBid`, `MsgCreateLease`, `MsgCloseBid`, `MsgCloseLease`, `MsgLeaseStartReclaim` (provider-signed, AEP-82, v2.1.0+)
 > - `akash.cert.v1.*` — `MsgCreateCertificate`, `MsgRevokeCertificate`
 >
 > Older code targeting `v1beta3` deployment or `v1beta4` market will fail with a chain-side parse error. When porting examples, double-check the version segment of any `typeUrl` and SDK proxy path.
@@ -142,6 +142,35 @@ msg := v1beta4.NewMsgCreateDeployment(
 // Confirm field/symbol names for your pinned version at
 // https://pkg.go.dev/pkg.akt.dev/go/node/deployment/v1beta4
 ```
+
+## Discovery & capability detection (v2.1.0)
+
+Before using v2.1.0 features (resource reclamation, Oracle V2), detect whether the
+node supports them. The discovery endpoint reports the node's version and module
+versions:
+
+- **Typed:** `sdk.akash.discovery.v1.getInfo()`
+- **REST:** `GET /akash/discovery/v1/info`
+
+The response includes `chain_id`, `node_version`, `min_client_version`, and
+`supported_versions[]` (each entry has an `api_version` and a `modules` map).
+(`client_info.api_version` is deprecated — read `node_version` / `supported_versions`
+instead.)
+
+```typescript
+const info = await sdk.akash.discovery.v1.getInfo();
+
+import semver from "semver";
+// reclamation (AEP-82) requires node v2.1.0+
+const supportsReclamation = semver.gte(semver.coerce(info.nodeVersion)!, "2.1.0");
+// Oracle V2 advertised via the module map
+const supportsOracleV2 = info.supportedVersions
+  ?.some(v => v.modules?.oracle === "v2") ?? false;
+```
+
+**Fallback:** pre-2.1 nodes do not implement discovery — the call returns HTTP `501`
+(REST) or gRPC `UNIMPLEMENTED`. Treat that as "no v2.1.0 features" and fall back to
+pre-2.1 behavior. `semver.coerce` handles `-rcN` pre-release tags.
 
 ## When to use an SDK vs. the Console API
 

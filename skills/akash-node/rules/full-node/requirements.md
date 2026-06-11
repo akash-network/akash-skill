@@ -67,7 +67,7 @@ pruning-keep-every = "0"
 
 | Software | Version | Purpose |
 |----------|---------|---------|
-| Go | 1.25+ | Required if building from source |
+| Go | 1.26+ | Required if building from source (node v2.1.0 `go.mod` requires `go 1.26.2`) |
 | make | Any | Build tooling |
 | git | Any | Cloning repositories |
 | curl / wget | Any | Downloading files |
@@ -92,8 +92,12 @@ sudo apt install -y \
   make \
   gcc
 
-# Install Go (check for latest version)
-GO_VERSION="1.25.5"
+# Install Go. Derive the exact version the node requires straight from its go.mod
+# (the source of truth) so this never drifts. Fetching "latest Go" is avoided on
+# purpose — a too-new toolchain can break Cosmos builds. To pin: GO_VERSION="1.26.2"
+AKASH_TAG=$(curl -s https://api.github.com/repos/akash-network/node/releases/latest | jq -r .tag_name)
+GO_VERSION=$(curl -s "https://raw.githubusercontent.com/akash-network/node/${AKASH_TAG}/go.mod" | awk '/^go /{print $2}')
+echo "Node ${AKASH_TAG} requires Go ${GO_VERSION}"
 wget "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz"
 sudo rm -rf /usr/local/go
 sudo tar -C /usr/local -xzf "go${GO_VERSION}.linux-amd64.tar.gz"

@@ -266,14 +266,18 @@ cosmovisor run version
 │   └── bin/
 │       └── akash         # Initial binary
 ├── upgrades/
-│   ├── upgrade-v2.0.1/
+│   ├── v2.1.0/           # Dir name MUST equal the on-chain upgrade plan name exactly
 │   │   └── bin/
 │   │       └── akash     # Upgrade binary
-│   └── upgrade-<next-version>/
+│   └── <next-version>/
 │       └── bin/
 │           └── akash     # Future upgrade binary
 └── current -> genesis/   # Symlink to active version
 ```
+
+> Cosmovisor matches the upgrade directory to the on-chain plan name **verbatim**.
+> For the v2.1.0 upgrade the plan name is `v2.1.0` (`UpgradeName = "v2.1.0"`), so the
+> directory is `cosmovisor/upgrades/v2.1.0/bin/` — no `upgrade-` prefix.
 
 ### Cosmovisor systemd Service
 
@@ -317,15 +321,18 @@ sudo systemctl restart akash-node
 
 ### Preparing for an Upgrade
 
-When a governance proposal for a chain upgrade passes:
+When a governance proposal for a chain upgrade passes (e.g. the **v2.1.0** network
+upgrade — Oracle V2 + AEP-82 resource reclamation):
 
 ```bash
 # 1. Check the upgrade proposal for the upgrade name and height
 akash query gov proposal PROPOSAL_ID --output json | jq '.content'
 
-# 2. Download or build the new binary
-UPGRADE_NAME="v2.0.1"
-NEW_VERSION="v2.0.1"
+# 2. Download or build the new binary.
+#    UPGRADE_NAME must match the on-chain plan name exactly (here: v2.1.0).
+#    NOTE: building v2.1.0 from source requires Go 1.26.2+.
+UPGRADE_NAME="v2.1.0"
+NEW_VERSION="v2.1.0"
 
 # Download pre-built binary
 wget "https://github.com/akash-network/node/releases/download/${NEW_VERSION}/akash_linux_amd64.zip"
@@ -346,6 +353,21 @@ cp akash ~/.akash/cosmovisor/upgrades/${UPGRADE_NAME}/bin/akash
 # Monitor logs during the upgrade
 sudo journalctl -u akash-node -f --no-hostname -o cat
 ```
+
+### v2.1.0 Upgrade Notes (Oracle V2)
+
+The v2.1.0 upgrade introduces **Oracle V2** alongside AEP-82 resource reclamation.
+Operator-relevant points:
+
+- **Oracle state is wiped and migrated** at the upgrade height (the v2.1.0 migration
+  resets oracle state from version 1 to version 2). This is expected — no action
+  needed beyond running the v2.1.0 binary.
+- **Oracle V2 uses time-based pricing and prunes its state**, keeping roughly the
+  **last 24h** on-chain; older oracle history is available via block events, not
+  current state. Don't treat the absence of older oracle entries as data loss.
+- No special validator action is required beyond the standard cosmovisor upgrade
+  above — these are chain-state changes applied by the new binary at the upgrade
+  height.
 
 ### Manual Upgrade (Without Cosmovisor)
 

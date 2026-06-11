@@ -184,8 +184,29 @@ provider-services query market lease get --dseq <DSEQ> ... -o json | jq '.lease.
 
 Possible states:
 - `active` - Running normally
+- `reclaiming` - Provider started resource reclamation (v2.1.0+); a deadline is set, after which the provider may close the lease (see below)
 - `closed` - Terminated
 - `insufficient_funds` - Escrow depleted
+
+The `reclaiming` state and paused groups only appear on v2.1.0+ leases; pre-2.1
+leases render with the classic active/closed/insufficient_funds states only.
+
+### Recovering a Reclaimed (Paused) Group
+
+If a provider reclaims a lease (v2.1.0+) and the reclamation window expires, the
+group is left **paused** with no automatic re-order. To recover:
+
+```bash
+# Option 1: resume the paused group (re-orders; new order inherits the reclamation requirement)
+provider-services tx deployment group start --dseq <DSEQ> --gseq 1 --from wallet
+
+# Option 2: close the deployment and redeploy
+provider-services tx deployment close --dseq <DSEQ> --from wallet
+provider-services tx deployment create deploy.yaml --from wallet
+```
+
+See [deployment-lifecycle.md](deployment-lifecycle.md#resource-reclamation-lifecycle-v210)
+for the full reclamation flow.
 
 ### Service Not Available
 

@@ -54,6 +54,12 @@ The script must output a single number: the total price in uact per block.
 15.5
 ```
 
+> **Resource reclamation (AEP-82) is not a pricing-script concern.** The reclamation
+> window a provider offers is a static run-flag (`--reclamation-window`), not a
+> pricing-script input or output — the script above receives no reclamation field.
+> Configure it in the provider run config / Helm values; see
+> [bid-engine.md](bid-engine.md) ("Resource Reclamation Window").
+
 ## Cost Calculation Reference
 
 ### Converting to Monthly Cost

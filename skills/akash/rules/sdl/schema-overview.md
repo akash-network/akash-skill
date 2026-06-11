@@ -8,11 +8,13 @@ The SDL version must be specified as the first field:
 version: "2.0"
 ```
 
-Use version `"2.1"` when you need IP endpoints:
+Use version `"2.1"` when you need IP endpoints **or** the `reclamation` block (resource reclamation, see below):
 
 ```yaml
 version: "2.1"
 ```
+
+SDL `"2.0"` continues to work unchanged — version `"2.1"` is only required when you use one of the 2.1-gated sections.
 
 ## Required Sections
 
@@ -30,6 +32,7 @@ Every valid SDL must contain these four sections:
 | Section | Purpose | Requires Version |
 |---------|---------|------------------|
 | `endpoints` | IP lease endpoint declarations | 2.1 |
+| `reclamation` | Minimum grace window a provider must honor before reclaiming the lease's resources (AEP-82). See [reclamation.md](reclamation.md). | 2.1 |
 
 ## Basic Structure
 

@@ -51,6 +51,7 @@ For a fuller chain-side vocabulary (deployer view), see the `akash-network:akash
 | Pricing script — how bids are priced per resource | **@rules/configuration/pricing.md** |
 | Bid engine tuning (when to bid, min/max prices) | **@rules/configuration/bid-engine.md** |
 | Day-to-day lease management | **@rules/operations/lease-management.md** |
+| Resource reclamation (AEP-82, v0.13.0+) — provider-initiated reclaim of active leases | **@rules/operations/lease-management.md** (§ Resource Reclamation) + **@rules/configuration/bid-engine.md** (§ Resource Reclamation Window) |
 | Monitoring (metrics, alerting, on-chain status) | **@rules/operations/monitoring.md** |
 | Common failures and how to diagnose | **@rules/operations/troubleshooting.md** |
 
@@ -85,7 +86,7 @@ The provider does three jobs:
 
 - **Use `uact` in your bid pricing script** (the script's output becomes the `price` field on `MsgCreateBid`). Use `uakt` for `--gas-prices` and `minimum-gas-prices` (chain gas). The `bidMinDeposit` / `deposit` field on `MsgCreateBid` defaults to `uakt` (`500000` = 0.5 AKT, posted from the provider's balance); `uact` is accepted only via a rare burn-mint fallback. The pricing-script `price` denom and the gas denom aren't interchangeable; the chain enforces both.
 - **Provider TLS identity is your on-chain wallet.** The provider's TLS certificate must have a CN/SAN matching its on-chain Akash address. Tenants validate it that way.
-- **Keep `provider-services` up to date.** Chain upgrades regularly break older provider releases. Subscribe to the Akash Discord / GitHub releases.
+- **Keep `provider-services` up to date.** Chain upgrades regularly break older provider releases. Subscribe to the Akash Discord / GitHub releases. For node **v2.1.0**, run **provider-services v0.13.0 or later** (the paired build; required to offer AEP-82 resource reclamation via `--reclamation-window`).
 - **Audit attributes are trust signals.** If you advertise `signedBy` claims (e.g. "trusted by AkashNetwork"), you must arrange the on-chain signature from the auditor. Don't claim unverified audits.
 - **GPU providers must match SDL filters exactly.** GPU vendor and model strings in your attributes must match what SDLs ask for, or you won't bid (e.g. SDL requests `vendor.nvidia.model: a100`, your provider must expose that).
 

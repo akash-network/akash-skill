@@ -233,7 +233,10 @@ bidpricescript: |
 # ---- Image Configuration ----
 image:
   repository: ghcr.io/akash-network/provider
-  tag: 0.12.0
+  # tag omitted on purpose: the chart defaults to its bundled appVersion
+  # ({{ .Values.image.tag | default .Chart.AppVersion }}). For node v2.1.0 use a
+  # chart whose appVersion is v0.13.0+, or set `tag: "0.13.0"` to override.
+  # Don't pin an rc. https://github.com/akash-network/provider/releases
 
 # ---- Resource Limits ----
 resources:

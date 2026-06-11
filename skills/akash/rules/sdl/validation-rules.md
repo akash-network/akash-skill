@@ -271,6 +271,47 @@ endpoints:
     kind: ip
 ```
 
+## Reclamation Constraints
+
+The optional `reclamation` block (AEP-82) requires version 2.1 and a valid window.
+
+### Window Bounds
+
+`min_window` must be a positive Go duration within the governance bounds
+`[min_reclamation_window, max_reclamation_window]` — defaults **1h–720h**:
+
+```yaml
+# Valid
+version: "2.1"
+reclamation:
+  min_window: "24h"
+
+# Invalid - below minimum
+reclamation:
+  min_window: "10m"     # Error: below min_reclamation_window (1h)
+
+# Invalid - above maximum
+reclamation:
+  min_window: "1000h"   # Error: above max_reclamation_window (720h)
+
+# Invalid - not a positive duration
+reclamation:
+  min_window: "0s"      # Error: must be positive
+```
+
+### Version Requirement
+
+The `reclamation` block requires version 2.1:
+
+```yaml
+# Invalid
+version: "2.0"          # Error: reclamation requires version 2.1
+reclamation:
+  min_window: "24h"
+```
+
+See [reclamation.md](reclamation.md) for the full field reference.
+
 ## Reference Constraints
 
 ### Service Names
@@ -425,6 +466,7 @@ deployment:
 | GPU with units > 0 | Must have attributes with vendor |
 | GPU with units = 0 | Cannot have attributes |
 | Endpoints | Must be global, must be used, requires v2.1 |
+| Reclamation `min_window` | Positive Go duration within 1h–720h, requires v2.1 |
 | Deployment count | Minimum 1 |
 | Dependencies | Must reference existing services |
 | References | All names must match across sections |
