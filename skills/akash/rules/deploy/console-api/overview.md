@@ -131,6 +131,18 @@ The response includes `leases[].status.forwarded_ports` and `leases[].status.ips
 
 Logs and events are not served by the Console API directly — they come from the **provider**, gated by a JWT minted via `/v1/create-jwt-token`. See **@operations.md** for the full flow.
 
+## CLI: `console-axi`
+
+Instead of hand-rolling the calls above, [`console-axi`](https://github.com/baktun14/console-axi) wraps this same API in an ergonomic CLI: a one-shot `deploy` (create → bids → lease → wait for URIs), plus `deployment`, `logs`/`events`/`exec`/`shell`, `wallet`, `apikey`, and `jwt`. It emits token-efficient TOON and uses stable exit codes — reach for it when the user wants a CLI or clean, parseable output rather than raw `curl`.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/baktun14/console-axi/main/install.sh | sh
+console-axi login --with-key <key>
+console-axi deploy --sdl app.yml --deposit 5
+```
+
+Full command reference: **@axi-cli.md**.
+
 ## Response shape
 
 Successful responses from the deployment endpoints return:
@@ -191,3 +203,4 @@ These endpoints exist to power the Console UI and may change without notice. The
 - **@api-key-quickstart.md** — End-to-end walkthrough for the API-key path
 - **@account-and-funding.md** — Account model, programmatic balance reads, per-deployment auto-top-up; bootstrap, Stripe funding, and arbitrary tx signing are UI-only
 - **@operations.md** — Post-deploy: logs, events, status, shell, manifest updates
+- **@axi-cli.md** — `console-axi`, the ergonomic CLI over this API (one-shot deploy, TOON output, self-update)

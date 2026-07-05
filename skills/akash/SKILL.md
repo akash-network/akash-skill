@@ -61,7 +61,7 @@ There are **four deployment paths** (you host the workload) plus one **consumpti
 
 | # | Method | Wallet model | Auth | When to use |
 |---|---|---|---|---|
-| 1 | **Console API** | Managed (Console account owns the wallet) | `x-api-key` header | CI/CD, server-to-server, any backend that wants HTTP + an API key. No private-key handling. |
+| 1 | **Console API** | Managed (Console account owns the wallet) | `x-api-key` header | CI/CD, server-to-server, any backend that wants HTTP + an API key. No private-key handling. Also drivable via the `console-axi` CLI (one-shot deploy, TOON output). |
 | 2 | **Akash CLI** | Self-custody (you hold the keys) | Local key + signature | Shell scripting, manual workflows, full control. |
 | 3 | **TypeScript SDK** | Self-custody (browser wallet, hardware, or local key) | SDK signs locally | dApps, Node.js services, anywhere you want JS/TS code to deploy. |
 | 4 | **Go SDK** | Self-custody | SDK signs locally | Backend Go services, custom tooling. |
@@ -86,7 +86,7 @@ If you see **any** of these signals, commit to the matching path silently and st
 
 | If the user mentions… | Commit to… |
 |---|---|
-| `"I have an API key"`, `"$AKASH_API_KEY"`, `"x-api-key"`, `"curl"`, `"CI/CD"`, `"GitHub Actions"`, `"backend"`, `"server-to-server"`, `"deploy from CI"`, `"automate"` | Console API |
+| `"I have an API key"`, `"$AKASH_API_KEY"`, `"x-api-key"`, `"curl"`, `"console-axi"`, `"CI/CD"`, `"GitHub Actions"`, `"backend"`, `"server-to-server"`, `"deploy from CI"`, `"automate"` | Console API |
 | `"Keplr"`, `"Ledger"`, `"hardware wallet"`, `"my wallet"`, `"self-custody"`, `"provider-services keys add"`, `"my mnemonic"` | CLI or SDK (ask only if they didn't also signal a language) |
 | `"React app"`, `"Next.js"`, `"akashjs"` (legacy), `"@akashnetwork/chain-sdk"`, `"my dApp"`, `"in the browser"` | TypeScript SDK |
 | `"Go service"`, `"golang"`, `"cosmos-sdk Go"`, `"my Go backend"` | Go SDK |
@@ -106,6 +106,7 @@ Once on the Console API path, pick the integration language from cues. **Ask onl
 
 | Cue | Use |
 |---|---|
+| `"console-axi"`, `"a CLI"`, `"TOON output"`, `"one-shot deploy"` | `console-axi` CLI ([@rules/deploy/console-api/axi-cli.md](rules/deploy/console-api/axi-cli.md)) |
 | `"curl"`, `"bash"`, `"shell"`, `"GitHub Actions"`, `"GitLab CI"`, any `.sh` reference, no app stack mentioned | curl + Bash |
 | `"Node"`, `"Next.js"`, `"Express"`, `package.json`, `.ts`/`.js` file, `"my Node app"` | TypeScript / Node `fetch` |
 | `"Python"`, `requirements.txt`, `.py`, `"FastAPI"`, `"Django"`, `"Flask"` | Python `requests` or `httpx` |
@@ -243,6 +244,7 @@ deployment:
   - `api-key-quickstart.md` — linear walkthrough from "I have an API key" to a running deployment
   - `account-and-funding.md` — Console account model, programmatic balance reads, per-deployment auto-top-up (bootstrap + Stripe funding + arbitrary tx signing are UI-only)
   - `operations.md` — JWT + provider proxy + logs/events/status/shell
+  - `axi-cli.md` — `console-axi`, the ergonomic CLI over this API (one-shot deploy, TOON, self-update)
 - **@rules/deploy/cli/** — Akash CLI (self-custody path)
   - `mtls-legacy.md` — Legacy mTLS auth for CLI/SDK direct provider calls (deprecated for Console API)
 
