@@ -225,6 +225,7 @@ deployment:
 - **@rules/sdl/deployment.md** — Service-to-profile mapping
 - **@rules/sdl/endpoints.md** — IP endpoint configuration (v2.1)
 - **@rules/sdl/reclamation.md** — Resource reclamation `reclamation` block (v2.1, AEP-82)
+- **@rules/sdl/confidential-compute.md** — Confidential Compute / TEE (`params.tee`, AEP-83)
 - **@rules/sdl/validation-rules.md** — All constraints and validation rules
 
 ### SDL Examples
@@ -233,6 +234,7 @@ deployment:
 - **@rules/sdl/examples/gpu-workload.md** — GPU deployment with NVIDIA
 - **@rules/sdl/examples/ip-lease.md** — IP endpoint configuration
 - **@rules/sdl/examples/reclamation.md** — Resource reclamation grace window (v2.1)
+- **@rules/sdl/examples/confidential-compute.md** — Confidential Compute (TEE): CPU-only and CPU+GPU
 
 ### Deployment Methods
 - **@rules/deploy/overview.md** — Method selection (start here)
@@ -309,6 +311,14 @@ profiles:
             vendor:
               nvidia:
                 - model: a100
+```
+
+### Confidential Compute (TEE)
+```yaml
+services:
+  web:
+    params:
+      tee: cpu        # or: cpu-gpu (requires GPU resources)
 ```
 
 ### Payment Options

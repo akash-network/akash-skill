@@ -156,6 +156,8 @@ services:
 
 ### params (optional)
 
+Service parameters — storage mounts and Confidential Compute (TEE).
+
 Storage mount configuration:
 
 ```yaml
@@ -170,6 +172,20 @@ services:
 ```
 
 The storage name (`data` in the example) must match a named storage volume in the compute profile.
+
+#### tee (Confidential Compute)
+
+Request a Confidential Compute (TEE) workload with `params.tee`, a plain string set to `cpu` (CPU-only) or `cpu-gpu` (CPU + GPU):
+
+```yaml
+services:
+  web:
+    image: nginx:1.25.3
+    params:
+      tee: cpu        # or: cpu-gpu (requires GPU resources in the compute profile)
+```
+
+The provider selects the TEE hardware and injects attestation automatically. See [confidential-compute.md](confidential-compute.md) for the full reference.
 
 ### dependencies (optional)
 
