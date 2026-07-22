@@ -219,6 +219,93 @@ gpu:
       nvidia:
 ```
 
+## Confidential Compute (TEE) Constraints
+
+The `services.<name>.params.tee` field (AEP-83) has three constraints.
+
+### Allowed Values
+
+`tee` must be `cpu` or `cpu-gpu`:
+
+```yaml
+# Valid - CPU-only confidential compute
+services:
+  web:
+    params:
+      tee: cpu
+
+# Valid - CPU + GPU confidential compute
+services:
+  inference:
+    params:
+      tee: cpu-gpu
+
+# Invalid - unknown value
+services:
+  web:
+    params:
+      tee: sev          # Error: must be 'cpu' or 'cpu-gpu'
+```
+
+### cpu-gpu Requires GPU Resources
+
+`tee: cpu-gpu` requires the compute profile to declare GPU resources:
+
+```yaml
+# Valid - cpu-gpu with a GPU in the profile
+services:
+  inference:
+    params:
+      tee: cpu-gpu
+profiles:
+  compute:
+    inference:
+      resources:
+        gpu:
+          units: 1
+          attributes:
+            vendor:
+              nvidia:
+
+# Invalid - cpu-gpu without GPU resources
+services:
+  inference:
+    params:
+      tee: cpu-gpu      # Error: cpu-gpu requires GPU resources in the profile
+profiles:
+  compute:
+    inference:
+      resources:
+        cpu:
+          units: 4
+```
+
+### Same Value Per Deployment Group
+
+All services in a deployment group must use the same `tee` value, or none:
+
+```yaml
+# Valid - both services request the same TEE value
+services:
+  web:
+    params:
+      tee: cpu
+  api:
+    params:
+      tee: cpu
+
+# Invalid - mixed TEE values in one group
+services:
+  web:
+    params:
+      tee: cpu
+  api:
+    params:
+      tee: cpu-gpu      # Error: all services in a group must use the same value or none
+```
+
+See [confidential-compute.md](confidential-compute.md) for the full field reference.
+
 ## Endpoint Constraints
 
 ### Must Be Global
@@ -465,6 +552,9 @@ deployment:
 | Non-RAM + attributes | Requires persistent=true |
 | GPU with units > 0 | Must have attributes with vendor |
 | GPU with units = 0 | Cannot have attributes |
+| TEE value | Must be `cpu` or `cpu-gpu` |
+| TEE `cpu-gpu` | Requires GPU resources in the profile |
+| TEE per group | All services same value or none |
 | Endpoints | Must be global, must be used, requires v2.1 |
 | Reclamation `min_window` | Positive Go duration within 1h–720h, requires v2.1 |
 | Deployment count | Minimum 1 |
