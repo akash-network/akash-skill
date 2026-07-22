@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.3.0](https://github.com/akash-network/akash-skill/compare/v3.2.0...v3.3.0) (2026-07-22)
+
+
+### Features
+
+* **akash:** document Confidential Compute (TEE) SDL support ([#27](https://github.com/akash-network/akash-skill/issues/27)) ([7ac8250](https://github.com/akash-network/akash-skill/commit/7ac82506a4a930839f7b518e4275966e6afbb905))
+
 ## [3.2.0](https://github.com/akash-network/akash-skill/compare/v3.1.1...v3.2.0) (2026-06-11)
 
 
