@@ -27,6 +27,36 @@ The first command registers the marketplace from this GitHub repo; the second in
 
 Use `/plugin marketplace update akash-network` to pull new releases later.
 
+### Install with the skills CLI (Claude Code, Cursor, Codex, OpenCode, …)
+
+The [`skills` CLI](https://github.com/vercel-labs/skills) installs skills from this repo into 70+ coding agents. The most common case — just the deployer skill (SDL, Console API, SDKs, AkashML), which is all the Akash Console needs:
+
+```bash
+npx skills add akash-network/akash-skill --skill akash
+```
+
+Other variants:
+
+```bash
+# Pick skills and target agents interactively
+npx skills add akash-network/akash-skill
+
+# Install all three skills, non-interactively
+npx skills add akash-network/akash-skill --skill '*' -y
+
+# User-level (global) install instead of project-level
+npx skills add akash-network/akash-skill --skill akash -g
+
+# Target a specific agent explicitly
+npx skills add akash-network/akash-skill --skill akash -a claude-code
+```
+
+Valid `--skill` names are `akash`, `akash-provider`, and `akash-node`. A direct skill URL works too:
+
+```bash
+npx skills add https://github.com/akash-network/akash-skill/tree/main/skills/akash
+```
+
 ### Install in Codex
 
 Codex reads the plugin manifest at `.codex-plugin/plugin.json` and loads the three skills from `skills/`.

@@ -15,3 +15,4 @@ Resolve relative rule links from the skill directory that contains the `SKILL.md
 - Claude Code uses `.claude-plugin/`.
 - Codex uses `.codex-plugin/plugin.json` and the optional `agents/openai.yaml` files under each skill.
 - OpenCode and generic agent-compatible clients can discover the same skills through `.agents/skills`, which points to the canonical `skills/` directory.
+- The [`skills` CLI](https://github.com/vercel-labs/skills) (`npx skills add akash-network/akash-skill --skill <name>`) installs individual skills from `skills/` into any supported agent.
