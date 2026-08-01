@@ -215,7 +215,6 @@ A handful of endpoints don't require authentication:
 | `GET /v1/balances?address=` | Read on-chain balance for any address |
 | `GET /v1/blockchain-status` | Reachability check |
 | `POST /v1/bid-screening` | Match deployment requirements to providers (no chain action) |
-| `POST /v1/pricing` | Price estimate for given compute resources |
 
 These are safe to call from scripts without credentials.
 

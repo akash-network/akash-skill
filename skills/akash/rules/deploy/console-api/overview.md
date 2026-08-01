@@ -31,7 +31,7 @@ Endpoints in this skill fall into two tiers. Code against the higher tier; treat
 - Auto-top-up — `GET /v2/deployment-settings/{dseq}`, `POST /v2/deployment-settings`, `PATCH /v2/deployment-settings/{dseq}`
 - Providers (public, no auth) — `GET /v1/providers`, `GET /v1/providers/{address}`
 
-**Tier 2 — Swagger-only / undocumented.** Observed on the running Console API service but **not** in the official reference. They may change or be removed without notice. The skill documents them for completeness because some are genuinely useful (e.g., `GET /v1/balances`, `POST /v1/create-jwt-token` for the logs flow), but you should pin to a tested runtime version and watch for breakage on Console releases. Examples: `/v1/balances`, `/v1/create-jwt-token`, `/v1/api-keys` CRUD, `/v1/pricing`, `/v1/bid-screening`, `/v1/blockchain-status`, `/v1/weekly-cost`, `/v1/deployment/{owner}/{dseq}`, `/v1/provider-regions`, `/v1/provider-versions`, `/v1/provider-attributes-schema`, `/v1/auditors`.
+**Tier 2 — Swagger-only / undocumented.** Observed on the running Console API service but **not** in the official reference. They may change or be removed without notice. The skill documents them for completeness because some are genuinely useful (e.g., `GET /v1/balances`, `POST /v1/create-jwt-token` for the logs flow), but you should pin to a tested runtime version and watch for breakage on Console releases. Examples: `/v1/balances`, `/v1/create-jwt-token`, `/v1/api-keys` CRUD, `/v1/bid-screening`, `/v1/blockchain-status`, `/v1/weekly-cost`, `/v1/deployment/{owner}/{dseq}`, `/v1/provider-regions`, `/v1/provider-versions`, `/v1/provider-attributes-schema`, `/v1/auditors`.
 
 Each Tier-2 endpoint in this skill carries a "Swagger-only" banner at the section that documents it. If you're building something critical, prefer Tier-1 paths and use the UI for what Tier 2 covers.
 
@@ -152,7 +152,6 @@ Rate limits exist and depend on your account tier; the exact numbers are managed
 | Deployments | CRUD + deposit + update | 10 paths under `/v1/deployments` and `/v1/deposit-deployment` | @deployment-endpoints.md |
 | Leases | Batch create | `POST /v1/leases` | @deployment-endpoints.md |
 | Bids | List | `GET /v1/bids?dseq=` | @deployment-endpoints.md |
-| Pricing | Estimate | `POST /v1/pricing` | @deployment-endpoints.md |
 | Providers | Read | `GET /v1/providers`, `GET /v1/providers/{address}`, ... | @deployment-endpoints.md |
 | Bid screening | Match deployment to providers | `POST /v1/bid-screening` | @deployment-endpoints.md |
 | API Keys | CRUD | `/v1/api-keys` | @authentication.md |
