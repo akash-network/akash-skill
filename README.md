@@ -56,8 +56,6 @@ ln -s /path/to/akash-skill/skills/akash-provider ~/.agents/skills/akash-provider
 ln -s /path/to/akash-skill/skills/akash-node ~/.agents/skills/akash-node
 ```
 
-Do not link the repository root `SKILL.md` as a global skill; it is only a deprecated migration stub.
-
 ### Try without installing (local clone)
 
 Useful for Claude Code development against an unreleased branch, or for trying the plugin in a single session without persisting it:
@@ -134,7 +132,6 @@ In Claude Code, you can also invoke them explicitly: `/akash-network:akash`, `/a
 │           ├── overview.md
 │           ├── full-node/       # Installation, requirements, state sync
 │           └── validator/       # Becoming a validator, ops, security
-├── SKILL.md                     # Deprecation stub for the old standalone skill
 ├── README.md                    # This file
 └── LICENSE
 ```

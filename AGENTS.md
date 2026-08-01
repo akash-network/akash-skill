@@ -8,7 +8,7 @@ This repository packages Akash Network skills for multiple coding-agent clients.
 - For Akash provider setup, Kubernetes provider operations, attributes, pricing, bid engine, monitoring, or troubleshooting, read `skills/akash-provider/SKILL.md`.
 - For Akash full node, validator, state sync, validator security, slashing, or sentry-node tasks, read `skills/akash-node/SKILL.md`.
 
-Resolve relative rule links from the skill directory that contains the `SKILL.md` file. Do not use the root `SKILL.md` as the active skill; it is a deprecated standalone-skill migration stub.
+Resolve relative rule links from the skill directory that contains the `SKILL.md` file.
 
 ## Platform Paths
 
