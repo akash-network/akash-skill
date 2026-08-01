@@ -9,7 +9,6 @@ All write endpoints wrap payloads in `{ "data": { ... } }`.
 - [Deployments](#deployments)
 - [Leases](#leases)
 - [Bids](#bids)
-- [Pricing](#pricing)
 - [Bid screening](#bid-screening)
 - [Providers](#providers)
 - [Auto-top-up (deployment settings v2)](#auto-top-up-deployment-settings-v2)
@@ -274,53 +273,6 @@ This is the canonical form documented in the official API reference. A path-para
 
 `resources_offer` is the per-unit compute the provider committed to. Useful for verifying that a provider can actually run what the SDL requested before you accept the bid.
 
-## Pricing
-
-> ⚠️ **Swagger-only (Tier 2).** Not in the [official API reference](https://akash.network/docs/api-documentation/console-api/api-reference/). Useful for client-side cost estimation but may change without notice.
-
-### Estimate cost for raw resources
-
-```
-POST /v1/pricing
-```
-
-**Auth:** Public (no auth required)
-
-**Body (single estimate):**
-```json
-{
-  "cpu": 500,
-  "memory": 536870912,
-  "storage": 1073741824
-}
-```
-
-- `cpu` — thousandths of a core (500 = 0.5 cores)
-- `memory` — bytes
-- `storage` — bytes
-
-**Body (batch, up to 10):**
-```json
-[
-  { "cpu": 500, "memory": 536870912, "storage": 1073741824 },
-  { "cpu": 1000, "memory": 1073741824, "storage": 5368709120 }
-]
-```
-
-**Response:**
-```json
-{
-  "data": {
-    "akash": <usd-per-month>,
-    "aws": <usd-per-month>,
-    "gcp": <usd-per-month>,
-    "azure": <usd-per-month>
-  }
-}
-```
-
-**Note:** This is **not** an SDL-based pricing endpoint. There is no `POST /v1/sdl/price` and no `POST /v1/sdl/validate`. Validate SDL client-side (e.g., via the TypeScript SDK's SDL parser) and convert resources to the `cpu/memory/storage` numbers before calling this endpoint.
-
 ## Bid screening
 
 > ⚠️ **Swagger-only (Tier 2).** Not in the [official API reference](https://akash.network/docs/api-documentation/console-api/api-reference/). Powers the bid-matching workflow in this skill (see `rules/bid-matching/`); useful for pre-flight checks but not a stable contract.
@@ -462,7 +414,7 @@ For anyone migrating from older skill versions, here is the change set:
 | `GET /lease/{dseq}/{gseq}/{oseq}` | read from `GET /v1/deployments/{dseq}.leases[]` |
 | `DELETE /lease/{dseq}/{gseq}/{oseq}` | not exposed; close the entire deployment via `DELETE /v1/deployments/{dseq}` instead |
 | `POST /sdl/validate` | does not exist — validate client-side |
-| `POST /sdl/price` | replaced by `POST /v1/pricing` (raw cpu/mem/storage, not SDL) |
+| `POST /sdl/price` | does not exist — no pricing endpoint; actual prices come from provider bids (`GET /v1/bids?dseq=`) |
 | `POST /wallet/create` | Account creation is **UI-only** at [console.akash.network](https://console.akash.network) — no API for first-time signup (see @account-and-funding.md) |
 | `GET /wallet/balance` | `GET /v1/balances?address=...` |
 | `POST /wallet/deposit` | Funding happens in the Console UI via Stripe; **no programmatic deposit endpoint** (see @account-and-funding.md) |
