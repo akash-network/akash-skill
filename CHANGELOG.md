@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.4.0](https://github.com/akash-network/akash-skill/compare/v3.3.0...v3.4.0) (2026-08-01)
+
+
+### Features
+
+* support and document npx skills add installs ([#29](https://github.com/akash-network/akash-skill/issues/29)) ([0c18f52](https://github.com/akash-network/akash-skill/commit/0c18f521cf33ba7e9add00ccf0ed47701654b50e))
+
+
+### Bug Fixes
+
+* **akash/console-api:** remove stale pricing endpoint docs ([#31](https://github.com/akash-network/akash-skill/issues/31)) ([5115395](https://github.com/akash-network/akash-skill/commit/5115395d24618a2affbfd60958c54a5f3e9ec59e))
+
 ## [3.3.0](https://github.com/akash-network/akash-skill/compare/v3.2.0...v3.3.0) (2026-07-22)
 
 
