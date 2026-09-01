@@ -4,7 +4,7 @@ When you sign up on console.akash.network, your account *is* a managed wallet. T
 
 This file covers the lifecycle around the account: how to bootstrap one (UI-only) and how to read account state programmatically. Wallet operations happen through the dedicated deployment endpoints in **@deployment-endpoints.md**, not through any account-level "send arbitrary tx" endpoint (no such programmatic endpoint exists in the documented API).
 
-**Funding a deployment is not something you do.** You add credits to the account, and Console keeps every deployment funded from that balance for as long as the credits last. There is no deposit to send on create and no top-up call to make. See [How Funding Works](https://akash.network/docs/getting-started/how-funding-works/).
+**Funding a deployment is not something you do.** You add credits to the account, and Console keeps every deployment funded from that balance for as long as the credits last. There is no deposit to send on create and no top-up call to make. Each deployment still has its own on-chain escrow account — Console just fills it for you, and the Console UI reports the held total as "Escrow" against an "Available" balance. See [How Funding Works](https://akash.network/docs/getting-started/how-funding-works/).
 
 ## The model
 
@@ -13,7 +13,7 @@ Console account
 ├── email + password (or OAuth)
 ├── managed wallet (the on-chain address that signs your deployments)
 │   ├── credit balance (USD internally; uact on-chain), split into
-│   │   available and reserved-for-running-deployments
+│   │   available and escrow held by running deployments
 │   └── Auto Top-Up settings — charges the card to keep credits up (UI-only)
 └── API keys (one or more — each authenticates as this account)
 ```
@@ -51,14 +51,14 @@ GET /v1/balances?address=<your-akash-address>
 ```json
 {
   "data": {
-    "balance": <usd-number>,
-    "deployments": <usd-spent-on-active-deployments>,
-    "total": <usd-number>
+    "balance": <usd-available-to-spend>,
+    "deployments": <usd-held-in-deployment-escrow>,
+    "total": <balance + deployments>
   }
 }
 ```
 
-All values are USD numbers. The conversion from `uact` happens server-side.
+All values are USD numbers; the conversion from `uact` happens server-side. This is the programmatic form of the split the Console UI shows: `balance` is **Available**, `deployments` is **Escrow** — held by running deployments, not spent, and returned to `balance` as each one closes.
 
 Your account's wallet address is shown in the Console UI under Settings; copy it once and store it alongside your API key (e.g., `AKASH_WALLET_ADDRESS`).
 
