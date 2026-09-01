@@ -41,9 +41,9 @@ image: nginx          # implies :latest
 **Akash has two tokens — don't conflate them.**
 
 - **AKT** (`uakt`, 1 AKT = 1,000,000 uakt) is the **chain token**. Used for gas fees (`--gas-prices`, `minimum-gas-prices`, SDK `WithGasPrices`), staking (self-delegation, validator bonds, slashing), and validator rewards. Self-custody wallets hold AKT.
-- **ACT** (`uact`, 1 ACT = 1,000,000 uact) is the **deployment-payment token**. Used for SDL pricing (`denom: uact`), deployment deposits and escrow, **bid prices** (the rate the provider offers), and lease payments. Note: the **provider-side bid deposit** (anti-spam collateral on `MsgCreateBid`, the `bidMinDeposit` config) is `uakt`, not `uact` — providers operate exclusively in AKT for chain operations and earn ACT from leases. Deployers don't deal with this directly.
+- **ACT** (`uact`, 1 ACT = 1,000,000 uact) is the **deployment-payment token**. Used for SDL pricing (`denom: uact`), deployment escrow, **bid prices** (the rate the provider offers), and lease payments. Note: the **provider-side bid deposit** (anti-spam collateral on `MsgCreateBid`, the `bidMinDeposit` config) is `uakt`, not `uact` — providers operate exclusively in AKT for chain operations and earn ACT from leases. Deployers don't deal with this directly.
 
-**For self-custody deployers: you must mint ACT by burning AKT before you can deposit to a deployment.** Acquire AKT first (exchange / faucet for testnet), then convert a portion to ACT via the burn/mint mechanism. Console API users skip this entirely — Console funds the managed wallet with ACT directly (Stripe → USD → ACT server-side).
+**For self-custody deployers: you must mint ACT by burning AKT before you can fund a deployment.** Acquire AKT first (exchange / faucet for testnet), then convert a portion to ACT via the burn/mint mechanism. Console API users skip this entirely — you add USD credits and Console funds each deployment from them automatically (Stripe → USD → ACT server-side).
 
 When you see `--gas-prices 0.025uakt`, that's correct (gas is paid in AKT). When you see `denom: uact, amount: 1000` in an SDL, that's also correct (lease pricing is in ACT). Both denoms coexist in normal commands.
 
@@ -243,7 +243,7 @@ deployment:
   - `authentication.md` — API key (`x-api-key`), JWT minting, API Keys CRUD
   - `deployment-endpoints.md` — full curated endpoint reference
   - `api-key-quickstart.md` — linear walkthrough from "I have an API key" to a running deployment
-  - `account-and-funding.md` — Console account model, programmatic balance reads, per-deployment auto-top-up (bootstrap + Stripe funding + arbitrary tx signing are UI-only)
+  - `account-and-funding.md` — Console account model, programmatic balance reads, automatic deployment funding (bootstrap + adding credits + arbitrary tx signing are UI-only)
   - `operations.md` — JWT + provider proxy + logs/events/status/shell
 - **@rules/deploy/cli/** — Akash CLI (self-custody path)
   - `mtls-legacy.md` — Legacy mTLS auth for CLI/SDK direct provider calls (deprecated for Console API)
@@ -322,8 +322,8 @@ services:
 ```
 
 ### Payment Options
-- **uact** — Micro-denomination of ACT (the deployment-payment token, separate from AKT). The denom for SDL pricing (`amount: 1000`), deployment deposits, and lease payments. `uakt` is only accepted via a rare burn-mint (BME) fallback, not a normal alternative.
-- Note: the Console API expresses deposits as a **USD number**, not a denom string — translation happens server-side.
+- **uact** — Micro-denomination of ACT (the deployment-payment token, separate from AKT). The denom for SDL pricing (`amount: 1000`), deployment escrow, and lease payments. `uakt` is only accepted via a rare burn-mint (BME) fallback, not a normal alternative.
+- Note: Console API deployments take no deposit at all — Console funds them from the account's USD credit balance.
 
 ## Additional Resources
 

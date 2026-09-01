@@ -286,7 +286,7 @@ steps:
       curl -X POST https://console-api.akash.network/v1/deployments \
         -H "x-api-key: $AKASH_API_KEY" \
         -H "Content-Type: application/json" \
-        -d "{\"data\":{\"sdl\":\"$SDL\",\"deposit\":5}}"
+        -d "{\"data\":{\"sdl\":\"$SDL\"}}"
 ```
 
 ### GitLab CI
@@ -300,7 +300,7 @@ deploy:
       curl -X POST https://console-api.akash.network/v1/deployments \
         -H "x-api-key: $AKASH_API_KEY" \
         -H "Content-Type: application/json" \
-        -d "{\"data\":{\"sdl\":\"$SDL\",\"deposit\":5}}"
+        -d "{\"data\":{\"sdl\":\"$SDL\"}}"
 ```
 
 ### Docker

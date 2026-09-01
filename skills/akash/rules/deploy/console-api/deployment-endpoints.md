@@ -11,7 +11,7 @@ All write endpoints wrap payloads in `{ "data": { ... } }`.
 - [Bids](#bids)
 - [Bid screening](#bid-screening)
 - [Providers](#providers)
-- [Auto-top-up (deployment settings v2)](#auto-top-up-deployment-settings-v2)
+- [Deployment settings v2 (runtime limits)](#deployment-settings-v2-runtime-limits)
 
 For API keys and JWT minting, see **@authentication.md**. For logs/events/status from the provider, see **@operations.md**.
 
@@ -29,14 +29,15 @@ POST /v1/deployments
 ```json
 {
   "data": {
-    "sdl": "<SDL as a string with literal \\n newlines>",
-    "deposit": 5
+    "sdl": "<SDL as a string with literal \\n newlines>"
   }
 }
 ```
 
 - `sdl` — full SDL YAML as a string
-- `deposit` — **USD number** (e.g. `5` = $5), not a denom string
+- `runtimeLimitHours` — optional integer, 1 to 48. Closes the deployment after that many hours of runtime, counted from lease start, and returns the unused credits. Omit it for always-on funding.
+
+Do **not** send a `deposit`. Console funds every deployment from the account's credit balance and ignores a caller-supplied amount. The field is deprecated and will be removed.
 
 **Response (201):**
 ```json
@@ -61,7 +62,7 @@ SDL=$(cat deploy.yaml)
 curl -X POST https://console-api.akash.network/v1/deployments \
   -H "x-api-key: $AKASH_API_KEY" \
   -H "Content-Type: application/json" \
-  -d "$(jq -nc --arg sdl "$SDL" '{data: {sdl: $sdl, deposit: 5}}')"
+  -d "$(jq -nc --arg sdl "$SDL" '{data: {sdl: $sdl}}')"
 ```
 
 ### List deployments
@@ -136,9 +137,11 @@ DELETE /v1/deployments/{dseq}
 
 **Auth:** `x-api-key`
 
-Closes the deployment on-chain and settles escrow.
+Closes the deployment on-chain and settles escrow. Whatever the deployment has not spent returns to the account's credit balance.
 
-### Deposit additional funds
+### Deposit additional funds (deprecated)
+
+> ⚠️ **Deprecated.** Console tops every deployment up automatically for as long as the account has credits, so there is nothing for this endpoint to do. It still accepts requests, and will be removed. Do not generate code that calls it — if an account is running low, the fix is adding credits, which is a UI action. See [How Funding Works](https://akash.network/docs/getting-started/how-funding-works/).
 
 ```
 POST /v1/deposit-deployment
@@ -150,8 +153,6 @@ POST /v1/deposit-deployment
 ```json
 { "data": { "dseq": "12345678", "deposit": 5 } }
 ```
-
-`deposit` is again a USD number.
 
 ### Public read-only deployment view
 
@@ -165,7 +166,7 @@ GET /v1/deployment/{owner}/{dseq}
 
 Read-only deployment lookup by owner address + dseq. Returns the on-chain state, lease info, monthly cost, and recent events. Useful for status pages and external dashboards.
 
-### Weekly cost (auto-top-up deployments)
+### Weekly cost
 
 > ⚠️ **Swagger-only (Tier 2).** Not in the [official API reference](https://akash.network/docs/api-documentation/console-api/api-reference/). May change without notice.
 
@@ -175,7 +176,7 @@ GET /v1/weekly-cost
 
 **Auth:** `x-api-key`
 
-Returns the USD weekly cost for all deployments with auto-top-up enabled on your account.
+Returns the USD weekly cost of the account's automatically funded deployments.
 
 ## Leases
 
@@ -355,9 +356,11 @@ GET /v1/auditors
 
 All public; useful for SDL placement attribute editors.
 
-## Auto-top-up (deployment settings v2)
+## Deployment settings v2 (runtime limits)
 
-Programmatically toggle auto-top-up for a specific deployment. Documented in the official API reference.
+Read and change a deployment's funding settings. Documented in the official API reference.
+
+Automatic funding is always on and cannot be turned off: `autoTopUpEnabled` is accepted for backwards compatibility, and an explicit `false` is rejected. What these endpoints are actually for is the **runtime limit** — an optional cap on how long a deployment runs before Console closes it and returns the unused credits.
 
 ### Get deployment settings
 
@@ -367,7 +370,7 @@ GET /v2/deployment-settings/{dseq}
 
 **Auth:** `x-api-key`
 
-Returns the current settings for the deployment. The record is auto-created on first read. Response includes `autoTopUpEnabled`, `estimatedTopUpAmount`, `topUpFrequencyMs`.
+Returns the current settings for the deployment. The record is auto-created on first read. Response includes `runtimeLimitHours` (`null` for always-on funding), `runtimeEndsAt` (`null` until the lease starts), `autoTopUpEnabled`, `estimatedTopUpAmount`, and `topUpFrequencyMs`.
 
 ### Create deployment settings
 
@@ -379,10 +382,10 @@ POST /v2/deployment-settings
 
 **Body:**
 ```json
-{ "data": { "dseq": "12345678", "autoTopUpEnabled": true } }
+{ "data": { "dseq": "12345678" } }
 ```
 
-Returns 201 on success.
+Returns 201 on success. Only needed when the settings row does not exist yet; a `GET` creates it too.
 
 ### Update deployment settings
 
@@ -394,10 +397,12 @@ PATCH /v2/deployment-settings/{dseq}
 
 **Body:**
 ```json
-{ "data": { "autoTopUpEnabled": false } }
+{ "data": { "runtimeLimitHours": 48 } }
 ```
 
-> The older `/v1/deployment-settings/*` paths are not documented in the official API reference; use the **v2** endpoints. Global account-level auto-reload (`/v1/wallet-settings`) is **UI-only** — only the per-deployment v2 toggle is documented as programmatic.
+Send the new **total**, not an increment, and raise it by at most 48 hours per request. Lowering a limit is not supported. Send `null` to drop the limit and return the deployment to always-on funding.
+
+> The older `/v1/deployment-settings/*` paths are not documented in the official API reference; use the **v2** endpoints. Account-level Auto Top-Up (`/v1/wallet-settings`), which charges the card to keep the credit balance up, is **UI-only**.
 
 ## What is gone vs. older docs
 
@@ -408,7 +413,7 @@ For anyone migrating from older skill versions, here is the change set:
 | `POST /deployment` | `POST /v1/deployments` |
 | `GET /deployment/{dseq}` | `GET /v1/deployments/{dseq}` |
 | `DELETE /deployment/{dseq}` | `DELETE /v1/deployments/{dseq}` |
-| `POST /deployment/{dseq}/deposit` | `POST /v1/deposit-deployment` (body `{ data: { dseq, deposit } }`) |
+| `POST /deployment/{dseq}/deposit` | Gone — deployments are funded automatically. `POST /v1/deposit-deployment` still exists but is deprecated |
 | `GET /providers/{address}/status` | merged into `GET /v1/providers/{address}` |
 | `POST /lease` (single) | `POST /v1/leases` (batch + manifest) |
 | `GET /lease/{dseq}/{gseq}/{oseq}` | read from `GET /v1/deployments/{dseq}.leases[]` |
@@ -417,6 +422,6 @@ For anyone migrating from older skill versions, here is the change set:
 | `POST /sdl/price` | does not exist — no pricing endpoint; actual prices come from provider bids (`GET /v1/bids?dseq=`) |
 | `POST /wallet/create` | Account creation is **UI-only** at [console.akash.network](https://console.akash.network) — no API for first-time signup (see @account-and-funding.md) |
 | `GET /wallet/balance` | `GET /v1/balances?address=...` |
-| `POST /wallet/deposit` | Funding happens in the Console UI via Stripe; **no programmatic deposit endpoint** (see @account-and-funding.md) |
+| `POST /wallet/deposit` | Adding credits happens in the Console UI via Stripe; **no programmatic endpoint** (see @account-and-funding.md) |
 | `Authorization: Bearer <api-key>` | `x-api-key: <key>` |
 | `POST /v1/auth/refresh` | does not exist — re-mint via `POST /v1/create-jwt-token` |

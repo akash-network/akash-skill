@@ -2,7 +2,9 @@
 
 When you sign up on console.akash.network, your account *is* a managed wallet. There isn't a separate "wallet" product to enable — the API key authenticates as your account, and deployments spend from that account's wallet automatically.
 
-This file covers the lifecycle around the account: how to bootstrap one (UI-only) and how to read account state programmatically. All wallet operations — signing transactions, depositing to deployments — happen through the dedicated deployment endpoints in **@deployment-endpoints.md**, not through any account-level "send arbitrary tx" endpoint (no such programmatic endpoint exists in the documented API).
+This file covers the lifecycle around the account: how to bootstrap one (UI-only) and how to read account state programmatically. Wallet operations happen through the dedicated deployment endpoints in **@deployment-endpoints.md**, not through any account-level "send arbitrary tx" endpoint (no such programmatic endpoint exists in the documented API).
+
+**Funding a deployment is not something you do.** You add credits to the account, and Console keeps every deployment funded from that balance for as long as the credits last. There is no deposit to send on create and no top-up call to make. See [How Funding Works](https://akash.network/docs/getting-started/how-funding-works/).
 
 ## The model
 
@@ -10,8 +12,9 @@ This file covers the lifecycle around the account: how to bootstrap one (UI-only
 Console account
 ├── email + password (or OAuth)
 ├── managed wallet (the on-chain address that signs your deployments)
-│   ├── balance (denominated in USD internally; uact on-chain)
-│   └── auto-top-up settings (managed in the UI)
+│   ├── credit balance (USD internally; uact on-chain), split into
+│   │   available and reserved-for-running-deployments
+│   └── Auto Top-Up settings — charges the card to keep credits up (UI-only)
 └── API keys (one or more — each authenticates as this account)
 ```
 
@@ -24,8 +27,8 @@ The following steps are **UI-only** at [console.akash.network](https://console.a
 1. **Sign up** in the Console UI (email + password, or OAuth).
 2. **Verify email** via the link sent to your inbox.
 3. **Add a payment method** in Settings → Payment Methods (Stripe).
-4. **Fund the wallet** — top up via the UI; the credit balance becomes spendable as ACT.
-5. **(Optional) Enable auto-top-up** in Settings if you don't want to manually reload before deployments stall.
+4. **Add credits** via the UI; the balance becomes spendable as ACT.
+5. **(Optional) Enable Auto Top-Up** in Settings so the card is charged before the balance runs out.
 6. **Generate an API key** in Settings → API Keys. Plaintext is shown once at creation; copy it and store as `AKASH_API_KEY`.
 
 Only after step 6 do you have an API key to authenticate the programmatic endpoints below.
@@ -59,9 +62,11 @@ All values are USD numbers. The conversion from `uact` happens server-side.
 
 Your account's wallet address is shown in the Console UI under Settings; copy it once and store it alongside your API key (e.g., `AKASH_WALLET_ADDRESS`).
 
-### Auto-top-up (per-deployment)
+### Deployment funding
 
-Programmatic auto-top-up is supported, but only per-deployment via the **v2** endpoints — see **@deployment-endpoints.md** § "Auto-top-up (deployment settings v2)". Global account-level auto-reload (`/v1/wallet-settings`) is UI-only.
+Nothing to configure: Console funds each deployment automatically and keeps it topped up while the account has credits. The one funding knob that *is* programmatic is a deployment's **runtime limit** — see **@deployment-endpoints.md** § "Deployment settings v2 (runtime limits)". Account-level Auto Top-Up (`/v1/wallet-settings`) is UI-only.
+
+If a deployment is running low, the answer is credits on the account, not a call to `/v1/deposit-deployment` — that endpoint is deprecated and does nothing that automatic funding does not already do.
 
 ## What this file deliberately does NOT cover
 
@@ -69,7 +74,7 @@ The following are real Console-UI features but are **not** part of the documente
 
 - **Account creation, password reset, email verification, OAuth flows** — UI only.
 - **Stripe payment methods, payment confirmation, transaction history, customer management** — UI only. All `/v1/stripe/*` endpoints back the Console's billing screens.
-- **Account-level auto-reload** (`/v1/wallet-settings`) — UI only. (Per-deployment auto-top-up via `/v2/deployment-settings/*` *is* documented as programmatic — covered in `deployment-endpoints.md`.)
+- **Account-level Auto Top-Up** (`/v1/wallet-settings`) — UI only. (Per-deployment runtime limits via `/v2/deployment-settings/*` *are* documented as programmatic — covered in `deployment-endpoints.md`.)
 - **Username and profile management** (`/v1/user/*`) — UI only.
 - **Favorite templates, saved templates, newsletter signup** — UI only.
 - **Alerts and notification channels** — UI only.
@@ -80,5 +85,5 @@ The following are real Console-UI features but are **not** part of the documente
 ## Related files
 
 - **@authentication.md** — `x-api-key` setup
-- **@deployment-endpoints.md** — Full endpoint reference (Deployments, Leases, Bids, Auto-top-up)
+- **@deployment-endpoints.md** — Full endpoint reference (Deployments, Leases, Bids, runtime limits)
 - **@api-key-quickstart.md** — End-to-end walkthrough
