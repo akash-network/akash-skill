@@ -50,7 +50,7 @@ REST API at `https://console-api.akash.network/v1`. Authentication is `x-api-key
 - Programmatic deployments via simple HTTP
 - No certificate management
 - No private-key handling
-- Deposits expressed in USD (translated server-side)
+- Deployments funded automatically from account credits, in USD
 - Stripe-funded; no need to acquire AKT manually
 
 **Limitations**
@@ -135,13 +135,12 @@ curl -X POST https://console-api.akash.network/v1/deployments \
   -H "Content-Type: application/json" \
   -d '{
     "data": {
-      "sdl": "version: \"2.0\"\nservices:\n  web:\n    image: nginx:1.25.3\n...",
-      "deposit": 5
+      "sdl": "version: \"2.0\"\nservices:\n  web:\n    image: nginx:1.25.3\n..."
     }
   }'
 ```
 
-`deposit` is a USD number, not a denom string. Response includes `dseq`, the on-chain manifest, and the signed `MsgCreateDeployment` result.
+No `deposit`: Console funds the deployment from the account's credit balance. Response includes `dseq`, the on-chain manifest, and the signed `MsgCreateDeployment` result.
 
 ### CLI (self-custody)
 

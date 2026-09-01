@@ -13,7 +13,8 @@
         {"id": "no_cert_generation", "type": "regex_absent", "pattern": "(akash tx cert create|certificateManager\\.createCertificate|tls.*cert.*generate)", "description": "Does NOT walk through mTLS certificate generation"},
         {"id": "batch_leases_endpoint", "type": "regex_present", "pattern": "/v1/leases\\b", "description": "Uses POST /v1/leases (batch endpoint that also sends manifest)"},
         {"id": "no_authorization_bearer_for_apikey", "type": "regex_absent", "pattern": "Authorization:\\s*Bearer\\s*\\$?AKASH_API_KEY", "description": "Does NOT use Authorization: Bearer with the API key"},
-        {"id": "uses_env_var_reference", "type": "regex_present", "pattern": "(\\$AKASH_API_KEY|\\$\\{AKASH_API_KEY\\}|\\$\\{\\{ secrets\\.AKASH_API_KEY \\}\\}|process\\.env\\.AKASH_API_KEY|os\\.environ\\[[\"']AKASH_API_KEY[\"']\\]|os\\.Getenv\\([\"']AKASH_API_KEY[\"']\\))", "description": "References the API key via env var, never inline"}
+        {"id": "uses_env_var_reference", "type": "regex_present", "pattern": "(\\$AKASH_API_KEY|\\$\\{AKASH_API_KEY\\}|\\$\\{\\{ secrets\\.AKASH_API_KEY \\}\\}|process\\.env\\.AKASH_API_KEY|os\\.environ\\[[\"']AKASH_API_KEY[\"']\\]|os\\.Getenv\\([\"']AKASH_API_KEY[\"']\\))", "description": "References the API key via env var, never inline"},
+        {"id": "no_deposit_on_create", "type": "regex_absent", "pattern": "deposit", "description": "Does NOT send a deposit; Console funds deployments automatically", "case_insensitive": true}
       ]
     },
     {

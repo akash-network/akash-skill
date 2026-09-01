@@ -25,10 +25,10 @@ Endpoints in this skill fall into two tiers. Code against the higher tier; treat
 **Tier 1 — Documented in the official API reference.** The Akash team commits to these as the supported programmatic surface. 13 endpoints total:
 
 - Deployments — `POST /v1/deployments`, `GET /v1/deployments`, `GET /v1/deployments/{dseq}`, `PUT /v1/deployments/{dseq}`, `DELETE /v1/deployments/{dseq}`
-- Escrow — `POST /v1/deposit-deployment`
+- Escrow — `POST /v1/deposit-deployment` (deprecated; funding is automatic)
 - Leases — `POST /v1/leases`
 - Bids — `GET /v1/bids?dseq=`
-- Auto-top-up — `GET /v2/deployment-settings/{dseq}`, `POST /v2/deployment-settings`, `PATCH /v2/deployment-settings/{dseq}`
+- Deployment settings / runtime limits — `GET /v2/deployment-settings/{dseq}`, `POST /v2/deployment-settings`, `PATCH /v2/deployment-settings/{dseq}`
 - Providers (public, no auth) — `GET /v1/providers`, `GET /v1/providers/{address}`
 
 **Tier 2 — Swagger-only / undocumented.** Observed on the running Console API service but **not** in the official reference. They may change or be removed without notice. The skill documents them for completeness because some are genuinely useful (e.g., `GET /v1/balances`, `POST /v1/create-jwt-token` for the logs flow), but you should pin to a tested runtime version and watch for breakage on Console releases. Examples: `/v1/balances`, `/v1/create-jwt-token`, `/v1/api-keys` CRUD, `/v1/bid-screening`, `/v1/blockchain-status`, `/v1/weekly-cost`, `/v1/deployment/{owner}/{dseq}`, `/v1/provider-regions`, `/v1/provider-versions`, `/v1/provider-attributes-schema`, `/v1/auditors`.
@@ -61,20 +61,19 @@ For example, creating a deployment:
 ```json
 {
   "data": {
-    "sdl": "version: \"2.0\"\n...",
-    "deposit": 5
+    "sdl": "version: \"2.0\"\n..."
   }
 }
 ```
 
-The `deposit` field is a **USD number** (e.g. `5` means $5 USD), not a denom string. Conversion to `uact` happens server-side.
+No `deposit`: Console funds the deployment from the account's credit balance. A caller-supplied deposit is ignored, and the field is deprecated.
 
 ## Quick start
 
 ### 1. Create an account and get an API key
 
 1. Visit https://console.akash.network and sign up.
-2. Fund your account (Stripe).
+2. Add credits to your account (Stripe).
 3. Generate an API key under Settings → API Keys. Copy it once — the plaintext key is shown exactly one time.
 
 ### 2. Create a deployment
@@ -85,8 +84,7 @@ curl -X POST https://console-api.akash.network/v1/deployments \
   -H "Content-Type: application/json" \
   -d '{
     "data": {
-      "sdl": "version: \"2.0\"\nservices:\n  web:\n    image: nginx:1.25.3\n    expose:\n      - port: 80\n        as: 80\n        to:\n          - global: true\nprofiles:\n  compute:\n    web:\n      resources:\n        cpu:\n          units: 0.5\n        memory:\n          size: 512Mi\n        storage:\n          size: 1Gi\n  placement:\n    dcloud:\n      pricing:\n        web:\n          denom: uact\n          amount: 1000\ndeployment:\n  web:\n    dcloud:\n      profile: web\n      count: 1",
-      "deposit": 5
+      "sdl": "version: \"2.0\"\nservices:\n  web:\n    image: nginx:1.25.3\n    expose:\n      - port: 80\n        as: 80\n        to:\n          - global: true\nprofiles:\n  compute:\n    web:\n      resources:\n        cpu:\n          units: 0.5\n        memory:\n          size: 512Mi\n        storage:\n          size: 1Gi\n  placement:\n    dcloud:\n      pricing:\n        web:\n          denom: uact\n          amount: 1000\ndeployment:\n  web:\n    dcloud:\n      profile: web\n      count: 1"
     }
   }'
 ```
@@ -149,14 +147,14 @@ Rate limits exist and depend on your account tier; the exact numbers are managed
 
 | Group | Methods | Endpoints | See |
 |---|---|---|---|
-| Deployments | CRUD + deposit + update | 10 paths under `/v1/deployments` and `/v1/deposit-deployment` | @deployment-endpoints.md |
+| Deployments | CRUD + update | 10 paths under `/v1/deployments` and `/v1/deposit-deployment` | @deployment-endpoints.md |
 | Leases | Batch create | `POST /v1/leases` | @deployment-endpoints.md |
 | Bids | List | `GET /v1/bids?dseq=` | @deployment-endpoints.md |
 | Providers | Read | `GET /v1/providers`, `GET /v1/providers/{address}`, ... | @deployment-endpoints.md |
 | Bid screening | Match deployment to providers | `POST /v1/bid-screening` | @deployment-endpoints.md |
 | API Keys | CRUD | `/v1/api-keys` | @authentication.md |
 | JWT minting | Provider-access tokens | `POST /v1/create-jwt-token` | @authentication.md, @operations.md |
-| Account & funding | Read-only balance + per-deployment auto-top-up (setup, funding, and arbitrary tx signing are UI-only) | `GET /v1/balances`, `/v2/deployment-settings/*` | @account-and-funding.md |
+| Account & funding | Read-only balance + per-deployment runtime limits (signup, adding credits, and arbitrary tx signing are UI-only) | `GET /v1/balances`, `/v2/deployment-settings/*` | @account-and-funding.md |
 | Operations | Logs, events, status, shell (via provider proxy) | provider URL templates | @operations.md |
 
 For the curated reference: **@deployment-endpoints.md**.
@@ -171,8 +169,8 @@ The full Swagger exposes ~80 additional endpoints that this skill intentionally 
 |---|---|---|
 | Account creation, auth, email verification | `/v1/auth/signup`, `/v1/register-user`, `/v1/send-verification-email`, `/v1/verify-email`, `/v1/verify-email-code`, `/v1/send-verification-code` | Sign up, log in, password reset, email verification |
 | Trial wallet provisioning | `/v1/start-trial` | First-time wallet creation (handled implicitly by signup in the UI) |
-| **Stripe payments and transactions** | `/v1/stripe/*` (payment methods, transactions, customer, coupons) | Adding cards, topping up the wallet, viewing billing history |
-| Account-level auto-reload | `/v1/wallet-settings`, `/v1/deployment-settings/*` (v1) | Settings → Auto-top-up. (Per-deployment auto-top-up via `/v2/deployment-settings/*` *is* programmatic — see @deployment-endpoints.md.) |
+| **Stripe payments and transactions** | `/v1/stripe/*` (payment methods, transactions, customer, coupons) | Adding cards, adding credits, viewing billing history |
+| Account-level Auto Top-Up | `/v1/wallet-settings`, `/v1/deployment-settings/*` (v1) | Settings → Auto Top-Up, which charges the card to keep the credit balance up. (Per-deployment runtime limits via `/v2/deployment-settings/*` *are* programmatic — see @deployment-endpoints.md.) |
 | Username & profile management | `/v1/user/me`, `/v1/user/updateSettings`, username availability checks | Editing your profile |
 | Favorite / saved templates | `/v1/user/addFavoriteTemplate`, `/v1/user/saveTemplate`, etc. | Bookmarking templates in the Console UI |
 | Alerts and notification channels | `/v1/alerts/*`, `/v1/deployment-alerts/*`, `/v1/notification-channels/*` | Configuring deployment health alerts |
@@ -188,5 +186,5 @@ These endpoints exist to power the Console UI and may change without notice. The
 - **@authentication.md** — `x-api-key` vs JWT, API Keys CRUD, JWT minting
 - **@deployment-endpoints.md** — Full endpoint reference with bodies and examples
 - **@api-key-quickstart.md** — End-to-end walkthrough for the API-key path
-- **@account-and-funding.md** — Account model, programmatic balance reads, per-deployment auto-top-up; bootstrap, Stripe funding, and arbitrary tx signing are UI-only
+- **@account-and-funding.md** — Account model, programmatic balance reads, automatic deployment funding; signup, adding credits, and arbitrary tx signing are UI-only
 - **@operations.md** — Post-deploy: logs, events, status, shell, manifest updates

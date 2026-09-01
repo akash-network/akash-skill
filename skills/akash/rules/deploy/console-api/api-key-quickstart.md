@@ -9,7 +9,7 @@ If you don't have an API key yet, follow **@authentication.md** § "Getting an A
 ## What you need
 
 - An API key, **stored in an environment variable, never pasted inline**. The canonical name is `AKASH_API_KEY`.
-- A funded Console account (≥ $5 USD balance is enough for a small test deployment).
+- A Console account with credits (≥ $5 USD is enough for a small test deployment).
 - An SDL file. We'll use `deploy.yaml`.
 
 Optional: `jq` for parsing JSON responses.
@@ -68,7 +68,7 @@ deployment:
       count: 1
 ```
 
-(See `../../sdl/` for full SDL syntax. Note `denom: uact` — the SDL-pricing and deposit denom. `uakt` (AKT) and `uact` (ACT) are different denoms: `uakt` is the gas/staking denom, while `uact` is the deployment-payment denom used here for SDL pricing and deposits.)
+(See `../../sdl/` for full SDL syntax. Note `denom: uact` — the SDL-pricing denom. `uakt` (AKT) and `uact` (ACT) are different denoms: `uakt` is the gas/staking denom, while `uact` is the deployment-payment denom used here for SDL pricing.)
 
 ## Step 2 — Create the deployment
 
@@ -77,7 +77,7 @@ SDL=$(cat deploy.yaml)
 RESPONSE=$(curl -sX POST https://console-api.akash.network/v1/deployments \
   -H "x-api-key: $AKASH_API_KEY" \
   -H "Content-Type: application/json" \
-  -d "$(jq -nc --arg sdl "$SDL" '{data: {sdl: $sdl, deposit: 5}}')")
+  -d "$(jq -nc --arg sdl "$SDL" '{data: {sdl: $sdl}}')")
 
 echo "$RESPONSE" | jq .
 ```
@@ -90,7 +90,7 @@ MANIFEST=$(echo "$RESPONSE" | jq -r .data.manifest)
 echo "Deployment $DSEQ created"
 ```
 
-`deposit: 5` is **USD**, not `5uact`. The Console API converts to the chain denom server-side.
+No `deposit` in the body. Console funds the deployment from the account's credit balance and keeps topping it up while credits last; a caller-supplied deposit is ignored.
 
 ## Step 3 — Wait for bids and list them
 
@@ -202,7 +202,7 @@ curl -X DELETE https://console-api.akash.network/v1/deployments/$DSEQ \
 - Run `provider-services keys add`
 - Manage a private key, mnemonic, or hardware wallet
 - Generate or maintain mTLS certificates (those are deprecated for the Console API path — see `../cli/mtls-legacy.md`)
-- Acquire AKT manually — your account is funded with USD via Stripe
+- Acquire AKT manually — you add USD credits via Stripe
 
 This is the value proposition of the Console API. If a step in your workflow ever requires one of those things, you've drifted into the CLI or SDK path and should re-read SKILL.md's "Choosing a Deployment Method" section.
 
@@ -212,7 +212,7 @@ This is the value proposition of the Console API. If a step in your workflow eve
 |---|---|---|
 | `401 Unauthorized` | API key in `Authorization: Bearer` | Move to `x-api-key` header |
 | `400 Bad Request` on create | Body not wrapped in `{ "data": { ... } }` | Wrap it |
-| `400 Bad Request` on create | `deposit` sent as `"5uact"` string | Send as USD number (e.g. `5`) |
+| Deployment closes unexpectedly | Account ran out of credits | Add credits in the Console UI, or turn on Auto Top-Up |
 | No bids | SDL resources don't match providers; price too low | Run `POST /v1/bid-screening` or see `rules/bid-matching/` |
 | `404` on lease endpoints | Tried `/lease/{dseq}/{gseq}/{oseq}` | Read lease state from `GET /v1/deployments/{dseq}.leases[]` instead |
 | Logs request times out | Hit `console-api.akash.network` for logs | Logs are served by the provider — see step 6 |
