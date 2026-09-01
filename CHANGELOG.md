@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.4.1](https://github.com/akash-network/akash-skill/compare/v3.4.0...v3.4.1) (2026-09-01)
+
+
+### Bug Fixes
+
+* **akash/console-api:** say escrow for the held balance and correct GET /v1/balances ([#34](https://github.com/akash-network/akash-skill/issues/34)) ([0b50d10](https://github.com/akash-network/akash-skill/commit/0b50d10bdbfe6e1585c36f835221ea27bbfdb299))
+* **akash/console-api:** stop telling agents to send a deposit ([#32](https://github.com/akash-network/akash-skill/issues/32)) ([c326733](https://github.com/akash-network/akash-skill/commit/c326733d143718c92526f17827a0ba06662e3981))
+
 ## [3.4.0](https://github.com/akash-network/akash-skill/compare/v3.3.0...v3.4.0) (2026-08-01)
 
 
