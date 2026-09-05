@@ -45,6 +45,7 @@ Provider attributes are key-value pairs that describe a provider's capabilities,
 | `capabilities/storage/1/persistent` | `true`, `false` | Persistent storage support |
 | `capabilities/gpu/vendor/nvidia/model/<model>` | `true` | GPU model availability |
 | `capabilities/ip/ip_lease` | `true` | Dedicated IP lease support |
+| `capabilities/cpu/arch` | `x86-64`, `arm-64` | CPU architecture the cluster offers. Console surfaces it as `hardwareCpuArch`. The vocabulary differs from the SDL's `cpu.attributes.arch` (`amd64` / `arm64`); the bid engine matches SDL `arch` against node inventory (`CPUInfo.arch`), not this attribute, so it is a discovery hint rather than the gate. Declare it if you run arm64 nodes. |
 
 ### GPU Attributes
 
@@ -73,6 +74,8 @@ attributes:
     value: community
   - key: organization
     value: myorg
+  - key: capabilities/cpu/arch
+    value: x86-64
   - key: capabilities/storage/1/class
     value: beta2
   - key: capabilities/storage/1/persistent

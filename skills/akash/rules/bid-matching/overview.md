@@ -20,7 +20,7 @@ Pair with the SDL rules: those tell you if the YAML is valid; this tells you if 
 
 1. Fetch `https://console-api.akash.network/v1/providers`.
 2. Keep only providers where `isOnline === true` AND `isAudited === true`. Both filters matter — offline providers won't bid at all, and audited providers are what Console surfaces by default.
-3. Extract compute requirements from every profile in the SDL (CPU millis, memory, ephemeral + persistent storage, storage class, GPU count + vendor + model, IP endpoint need).
+3. Extract compute requirements from every profile in the SDL (CPU millis, CPU architecture if set, memory, ephemeral + persistent storage, storage class, GPU count + vendor + model, IP endpoint need).
 4. Check each provider's `stats.*.available` and capability flags against those requirements.
 5. Produce a funnel that shows which single constraint collapses the provider pool. The biggest filter is usually more useful than the final count, because it tells the user what to relax.
 
@@ -35,6 +35,7 @@ python3 scripts/match_providers.py /path/to/deploy.yaml
 Optional flags:
 - `--top N` — top N matching providers per profile (default 5)
 - `--api URL` — override the providers endpoint
+- `--api file:///abs/path/providers.json` — run against a saved providers response instead of the live endpoint
 - `--json` — emit only JSON (default behavior anyway)
 
 If the user pasted an SDL inline, save it to a temp file first:
@@ -111,6 +112,7 @@ When picking changes:
 - **Per-GPU-model availability is not exposed.** The endpoint reports total GPU count via `stats.gpu.available` and a list of models via `gpuModels[]`, but not a per-model available count. The matcher treats "provider has this model in `gpuModels` AND total GPUs available ≥ requested" as a match — it can overcount when one provider has mixed models.
 - **Provider-side bid config (floor prices, deployment ACLs, denom acceptance) is not exposed.** A provider can satisfy the SDL on paper and still decline the bid based on its own pricing rules or policy. The report predicts *capability*, not *intent*.
 - **Stats are snapshots.** Available capacity changes minute-to-minute as leases come and go.
+- **CPU architecture is self-declared.** The endpoint exposes `hardwareCpuArch` (attribute `capabilities/cpu/arch`), not per-node inventory. Providers that declare nothing fail an explicit `arch` request. Never relax `arch`; a zero-match result means no provider serves that architecture right now.
 
 Surface these caveats when they matter — especially when the verdict is "feasible" but the user is still not getting bids. At that point SDL changes are the wrong lever; recommend out-of-band actions (direct provider DM on Akash Discord, smaller-model functional test, pre-arranged capacity).
 
