@@ -9,6 +9,8 @@ and the single biggest constraint.
 
 Usage:
     python match_providers.py <sdl.yaml> [--json] [--top N] [--api URL]
+
+--api also accepts file:///abs/path/providers.json to run against a saved response.
 """
 
 from __future__ import annotations
@@ -96,6 +98,7 @@ class ProfileRequirement:
     storage_classes: list[str]
     gpu_units: int
     gpu_alternatives: list[GPUAlternative]  # any one being satisfied is enough
+    cpu_arch: str | None  # resources.cpu.attributes.arch: amd64 | arm64 | None (no attribute written)
     needs_ip_endpoint: bool
     denom: str | None
     price_amount: int | None
@@ -145,7 +148,10 @@ def extract_requirements(sdl: dict) -> list[ProfileRequirement]:
     reqs: list[ProfileRequirement] = []
     for prof_name, prof in compute.items():
         resources = prof.get("resources") or {}
-        cpu_millis = parse_cpu_millis((resources.get("cpu") or {}).get("units"))
+        cpu_raw = resources.get("cpu") or {}
+        cpu_millis = parse_cpu_millis(cpu_raw.get("units"))
+        cpu_arch_raw = (cpu_raw.get("attributes") or {}).get("arch")
+        cpu_arch = str(cpu_arch_raw).strip() if cpu_arch_raw is not None else None
         memory_bytes = parse_bytes((resources.get("memory") or {}).get("size"))
 
         storage_raw = resources.get("storage")
@@ -206,6 +212,7 @@ def extract_requirements(sdl: dict) -> list[ProfileRequirement]:
                 storage_classes=sorted(set(classes)),
                 gpu_units=gpu_units * total_count,
                 gpu_alternatives=gpu_alts,
+                cpu_arch=cpu_arch,
                 needs_ip_endpoint=needs_ip,
                 denom=denom,
                 price_amount=amount,
@@ -219,6 +226,47 @@ def extract_requirements(sdl: dict) -> list[ProfileRequirement]:
 
 _STORAGE_CLASS_ATTR_RE = re.compile(r"^capabilities/storage/(\d+)/class$")
 _STORAGE_PERSIST_ATTR_RE = re.compile(r"^capabilities/storage/(\d+)/persistent$")
+_CPU_ARCH_ATTR_KEY = "capabilities/cpu/arch"
+# Declared vocabulary is x86-64 / arm-64; amd64, x86_64, arm64 show up in the wild. Fold to SDL values.
+# 32-bit x86 / arm have no alias and never match.
+_CPU_ARCH_ALIASES = {
+    "amd64": "amd64",
+    "x86-64": "amd64",
+    "x86_64": "amd64",
+    "x64": "amd64",
+    "arm64": "arm64",
+    "arm-64": "arm64",
+    "aarch64": "arm64",
+}
+SDL_CPU_ARCHS = {"amd64", "arm64"}  # chain-sdk go/sdl/cpu.go cpuArchitectures
+
+
+def provider_cpu_archs(provider: dict) -> set[str]:
+    """Normalised CPU architectures a provider declares; empty when unknown.
+
+    Sources: Console-derived `hardwareCpuArch` (comma-joined when the attribute repeats) and the
+    raw on-chain attribute `capabilities/cpu/arch`. Self-declared; the bid engine matches on live
+    node inventory, which the providers endpoint does not expose."""
+    raw: list[str] = []
+    if provider.get("hardwareCpuArch"):
+        raw.extend(str(provider["hardwareCpuArch"]).split(","))
+    for attr in provider.get("attributes") or []:
+        if (attr.get("key") or "").strip() == _CPU_ARCH_ATTR_KEY:
+            raw.append(str(attr.get("value") or ""))
+    out: set[str] = set()
+    for v in raw:
+        norm = _CPU_ARCH_ALIASES.get(v.strip().lower())
+        if norm:
+            out.add(norm)
+    return out
+
+
+def provider_cpu_arch_satisfies(provider: dict, arch: str | None) -> bool:
+    """Hard constraint. No arch requested: not applicable. Arch requested: the provider must
+    declare it. An undeclared architecture fails, same as the empty-gpuModels rule."""
+    if not arch:
+        return True
+    return arch.lower() in provider_cpu_archs(provider)
 
 
 def provider_persistent_classes(provider: dict) -> set[str]:
@@ -312,6 +360,7 @@ def check_provider(provider: dict, req: ProfileRequirement) -> dict[str, bool]:
     checks = {
         "placement_attributes": provider_satisfies_attributes(provider, req.placement_attributes),
         "cpu": cpu_avail >= req.cpu_millis,
+        "cpu_arch": provider_cpu_arch_satisfies(provider, req.cpu_arch),
         "memory": mem_avail >= req.memory_bytes,
         "storage_ephemeral": eph_avail >= req.storage_ephemeral_bytes,
         "storage_persistent": (
@@ -363,6 +412,7 @@ def summarize(providers: list[dict], reqs: list[ProfileRequirement], top_n: int 
         check_names = [
             "placement_attributes",
             "cpu",
+            "cpu_arch",
             "memory",
             "storage_ephemeral",
             "storage_persistent",
@@ -393,6 +443,7 @@ def summarize(providers: list[dict], reqs: list[ProfileRequirement], top_n: int 
                         "gpuModels": [
                             f"{g.get('vendor')}/{g.get('model')}" for g in p.get("gpuModels") or []
                         ],
+                        "cpuArch": sorted(provider_cpu_archs(p)),
                     }
                 )
 
@@ -409,6 +460,7 @@ def summarize(providers: list[dict], reqs: list[ProfileRequirement], top_n: int 
                 "count": req.count,
                 "requirements": {
                     "cpu_millis": req.cpu_millis,
+                    "cpu_arch": req.cpu_arch,
                     "memory": fmt_bytes(req.memory_bytes),
                     "storage_ephemeral": fmt_bytes(req.storage_ephemeral_bytes),
                     "storage_persistent": fmt_bytes(req.storage_persistent_bytes),
@@ -432,6 +484,7 @@ def summarize(providers: list[dict], reqs: list[ProfileRequirement], top_n: int 
                 "top_matches": matches[:top_n],
                 "feasible": len(matches) > 0,
                 "denom_note": _denom_note(req.denom),
+                "cpu_arch_note": _cpu_arch_note(req.cpu_arch),
             }
         )
 
@@ -455,6 +508,8 @@ def _check_applies(name: str, req: ProfileRequirement) -> bool:
         return req.needs_ip_endpoint
     if name == "placement_attributes":
         return bool(req.placement_attributes)
+    if name == "cpu_arch":
+        return bool(req.cpu_arch)
     return True
 
 
@@ -469,6 +524,15 @@ def _denom_note(denom: str | None) -> str | None:
     return (
         f"denom '{denom}' is not the native Akash denom (uact) — "
         "providers reject non-uact denoms for lease payment."
+    )
+
+
+def _cpu_arch_note(arch: str | None) -> str | None:
+    if arch is None or arch in SDL_CPU_ARCHS:
+        return None
+    return (
+        f"cpu.attributes.arch '{arch}' is not a valid SDL value (amd64 or arm64); "
+        "the SDL is rejected at validation before any bid window opens."
     )
 
 

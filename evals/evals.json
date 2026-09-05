@@ -6,15 +6,61 @@
       "name": "api-key-deploy",
       "prompt": "Deploy nginx to Akash with API key in $AKASH_API_KEY via CI",
       "assertions": [
-        {"id": "uses_x_api_key", "type": "regex_present", "pattern": "x-api-key", "description": "Uses the x-api-key header (not Authorization: Bearer for the API key)"},
-        {"id": "uses_v1_deployments_plural", "type": "regex_present", "pattern": "/v1/deployments\\b", "description": "Hits /v1/deployments (plural, current)"},
-        {"id": "wraps_in_data_envelope", "type": "regex_present", "pattern": "\"data\"\\s*:\\s*\\{", "description": "Wraps request body in { \"data\": { ... } }"},
-        {"id": "no_akash_cli", "type": "regex_absent", "pattern": "(?<!\\w)akash (tx|query|keys) ", "description": "Does NOT use the akash CLI (akash tx/query/keys ...)"},
-        {"id": "no_cert_generation", "type": "regex_absent", "pattern": "(akash tx cert create|certificateManager\\.createCertificate|tls.*cert.*generate)", "description": "Does NOT walk through mTLS certificate generation"},
-        {"id": "batch_leases_endpoint", "type": "regex_present", "pattern": "/v1/leases\\b", "description": "Uses POST /v1/leases (batch endpoint that also sends manifest)"},
-        {"id": "no_authorization_bearer_for_apikey", "type": "regex_absent", "pattern": "Authorization:\\s*Bearer\\s*\\$?AKASH_API_KEY", "description": "Does NOT use Authorization: Bearer with the API key"},
-        {"id": "uses_env_var_reference", "type": "regex_present", "pattern": "(\\$AKASH_API_KEY|\\$\\{AKASH_API_KEY\\}|\\$\\{\\{ secrets\\.AKASH_API_KEY \\}\\}|process\\.env\\.AKASH_API_KEY|os\\.environ\\[[\"']AKASH_API_KEY[\"']\\]|os\\.Getenv\\([\"']AKASH_API_KEY[\"']\\))", "description": "References the API key via env var, never inline"},
-        {"id": "no_deposit_on_create", "type": "regex_absent", "pattern": "deposit", "description": "Does NOT send a deposit; Console funds deployments automatically", "case_insensitive": true}
+        {
+          "id": "uses_x_api_key",
+          "type": "regex_present",
+          "pattern": "x-api-key",
+          "description": "Uses the x-api-key header (not Authorization: Bearer for the API key)"
+        },
+        {
+          "id": "uses_v1_deployments_plural",
+          "type": "regex_present",
+          "pattern": "/v1/deployments\\b",
+          "description": "Hits /v1/deployments (plural, current)"
+        },
+        {
+          "id": "wraps_in_data_envelope",
+          "type": "regex_present",
+          "pattern": "\"data\"\\s*:\\s*\\{",
+          "description": "Wraps request body in { \"data\": { ... } }"
+        },
+        {
+          "id": "no_akash_cli",
+          "type": "regex_absent",
+          "pattern": "(?<!\\w)akash (tx|query|keys) ",
+          "description": "Does NOT use the akash CLI (akash tx/query/keys ...)"
+        },
+        {
+          "id": "no_cert_generation",
+          "type": "regex_absent",
+          "pattern": "(akash tx cert create|certificateManager\\.createCertificate|tls.*cert.*generate)",
+          "description": "Does NOT walk through mTLS certificate generation"
+        },
+        {
+          "id": "batch_leases_endpoint",
+          "type": "regex_present",
+          "pattern": "/v1/leases\\b",
+          "description": "Uses POST /v1/leases (batch endpoint that also sends manifest)"
+        },
+        {
+          "id": "no_authorization_bearer_for_apikey",
+          "type": "regex_absent",
+          "pattern": "Authorization:\\s*Bearer\\s*\\$?AKASH_API_KEY",
+          "description": "Does NOT use Authorization: Bearer with the API key"
+        },
+        {
+          "id": "uses_env_var_reference",
+          "type": "regex_present",
+          "pattern": "(\\$AKASH_API_KEY|\\$\\{AKASH_API_KEY\\}|\\$\\{\\{ secrets\\.AKASH_API_KEY \\}\\}|process\\.env\\.AKASH_API_KEY|os\\.environ\\[[\"']AKASH_API_KEY[\"']\\]|os\\.Getenv\\([\"']AKASH_API_KEY[\"']\\))",
+          "description": "References the API key via env var, never inline"
+        },
+        {
+          "id": "no_deposit_on_create",
+          "type": "regex_absent",
+          "pattern": "deposit",
+          "description": "Does NOT send a deposit; Console funds deployments automatically",
+          "case_insensitive": true
+        }
       ]
     },
     {
@@ -22,8 +68,21 @@
       "name": "ambiguous-deploy",
       "prompt": "Want to deploy a node.js+postgres app to Akash. How?",
       "assertions": [
-        {"id": "asks_about_method", "type": "regex_present", "pattern": "(which|prefer|method|console api|cli|sdk|managed|self-custody).*\\?", "description": "Asks the user which deployment method they want", "case_insensitive": true},
-        {"id": "mentions_multiple_methods", "type": "count_at_least", "pattern": "(console api|akash cli|typescript sdk|go sdk)", "min_count": 2, "description": "Lists multiple methods so the user can pick", "case_insensitive": true}
+        {
+          "id": "asks_about_method",
+          "type": "regex_present",
+          "pattern": "(which|prefer|method|console api|cli|sdk|managed|self-custody).*\\?",
+          "description": "Asks the user which deployment method they want",
+          "case_insensitive": true
+        },
+        {
+          "id": "mentions_multiple_methods",
+          "type": "count_at_least",
+          "pattern": "(console api|akash cli|typescript sdk|go sdk)",
+          "min_count": 2,
+          "description": "Lists multiple methods so the user can pick",
+          "case_insensitive": true
+        }
       ]
     },
     {
@@ -31,10 +90,33 @@
       "name": "keplr-self-custody",
       "prompt": "Have 50 AKT in Keplr, deploy redis to Akash, don't want to give up keys",
       "assertions": [
-        {"id": "mentions_self_custody_path", "type": "regex_present", "pattern": "(akash cli|akash keys|chain-sdk|@akashnetwork/chain-sdk|typescript sdk|go sdk)", "description": "Mentions a self-custody path (CLI or SDK)", "case_insensitive": true},
-        {"id": "no_console_api_push", "type": "regex_absent", "pattern": "(use the console api|via the console api|x-api-key|/v1/deployments)", "description": "Does NOT push Console API for this user", "case_insensitive": true},
-        {"id": "respects_keplr", "type": "regex_present", "pattern": "keplr", "description": "Acknowledges the Keplr wallet specifically", "case_insensitive": true},
-        {"id": "no_fake_console_air_url", "type": "regex_absent", "pattern": "https?://console-air\\.akash\\.network", "description": "Does NOT reference the bogus console-air.akash.network URL (Console Air is self-hosted)"}
+        {
+          "id": "mentions_self_custody_path",
+          "type": "regex_present",
+          "pattern": "(akash cli|akash keys|chain-sdk|@akashnetwork/chain-sdk|typescript sdk|go sdk)",
+          "description": "Mentions a self-custody path (CLI or SDK)",
+          "case_insensitive": true
+        },
+        {
+          "id": "no_console_api_push",
+          "type": "regex_absent",
+          "pattern": "(use the console api|via the console api|x-api-key|/v1/deployments)",
+          "description": "Does NOT push Console API for this user",
+          "case_insensitive": true
+        },
+        {
+          "id": "respects_keplr",
+          "type": "regex_present",
+          "pattern": "keplr",
+          "description": "Acknowledges the Keplr wallet specifically",
+          "case_insensitive": true
+        },
+        {
+          "id": "no_fake_console_air_url",
+          "type": "regex_absent",
+          "pattern": "https?://console-air\\.akash\\.network",
+          "description": "Does NOT reference the bogus console-air.akash.network URL (Console Air is self-hosted)"
+        }
       ]
     },
     {
@@ -42,12 +124,42 @@
       "name": "stream-logs",
       "prompt": "Stream logs from Akash deployment dseq 12345678 via API",
       "assertions": [
-        {"id": "mints_jwt", "type": "regex_present", "pattern": "/v1/create-jwt-token", "description": "Mints JWT via POST /v1/create-jwt-token"},
-        {"id": "resolves_hosturi", "type": "regex_present", "pattern": "/v1/providers/", "description": "Resolves provider hostUri via GET /v1/providers/{address}"},
-        {"id": "uses_websocket", "type": "regex_present", "pattern": "(wss://|websocat|WebSocket|new WebSocket)", "description": "Uses WebSocket / WSS for log streaming"},
-        {"id": "provider_lease_logs_path", "type": "regex_present", "pattern": "/lease/.*/logs", "description": "Hits provider's /lease/{dseq}/{gseq}/{oseq}/logs endpoint"},
-        {"id": "no_invented_proxy", "type": "regex_absent", "pattern": "console-api\\.akash\\.network/v1/(proxy|logs|lease)", "description": "Does NOT invent a Console-API passthrough for logs"},
-        {"id": "jwt_in_auth_bearer", "type": "regex_present", "pattern": "Authorization:\\s*Bearer\\s*\\$?(JWT|TOKEN|jwt|token)", "description": "Sends JWT in Authorization: Bearer header on the provider call"}
+        {
+          "id": "mints_jwt",
+          "type": "regex_present",
+          "pattern": "/v1/create-jwt-token",
+          "description": "Mints JWT via POST /v1/create-jwt-token"
+        },
+        {
+          "id": "resolves_hosturi",
+          "type": "regex_present",
+          "pattern": "/v1/providers/",
+          "description": "Resolves provider hostUri via GET /v1/providers/{address}"
+        },
+        {
+          "id": "uses_websocket",
+          "type": "regex_present",
+          "pattern": "(wss://|websocat|WebSocket|new WebSocket)",
+          "description": "Uses WebSocket / WSS for log streaming"
+        },
+        {
+          "id": "provider_lease_logs_path",
+          "type": "regex_present",
+          "pattern": "/lease/.*/logs",
+          "description": "Hits provider's /lease/{dseq}/{gseq}/{oseq}/logs endpoint"
+        },
+        {
+          "id": "no_invented_proxy",
+          "type": "regex_absent",
+          "pattern": "console-api\\.akash\\.network/v1/(proxy|logs|lease)",
+          "description": "Does NOT invent a Console-API passthrough for logs"
+        },
+        {
+          "id": "jwt_in_auth_bearer",
+          "type": "regex_present",
+          "pattern": "Authorization:\\s*Bearer\\s*\\$?(JWT|TOKEN|jwt|token)",
+          "description": "Sends JWT in Authorization: Bearer header on the provider call"
+        }
       ]
     },
     {
@@ -55,10 +167,33 @@
       "name": "provider-setup",
       "prompt": "Set up Akash provider on 3-node k3s cluster with one 3090 GPU",
       "assertions": [
-        {"id": "mentions_kubernetes_setup", "type": "regex_present", "pattern": "(kubernetes|k3s|kubectl|CRD|ingress|storage class)", "description": "Covers Kubernetes prerequisites", "case_insensitive": true},
-        {"id": "mentions_provider_services", "type": "regex_present", "pattern": "provider[- ]services", "description": "Mentions installing provider-services daemon", "case_insensitive": true},
-        {"id": "mentions_gpu_attributes", "type": "regex_present", "pattern": "(gpu|nvidia|3090|a100|h100)", "description": "Addresses GPU attribute configuration", "case_insensitive": true},
-        {"id": "no_uakt", "type": "regex_absent", "pattern": "\\buakt\\b(?!.*deprecated|.*legacy|.*old name|.*renamed|.*migration)", "description": "Does NOT use uakt as the active denom (legacy/deprecated mentions are OK)"}
+        {
+          "id": "mentions_kubernetes_setup",
+          "type": "regex_present",
+          "pattern": "(kubernetes|k3s|kubectl|CRD|ingress|storage class)",
+          "description": "Covers Kubernetes prerequisites",
+          "case_insensitive": true
+        },
+        {
+          "id": "mentions_provider_services",
+          "type": "regex_present",
+          "pattern": "provider[- ]services",
+          "description": "Mentions installing provider-services daemon",
+          "case_insensitive": true
+        },
+        {
+          "id": "mentions_gpu_attributes",
+          "type": "regex_present",
+          "pattern": "(gpu|nvidia|3090|a100|h100)",
+          "description": "Addresses GPU attribute configuration",
+          "case_insensitive": true
+        },
+        {
+          "id": "no_uakt",
+          "type": "regex_absent",
+          "pattern": "\\buakt\\b(?!.*deprecated|.*legacy|.*old name|.*renamed|.*migration)",
+          "description": "Does NOT use uakt as the active denom (legacy/deprecated mentions are OK)"
+        }
       ]
     },
     {
@@ -66,10 +201,34 @@
       "name": "validator-setup",
       "prompt": "Install Akash validator on mainnet, state sync vs genesis?",
       "assertions": [
-        {"id": "mentions_full_node_install", "type": "regex_present", "pattern": "(akashd|akash.*install|akash.*binary|full[- ]node)", "description": "Covers full-node installation", "case_insensitive": true},
-        {"id": "compares_state_sync", "type": "regex_present", "pattern": "state[- ]sync", "description": "Discusses state sync (the user asked)", "case_insensitive": true},
-        {"id": "create_validator_tx", "type": "regex_present", "pattern": "(create-validator|create_validator|MsgCreateValidator|tx staking)", "description": "Mentions becoming a validator on-chain", "case_insensitive": true},
-        {"id": "mentions_security", "type": "regex_present", "pattern": "(sentry|slash|consensus key|priv_validator_key|tmkms|hsm)", "description": "Mentions validator security (sentry, slashing, key management)", "case_insensitive": true}
+        {
+          "id": "mentions_full_node_install",
+          "type": "regex_present",
+          "pattern": "(akashd|akash.*install|akash.*binary|full[- ]node)",
+          "description": "Covers full-node installation",
+          "case_insensitive": true
+        },
+        {
+          "id": "compares_state_sync",
+          "type": "regex_present",
+          "pattern": "state[- ]sync",
+          "description": "Discusses state sync (the user asked)",
+          "case_insensitive": true
+        },
+        {
+          "id": "create_validator_tx",
+          "type": "regex_present",
+          "pattern": "(create-validator|create_validator|MsgCreateValidator|tx staking)",
+          "description": "Mentions becoming a validator on-chain",
+          "case_insensitive": true
+        },
+        {
+          "id": "mentions_security",
+          "type": "regex_present",
+          "pattern": "(sentry|slash|consensus key|priv_validator_key|tmkms|hsm)",
+          "description": "Mentions validator security (sentry, slashing, key management)",
+          "case_insensitive": true
+        }
       ]
     },
     {
@@ -77,9 +236,58 @@
       "name": "method-switch",
       "prompt": "Started CLI deployment, want to switch to Console API for accepting bid",
       "assertions": [
-        {"id": "explains_wallet_mismatch", "type": "regex_present", "pattern": "(different wallet|different address|wallet.*not.*the same|cli.*wallet.*account|on-chain.*belongs|owned by)", "description": "Explains the wallet mismatch between CLI self-custody and Console account", "case_insensitive": true},
-        {"id": "no_naive_swap", "type": "regex_absent", "pattern": "(just switch|simple swap|yes you can switch to|just use the api now)", "description": "Does NOT claim the methods are mid-stream interchangeable", "case_insensitive": true},
-        {"id": "offers_path_forward", "type": "regex_present", "pattern": "(finish.*cli|complete.*cli|close.*deployment|redo.*via.*api|for future|next deployment)", "description": "Offers a concrete path forward (finish via CLI, or recreate via API)", "case_insensitive": true}
+        {
+          "id": "explains_wallet_mismatch",
+          "type": "regex_present",
+          "pattern": "(different wallet|different address|wallet.*not.*the same|cli.*wallet.*account|on-chain.*belongs|owned by)",
+          "description": "Explains the wallet mismatch between CLI self-custody and Console account",
+          "case_insensitive": true
+        },
+        {
+          "id": "no_naive_swap",
+          "type": "regex_absent",
+          "pattern": "(just switch|simple swap|yes you can switch to|just use the api now)",
+          "description": "Does NOT claim the methods are mid-stream interchangeable",
+          "case_insensitive": true
+        },
+        {
+          "id": "offers_path_forward",
+          "type": "regex_present",
+          "pattern": "(finish.*cli|complete.*cli|close.*deployment|redo.*via.*api|for future|next deployment)",
+          "description": "Offers a concrete path forward (finish via CLI, or recreate via API)",
+          "case_insensitive": true
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "arm64-sdl",
+      "prompt": "Write an Akash SDL for my arm64-only image ghcr.io/acme/edge-agent:1.4.2 (port 8080, 1 CPU, 1Gi RAM, 2Gi disk). It must land on ARM nodes.",
+      "assertions": [
+        {
+          "id": "sets_arch_arm64",
+          "type": "regex_present",
+          "pattern": "attributes:\\s*\\n\\s*arch:\\s*[\"']?arm64[\"']?",
+          "description": "Requests the architecture via cpu.attributes.arch: arm64"
+        },
+        {
+          "id": "no_wrong_arch_spelling",
+          "type": "regex_absent",
+          "pattern": "arch:\\s*[\"']?(x86_64|x86-64|aarch64|arm-64|ARM64|AMD64)",
+          "description": "Does NOT use uname/Go spellings or the wrong case as the arch value"
+        },
+        {
+          "id": "no_placement_arch_attribute",
+          "type": "regex_absent",
+          "pattern": "(capabilities/cpu/arch|hardware-cpu-arch)",
+          "description": "Does NOT request the architecture through placement attributes"
+        },
+        {
+          "id": "keeps_image_tag",
+          "type": "regex_absent",
+          "pattern": "edge-agent:latest",
+          "description": "Keeps the explicit image tag"
+        }
       ]
     }
   ]
