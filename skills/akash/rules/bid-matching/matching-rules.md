@@ -23,6 +23,20 @@ The script multiplies per-service requirements by `deployment[svc][placement].co
 
 **Canonical:** `tryAdjust` does CPU via `SubMilliNLZ` per-node (`provider/cluster/kube/operators/clients/inventory/inventory.go:46`), then `Adjust` walks nodes one at a time decrementing `resources[i].Count` per fit (`inventory.go:243-294`). Overcommit factors (`CPUCommitLevel`/`MemoryCommitLevel`/`GPUCommitLevel`) are applied via `sdlutil.ComputeCommittedResources` *before* `Adjust`, scaling the requested amount down by the commit ratio (`provider/cluster/inventory.go:286-294`). The matcher does not model overcommit — its check is conservative for that reason but optimistic on per-node fit.
 
+## CPU architecture
+
+- **SDL:** `resources.cpu.attributes.arch` — `amd64` or `arm64`, or absent (no CPU attributes written)
+- **Provider:** `hardwareCpuArch` — Console-derived from the self-declared on-chain attribute `capabilities/cpu/arch`. The declared vocabulary is `x86-64` / `arm-64`; `x86_64`, `amd64`, `arm64` and junk appear in the wild, and a repeated attribute is comma-joined. Empty on most providers. The raw `attributes[]` entry is honored as a fallback.
+- **Match:** applies only when the SDL sets `arch`. Normalise the provider value (`x86-64`, `x86_64`, `amd64` → `amd64`; `arm-64`, `aarch64`, `arm64` → `arm64`; 32-bit `x86` / `arm` never match) and require equality. A provider that declares no architecture **fails** an explicit `arch` request. Its architecture can't be verified from this endpoint, and passing it would report nearly the whole amd64 pool as arm64-capable. This is the same rule as the empty `gpuModels` edge case below.
+
+**Canonical:** the accepted values are enforced at SDL parse time, not by the provider. `cpuArchitectures` (`chain-sdk/go/sdl/cpu.go:20-23`) and `v2CPUAttributes.UnmarshalYAML` (`cpu.go:54-83`) reject anything but `amd64` / `arm64` and any key other than `arch`; the TypeScript SDK validates against the same enum in `chain-sdk/go/sdl/sdl-input.schema.yaml`. Omitting `arch` produces zero attributes; there is deliberately no default. Provider side: nodes report `CPUInfo.arch` in inventory (`chain-sdk/proto/provider/akash/inventory/v1/cpu.proto:36`, empty on inventory operators that predate the field), and bid-engine filtering of `arch` against node architecture ships with akash-network/provider#433 (AKT-490). The bid engine treats a group with no `arch` as amd64.
+
+### CPU architecture caveats
+
+- `capabilities/cpu/arch` is self-declared and rarely audited; the bid engine matches on live node inventory, which the providers endpoint does not expose. The matcher can miss a provider that runs arm64 nodes but declares nothing, and can pass one that declares `arm-64` with no free arm64 node.
+- The managed Console's bid screening reads live node inventory in addition to this attribute, so its arm64 verdict is more reliable than the matcher's.
+- This check is never relaxed. If `passes_cpu_arch` is the biggest filter, report that no online, audited provider currently serves that architecture and stop. Do not drop the attribute or switch it to `amd64`.
+
 ## Memory
 
 - **SDL:** `resources.memory.size` — accepts `Ki`/`Mi`/`Gi`/`Ti` (binary) and `k`/`M`/`G`/`T` (decimal)
@@ -121,6 +135,8 @@ The matcher treats only `uact` as recognized. Anything else — including legacy
 - **Storage name without `class`** — treated as ephemeral with no class constraint.
 - **GPU with `units: 0` and attributes** — invalid per SDL rules, ignored by the matcher (no GPU check applied).
 - **`gpuModels` empty but `stats.gpu.available > 0`** — provider has GPUs but model is unknown; the model check fails for any model-constrained request.
+- **`cpu.attributes.arch` absent** — no arch check applied. The bid engine treats the group as amd64; the SDL itself says nothing.
+- **Provider `hardwareCpuArch` is `x86` or `arm`** — 32-bit values, never match either accepted SDL value.
 
 ## Things the matcher cannot see (canonical bid filters not in the providers API)
 
@@ -130,6 +146,7 @@ The matcher treats only `uact` as recognized. Anything else — including legacy
 - **`IsStorageClassSupported` cluster check** — even if attributes declare `class=beta3`, the provider's cluster operator does a runtime check (`provider/cluster/kube/.../inventory.go:85-107`) the matcher can't reach.
 - **Custom shellscript filter** (`provider/bidengine/shellscript.go`) — providers can run arbitrary scripts to reject orders. Invisible.
 - **Existing bid dedupe and stale expiry** (`order.go:255`) — if a bid is already pending, the provider doesn't re-bid.
+- **Per-node CPU architecture** (`CPUInfo.arch` in provider inventory) — the providers endpoint only exposes the self-declared `capabilities/cpu/arch` attribute.
 
 ## Keep in mind
 

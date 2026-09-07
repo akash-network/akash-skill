@@ -170,6 +170,55 @@ storage:
     size: 5Gi
 ```
 
+## CPU Constraints
+
+### Architecture Values
+
+`cpu.attributes.arch` accepts exactly `amd64` or `arm64`:
+
+```yaml
+# Valid - arm64
+cpu:
+  units: 1
+  attributes:
+    arch: arm64
+
+# Valid - amd64
+cpu:
+  units: 1
+  attributes:
+    arch: amd64
+
+# Valid - no architecture requested (writes no CPU attributes)
+cpu:
+  units: 1
+
+# Invalid - uname and Go spellings are not accepted
+cpu:
+  units: 1
+  attributes:
+    arch: x86_64        # Error: unsupported cpu architecture "x86_64"
+
+cpu:
+  units: 1
+  attributes:
+    arch: aarch64       # Error: unsupported cpu architecture "aarch64"
+```
+
+### Only `arch` Is Recognised
+
+```yaml
+# Invalid - unknown CPU attribute key
+cpu:
+  units: 1
+  attributes:
+    vendor: amd         # Error: unsupported cpu attribute "vendor"
+```
+
+### No Default
+
+Omitting `attributes` is not shorthand for `arch: amd64`. The group spec gets zero CPU attributes, which is what every deployment created before `arch` existed has. SDL builders and SDK wrappers must not fill one in.
+
 ## GPU Constraints
 
 ### GPU with units > 0
@@ -550,6 +599,9 @@ deployment:
 | Price amount | Positive integer |
 | RAM storage | Cannot be persistent |
 | Non-RAM + attributes | Requires persistent=true |
+| CPU `arch` value | `amd64` or `arm64` exactly; `x86_64`, `aarch64` rejected |
+| CPU attributes | `arch` is the only recognised key |
+| CPU `arch` omitted | Writes no CPU attributes; no default |
 | GPU with units > 0 | Must have attributes with vendor |
 | GPU with units = 0 | Cannot have attributes |
 | TEE value | Must be `cpu` or `cpu-gpu` |

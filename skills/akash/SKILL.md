@@ -220,7 +220,7 @@ deployment:
 ### SDL Configuration
 - **@rules/sdl/schema-overview.md** — Version requirements and SDL structure
 - **@rules/sdl/services.md** — Service configuration (image, expose, env, credentials)
-- **@rules/sdl/compute-resources.md** — CPU, memory, storage, and GPU specifications
+- **@rules/sdl/compute-resources.md** — CPU (units, `arch`), memory, storage, and GPU specifications
 - **@rules/sdl/placement-pricing.md** — Provider selection and pricing (uact)
 - **@rules/sdl/deployment.md** — Service-to-profile mapping
 - **@rules/sdl/endpoints.md** — IP endpoint configuration (v2.1)
@@ -311,6 +311,18 @@ profiles:
             vendor:
               nvidia:
                 - model: a100
+```
+
+### CPU Architecture (arm64)
+```yaml
+profiles:
+  compute:
+    api:
+      resources:
+        cpu:
+          units: 2
+          attributes:
+            arch: arm64     # or amd64; omit to write no CPU attribute (there is no default)
 ```
 
 ### Confidential Compute (TEE)

@@ -12,6 +12,15 @@ When adapting an SDL to widen the bid pool, follow this priority order. The orde
 
 If capability matches are tiny and workload-relaxation options are exhausted, recommend out-of-band actions (direct provider DMs on Akash Discord, smaller-model functional test, pre-arranged capacity) — don't reach for the price knob.
 
+## What to leave alone — CPU architecture
+
+**Never change or remove `cpu.attributes.arch` to win a bid.**
+
+- `arch` is a hard constraint, not a preference. An arm64 image does not start on an amd64 node and vice versa; a bid on the wrong architecture fails at container start and the lease bills until it is closed.
+- Unlike a GPU model there is no "similar or larger" architecture to fall back to. There are two values and they are not interchangeable.
+- If no online, audited provider serves the requested architecture, say exactly that: "No provider currently serves `arm64`." Do not drop the attribute and do not switch it to `amd64`. The SDL has no implicit default. Providers read a group with no `arch` as amd64, but that is the provider's interpretation, not something to write into the SDL.
+- The one legitimate edit is when the user asked for an architecture they do not need (a multi-arch image with no ARM requirement) and confirms it. Then remove the attribute rather than replacing it with `amd64`.
+
 ## Adaptation priority — try each tier before the next
 
 ### 1. Reduce GPU count, keep the requested model
@@ -61,6 +70,8 @@ Very large single-node asks (>64 CPU, >256 GiB) narrow the pool. Sizing should f
 
 If capability matches plateau at 1–2 providers and the workload can't be relaxed further, **say so directly and stop iterating the SDL.** The remaining gates — bid-engine price floors, denom acceptance config, deployment ACLs, stale capacity — aren't visible in the providers endpoint and aren't fixable from the SDL.
 
+A `cpu_arch` plateau is a supply fact, not an SDL problem. Report that no provider serves the architecture and stop; do not relax it.
+
 Recommend out-of-band actions:
 - Direct provider DM on Akash Discord (with a 2-provider pool, a 30-second message beats another deploy cycle).
 - Smaller-model functional test on the same SDL shape, to validate plumbing while waiting on capacity.
@@ -77,7 +88,7 @@ Use these fields when deciding whether a provider can satisfy a feature:
 | RAM-class volumes | attribute `capabilities/storage/<N>/class=ram` |
 | IP endpoints | top-level `featEndpointIp` |
 | Custom domains | top-level `featEndpointCustomDomain` |
-| CPU architecture | `hardwareCpuArch` (`x86-64`, `arm64`) or attribute `capabilities/cpu/arch` |
+| CPU architecture | `hardwareCpuArch` (Console-derived from on-chain attribute `capabilities/cpu/arch`; declared vocabulary `x86-64` / `arm-64`, but `x86_64`, `amd64`, `arm64` occur in the wild, so normalise). Self-declared and empty on most providers. The bid engine matches on live node inventory, which this endpoint does not expose; the managed Console's bid screening does read it. |
 | GPU vendor/model | `gpuModels[]` with `{vendor, model, ram, interface}` |
 | GPU free count (any model) | `stats.gpu.available` |
 | Region / location | `locationRegion`, `country`, `ipCountry`, attributes `region`, `location-region` |
