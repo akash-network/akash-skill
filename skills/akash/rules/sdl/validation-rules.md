@@ -59,19 +59,21 @@ expose:
 | Field | Valid Range | Default |
 |-------|-------------|---------|
 | `max_body_size` | 0-104857600 (100MB) | 1048576 (1MB) |
-| `read_timeout` | 0-60000 ms | 60000 |
-| `send_timeout` | 0-60000 ms | 60000 |
+| `read_timeout` | 0-4294967295 ms, or a duration string | 60000 |
+| `send_timeout` | 0-4294967295 ms, or a duration string | 60000 |
 | `next_tries` | Not range-validated | 3 |
 | `next_timeout` | Not range-validated | 0 |
 | `next_cases` | Array of strings | `["error", "timeout"]` |
+| `proxy` | Optional object, see below | Unset |
 
-> Only `read_timeout` and `send_timeout` are range-capped (0-60000 ms) by the SDL parser. `next_timeout` and `next_tries` are not range-validated.
+> `read_timeout` and `send_timeout` take either a plain integer of milliseconds or a duration string ending in `ms`, `s`, `m` or `h`. Either form normalises to a uint32 millisecond count, so 4294967295 ms is the ceiling. `next_timeout` and `next_tries` are not range-validated.
 
 ```yaml
 # Valid
 http_options:
   max_body_size: 52428800     # 50MB
-  read_timeout: 30000         # 30 seconds
+  read_timeout: 30000         # 30 seconds as a millisecond count
+  send_timeout: 2m            # the same value can be written as a duration string
   next_cases:
     - error
     - timeout
@@ -82,11 +84,61 @@ http_options:
 # Invalid
 http_options:
   max_body_size: 200000000    # Error: exceeds 100MB limit
-  read_timeout: 120000        # Error: exceeds 60000ms limit
+  read_timeout: 30sec         # Error: the unit must be ms, s, m or h
   next_cases:
     - 502                     # Error: numbers must be quoted as strings
     - 503
 ```
+
+### Proxy Options
+
+`http_options.proxy` is an optional object with a closed key set:
+
+| Field | Valid Range |
+|-------|-------------|
+| `buffering_disable` | boolean |
+| `buffer_size` | 0-4294967295 (bytes) |
+| `buffers_number` | 1-4294967295 |
+| `buffers_size` | 1-4294967295 (bytes) |
+| `busy_buffers_size` | 0-4294967295 (bytes) |
+| `connect_timeout` | 0-4294967295 (ms) |
+
+```yaml
+# Valid - every field set
+http_options:
+  proxy:
+    buffering_disable: true
+    buffer_size: 4096
+    buffers_number: 8
+    buffers_size: 4096
+    busy_buffers_size: 8192
+    connect_timeout: 5000
+
+# Valid - one field is enough, the rest stay unset
+http_options:
+  proxy:
+    buffering_disable: true
+
+# Invalid - the buffers are an nginx pair
+http_options:
+  proxy:
+    buffers_number: 8         # Error: buffers_number and buffers_size must be set together
+
+# Invalid - the pair does not accept 0
+http_options:
+  proxy:
+    buffers_number: 0         # Error: minimum is 1
+    buffers_size: 4096
+
+# Invalid - unknown key
+http_options:
+  proxy:
+    buffering: false          # Error: the field is buffering_disable, and false is its default
+```
+
+### Unset Proxy Blocks Are Dropped
+
+A `proxy: {}` block, or one whose fields are all zero with `buffering_disable: false`, counts as unset. It is dropped from the manifest, so the deployment version hash matches a manifest written with no proxy options. The provider gateway applies its own defaults when it serves the route, and clients must not write those defaults into the SDL to make them explicit.
 
 ## Pricing Constraints
 
@@ -602,6 +654,10 @@ deployment:
 | CPU `arch` value | `amd64` or `arm64` exactly; `x86_64`, `aarch64` rejected |
 | CPU attributes | `arch` is the only recognised key |
 | CPU `arch` omitted | Writes no CPU attributes; no default |
+| `http_options` timeouts | Milliseconds or a duration string in `ms`, `s`, `m`, `h`; ceiling 4294967295 ms |
+| `http_options.proxy` keys | Closed set: `buffering_disable`, `buffer_size`, `buffers_number`, `buffers_size`, `busy_buffers_size`, `connect_timeout` |
+| Proxy buffers pair | `buffers_number` and `buffers_size` set together, both >= 1 |
+| Unset proxy block | Dropped from the manifest; no defaults injected |
 | GPU with units > 0 | Must have attributes with vendor |
 | GPU with units = 0 | Cannot have attributes |
 | TEE value | Must be `cpu` or `cpu-gpu` |
