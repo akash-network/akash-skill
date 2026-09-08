@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.6.0](https://github.com/akash-network/akash-skill/compare/v3.5.0...v3.6.0) (2026-09-08)
+
+
+### Features
+
+* **akash:** document the http_options proxy block ([#36](https://github.com/akash-network/akash-skill/issues/36)) ([7369535](https://github.com/akash-network/akash-skill/commit/7369535f509de4f5f931dcf41c4355f142789447))
+
 ## [3.5.0](https://github.com/akash-network/akash-skill/compare/v3.4.0...v3.5.0) (2026-09-07)
 
 
