@@ -289,6 +289,50 @@
           "description": "Keeps the explicit image tag"
         }
       ]
+    },
+    {
+      "id": 8,
+      "name": "http-proxy-options",
+      "prompt": "My Akash service streams server-sent events from port 8080, but clients only receive the whole stream once the response ends. Fix it in the SDL.",
+      "assertions": [
+        {
+          "id": "disables_proxy_buffering",
+          "type": "regex_present",
+          "pattern": "buffering_disable:\\s*[\"']?true",
+          "description": "Disables buffering via http_options.proxy.buffering_disable: true"
+        },
+        {
+          "id": "nests_under_http_options_proxy",
+          "type": "regex_present",
+          "pattern": "http_options:[\\s\\S]{0,400}?proxy:",
+          "description": "Nests the block under http_options.proxy"
+        },
+        {
+          "id": "no_nginx_directive_names",
+          "type": "regex_absent",
+          "pattern": "(proxy_buffering|proxy_buffer_size|proxy_buffers|proxy_busy_buffers_size|proxy_connect_timeout)\\s*:",
+          "description": "Does NOT use raw nginx directive names as SDL keys"
+        },
+        {
+          "id": "no_bare_buffering_key",
+          "type": "regex_absent",
+          "pattern": "\\bbuffering:\\s*[\"']?(false|off)",
+          "description": "Does NOT use the `buffering` spelling; the SDL field is `buffering_disable`"
+        },
+        {
+          "id": "pairs_proxy_buffers",
+          "type": "regex_absent",
+          "pattern": "buffers_number:(?![\\s\\S]*buffers_size:)",
+          "description": "Never sets buffers_number without buffers_size"
+        },
+        {
+          "id": "notes_provider_support_gap",
+          "type": "regex_present",
+          "pattern": "(provider#430|provider/pull/430|not yet (honou?red|supported|merged|live|rendered|applied)|no provider (yet )?(honou?rs|supports|renders|applies))",
+          "case_insensitive": true,
+          "description": "Says the proxy block is not honored by providers yet"
+        }
+      ]
     }
   ]
 }

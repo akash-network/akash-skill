@@ -128,8 +128,8 @@ expose:
       - global: true
     http_options:
       max_body_size: 1048576      # Max request body (bytes, 0-104857600)
-      read_timeout: 60000         # Read timeout (ms, 0-60000)
-      send_timeout: 60000         # Send timeout (ms, 0-60000)
+      read_timeout: 60000         # Read timeout (ms, or a duration string such as "60s")
+      send_timeout: 60000         # Send timeout (ms, or a duration string such as "60s")
       next_tries: 3               # Retry attempts
       next_timeout: 0             # Retry timeout (ms)
       next_cases:                 # Retry conditions (all values must be strings)
@@ -139,6 +139,39 @@ expose:
         - "502"
         - "503"
 ```
+
+##### Proxy Tuning
+
+`http_options.proxy` tunes the provider's nginx reverse proxy for one route. Every field is optional, and so is the block itself:
+
+```yaml
+expose:
+  - port: 80
+    as: 80
+    to:
+      - global: true
+    http_options:
+      proxy:
+        buffering_disable: true   # Stream the response instead of buffering it
+        buffer_size: 12288        # Bytes for the first part of the response
+        buffers_number: 6         # Buffer count; must be set with buffers_size
+        buffers_size: 24576       # Bytes per buffer; must be set with buffers_number
+        busy_buffers_size: 49152  # Bytes that may be busy sending to the client
+        connect_timeout: 7000     # Connect timeout in milliseconds
+```
+
+| Field | Type | nginx directive |
+|-------|------|-----------------|
+| `buffering_disable` | boolean | `proxy_buffering off` when `true` |
+| `buffer_size` | integer (bytes) | `proxy_buffer_size` |
+| `buffers_number` | integer | count half of `proxy_buffers`; requires `buffers_size` |
+| `buffers_size` | integer (bytes) | size half of `proxy_buffers`; requires `buffers_number` |
+| `busy_buffers_size` | integer (bytes) | `proxy_busy_buffers_size` |
+| `connect_timeout` | integer (ms) | `proxy_connect_timeout` |
+
+Set `buffering_disable: true` on a route that streams, such as server-sent events or a long poll, where buffering holds the payload back until the response finishes. Raise `buffer_size` when clients get a `502` on responses with large headers, usually an oversized `Set-Cookie` or a token echoed back in a header.
+
+Requires chain-sdk `1.0.0-alpha.44` or newer. Earlier parsers reject the `proxy` key outright. The provider gateway support that turns these into nginx directives is not merged yet ([provider#430](https://github.com/akash-network/provider/pull/430)), so the block validates and reaches the manifest but no provider acts on it. Do not offer proxy tuning to a user as a fix that works today.
 
 ### credentials (optional)
 

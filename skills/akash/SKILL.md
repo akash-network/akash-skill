@@ -219,7 +219,7 @@ deployment:
 
 ### SDL Configuration
 - **@rules/sdl/schema-overview.md** — Version requirements and SDL structure
-- **@rules/sdl/services.md** — Service configuration (image, expose, env, credentials)
+- **@rules/sdl/services.md** — Service configuration (image, expose, `http_options`, env, credentials)
 - **@rules/sdl/compute-resources.md** — CPU (units, `arch`), memory, storage, and GPU specifications
 - **@rules/sdl/placement-pricing.md** — Provider selection and pricing (uact)
 - **@rules/sdl/deployment.md** — Service-to-profile mapping
@@ -323,6 +323,20 @@ profiles:
           units: 2
           attributes:
             arch: arm64     # or amd64; omit to write no CPU attribute (there is no default)
+```
+
+### Streaming Route (disable proxy buffering)
+```yaml
+services:
+  api:
+    expose:
+      - port: 8080
+        as: 80
+        to:
+          - global: true
+        http_options:
+          proxy:
+            buffering_disable: true   # chain-sdk >= 1.0.0-alpha.44; not honored by providers yet
 ```
 
 ### Confidential Compute (TEE)
