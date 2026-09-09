@@ -210,15 +210,26 @@ Providers serve HTTPS with a **self-signed** certificate (not from a public CA),
 For direct, server-side provider calls, disable TLS certificate verification:
 
 **Node.js:**
+
+Install `undici` first (`npm install undici`), then use its dispatcher for the provider connection:
+
 ```typescript
-import https from "https";
+import { Agent, fetch } from "undici";
 
-const agent = new https.Agent({ rejectUnauthorized: false });
-
-const res = await fetch(`${hostUri}/lease/${dseq}/${gseq}/${oseq}/status`, {
-  headers: { Authorization: `Bearer ${jwt}` },
-  agent,
+const dispatcher = new Agent({
+  connect: { rejectUnauthorized: false },
 });
+
+try {
+  const res = await fetch(`${hostUri}/lease/${dseq}/${gseq}/${oseq}/status`, {
+    headers: { Authorization: `Bearer ${jwt}` },
+    dispatcher,
+  });
+  const status = await res.json();
+  console.log(status);
+} finally {
+  await dispatcher.close();
+}
 ```
 
 **Go:**
