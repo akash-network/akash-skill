@@ -2,6 +2,8 @@
 
 The Console API is the REST surface behind [Akash Console](https://console.akash.network). An API key authenticates as a Console account, and that account's managed wallet funds and signs every deployment action. This file covers the deployment-management subset; the rest of the spec powers the Console UI.
 
+With `akt` installed, `akt deploy` and the `akt console` commands make these calls for you: see [../akt/overview.md](../akt/overview.md).
+
 ## Base URL and spec
 
 ```

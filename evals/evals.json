@@ -78,7 +78,7 @@
         {
           "id": "mentions_multiple_methods",
           "type": "count_at_least",
-          "pattern": "(console api|akash cli|typescript sdk|go sdk)",
+          "pattern": "(console api|akash cli|`?akt`?\\s+(cli|deploy)|typescript sdk|go sdk)",
           "min_count": 2,
           "description": "Lists multiple methods so the user can pick",
           "case_insensitive": true
@@ -573,6 +573,234 @@
           "type": "regex_present",
           "pattern": "(?i)(422|deployment_resources_changed|can(no|')t (be )?change|cannot be changed|fixed at create|not possible in place|can't be updated in place|cannot be updated in place)",
           "description": "Says compute resources cannot change in place"
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "name": "akt-ci-console-deploy",
+      "prompt": "Our GitHub Actions runner has akt 1.0.0 (the Akash CLI) installed, and the Console API key is in a repository secret. Write the workflow steps that deploy `app.yaml` to Akash through Console with no prompts, take whichever bid is cheapest, and pass the deployment's dseq to later steps.",
+      "assertions": [
+        {
+          "id": "uses_akt_deploy",
+          "type": "regex_present",
+          "pattern": "akt deploy\\s+[\"']?\\S*app\\.ya?ml",
+          "description": "Deploys with `akt deploy app.yaml`"
+        },
+        {
+          "id": "key_via_env",
+          "type": "regex_present",
+          "pattern": "AKT_CONSOLE_API_KEY",
+          "description": "Passes the key through AKT_CONSOLE_API_KEY"
+        },
+        {
+          "id": "creates_console_context",
+          "type": "regex_present",
+          "pattern": "akt context create\\b[^\\n]*(--deploy-via[ =]console|--auth-method[ =]console-api)",
+          "description": "Creates a console context first; a fresh runner has none and akt has no wizard without a terminal"
+        },
+        {
+          "id": "bid_select_cheapest",
+          "type": "regex_present",
+          "pattern": "--bid-select[ =][\"']?cheapest",
+          "description": "Picks the bid non-interactively with --bid-select cheapest"
+        },
+        {
+          "id": "skips_prompts",
+          "type": "regex_present",
+          "pattern": "(--yes\\b|\\s-y\\b)",
+          "description": "Skips confirmation prompts with --yes"
+        },
+        {
+          "id": "machine_output",
+          "type": "regex_present",
+          "pattern": "(-o\\s*jsonl?\\b|--output[ =]jsonl?\\b)",
+          "description": "Requests JSON or JSONL output to parse"
+        },
+        {
+          "id": "reads_dseq",
+          "type": "regex_present",
+          "pattern": "jq[^\\n]*\\bdseq\\b",
+          "description": "Extracts the dseq from the machine output"
+        },
+        {
+          "id": "no_deposit_on_1_0",
+          "type": "regex_absent",
+          "pattern": "akt deploy[^\\n]*(--deposit|\\.ya?ml[\"']?\\s+[\"']?\\$?\\d)",
+          "description": "Passes no deposit, which akt 1.0 rejects on the console rail"
+        },
+        {
+          "id": "no_raw_api",
+          "type": "regex_absent",
+          "pattern": "curl[^\\n]*/v1/deployments",
+          "description": "Stays on akt instead of hand-writing Console API calls"
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "name": "akt-0-1-console-deposit",
+      "prompt": "I installed akt with Homebrew (`akt version` prints 0.1.2) and set up a Console context. Running `akt deploy svc.yaml --bid-select cheapest --yes` stops with: deposit \"auto\": console-api deployments require an explicit USD amount of at least $0.50. I thought Console funds deployments on its own now. What should I run?",
+      "assertions": [
+        {
+          "id": "passes_usd_deposit",
+          "type": "regex_present",
+          "pattern": "akt deploy[^\\n]*--deposit[ =][\"']?\\$?(0?\\.5|[1-9])",
+          "description": "On 0.1.x, passes a USD deposit of at least $0.50"
+        },
+        {
+          "id": "mentions_upgrade",
+          "type": "regex_present",
+          "pattern": "(?i)(upgrad|akt\\s+v?1\\.0\\b|v?1\\.0\\.0)",
+          "description": "Says akt 1.0 drops the deposit requirement"
+        },
+        {
+          "id": "deposit_not_used",
+          "type": "regex_present",
+          "pattern": "(?i)(ignor|discard|not (actually )?(charged|spent|used)|has no effect|automatic(ally)? fund|funds? (it|them|deployments?|every deployment) automatically)",
+          "description": "Explains Console ignores the amount and funds the deployment itself"
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "name": "akt-console-logs-shell",
+      "prompt": "Using akt with my Console context, get the last 200 log lines from the `worker` service of deployment 4419827, then check whether /data/cache exists inside that container.",
+      "assertions": [
+        {
+          "id": "console_logs",
+          "type": "regex_present",
+          "pattern": "akt console logs\\s+4419827\\s+worker\\b",
+          "description": "Uses `akt console logs <dseq> <service>`"
+        },
+        {
+          "id": "tail_200",
+          "type": "regex_present",
+          "pattern": "--tail[ =]200\\b",
+          "description": "Limits output with --tail 200"
+        },
+        {
+          "id": "console_shell_command",
+          "type": "regex_present",
+          "pattern": "akt console shell\\s+4419827\\s+worker\\b[^\\n]*\\s--\\s",
+          "description": "Runs a one-off command with `akt console shell <dseq> <service> -- <cmd>`"
+        },
+        {
+          "id": "no_chain_tooling",
+          "type": "regex_absent",
+          "pattern": "(provider-services\\s+(lease-\\w+|tx\\b|query\\b|send-manifest)|akt provider lease-(logs|shell|status))",
+          "description": "Does not run chain-rail or provider-services commands for a Console deployment"
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "name": "akt-update-image",
+      "prompt": "Deployment 7712004 was created with `akt deploy stack.yaml` on a Console context. I want to bump the api service from ghcr.io/acme/api:5.1.0 to ghcr.io/acme/api:5.2.0. What's the akt way to do it?",
+      "assertions": [
+        {
+          "id": "update_sdl_then_dseq",
+          "type": "regex_present",
+          "pattern": "akt update\\s+[\"']?\\S*stack\\.ya?ml[\"']?\\s+7712004\\b",
+          "description": "Runs `akt update <sdl> <dseq>` with the SDL first"
+        },
+        {
+          "id": "not_reversed",
+          "type": "regex_absent",
+          "pattern": "akt update\\s+7712004\\b",
+          "description": "Does not put the dseq before the SDL"
+        },
+        {
+          "id": "validates_sdl",
+          "type": "regex_present",
+          "pattern": "akt sdl validate\\b",
+          "description": "Validates the edited SDL before updating"
+        },
+        {
+          "id": "stays_on_akt",
+          "type": "regex_absent",
+          "pattern": "(-[A-Za-z]*X\\s*(PATCH|PUT)\\b|--request\\s+(PATCH|PUT)\\b)",
+          "description": "Stays on akt instead of switching to raw HTTP"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "name": "akt-mcp-claude-code",
+      "prompt": "I'd like Claude Code to use akt as an MCP server so it can read my Akash deployments. How do I hook it up, and will it be able to close deployments?",
+      "assertions": [
+        {
+          "id": "akt_mcp_command",
+          "type": "regex_present",
+          "pattern": "(akt mcp\\b|\"args\":\\s*\\[\\s*\"mcp\")",
+          "description": "Launches the server with `akt mcp`"
+        },
+        {
+          "id": "claude_mcp_add",
+          "type": "regex_present",
+          "pattern": "claude mcp add\\b[^\\n]*\\bakt\\b",
+          "description": "Registers it with `claude mcp add`"
+        },
+        {
+          "id": "enable_writes",
+          "type": "regex_present",
+          "pattern": "--enable-writes\\b",
+          "description": "Names --enable-writes as the switch for close and other writes"
+        },
+        {
+          "id": "read_only_default",
+          "type": "regex_present",
+          "pattern": "(?i)read[- ]only",
+          "description": "Says the server is read-only by default"
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "name": "akt-terminal-postgres",
+      "prompt": "akt is on my PATH and my Console context works. From this terminal, spin up a throwaway Postgres 16 on Akash for testing.",
+      "assertions": [
+        {
+          "id": "uses_akt_deploy",
+          "type": "regex_present",
+          "pattern": "akt deploy\\s+[\"']?\\S+\\.ya?ml",
+          "description": "Deploys with `akt deploy`"
+        },
+        {
+          "id": "bid_select",
+          "type": "regex_present",
+          "pattern": "--bid-select\\b",
+          "description": "Chooses the bid with --bid-select instead of an interactive picker an agent cannot answer"
+        },
+        {
+          "id": "validates_sdl",
+          "type": "regex_present",
+          "pattern": "akt sdl validate\\b",
+          "description": "Validates the SDL before deploying"
+        },
+        {
+          "id": "pinned_postgres",
+          "type": "regex_present",
+          "pattern": "image:\\s*[\"']?postgres:16",
+          "description": "Pins postgres:16 rather than latest"
+        },
+        {
+          "id": "uact_pricing",
+          "type": "regex_present",
+          "pattern": "denom:\\s*[\"']?uact\\b",
+          "description": "Prices the SDL in uact"
+        },
+        {
+          "id": "no_raw_api",
+          "type": "regex_absent",
+          "pattern": "curl[^\\n]*/v1/",
+          "description": "Stays on akt instead of hand-writing Console API calls"
+        },
+        {
+          "id": "no_provider_services",
+          "type": "regex_absent",
+          "pattern": "provider-services\\s+(tx|query|keys|send-manifest|lease-\\w+)\\b",
+          "description": "Does not run provider-services commands"
         }
       ]
     }

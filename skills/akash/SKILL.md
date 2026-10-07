@@ -3,11 +3,11 @@ name: akash
 description: >
   Build, validate, and deploy workloads to the Akash Network — the decentralized cloud
   marketplace. Covers SDL syntax & examples, choosing a deployment method (Console API,
-  CLI, TypeScript/Go SDKs), authentication (API key, JWT, self-custody wallets),
+  the akt CLI, provider-services, TypeScript/Go SDKs), authentication (API key, JWT, self-custody wallets),
   deployment lifecycle, fetching logs/events via the provider proxy, and fee grants/authz.
   Also covers AkashML — the managed inference surface for calling open-source LLMs on
   Akash compute via OpenAI/Anthropic-compatible APIs. Use for "deploy to Akash", "Akash SDL",
-  "Akash Console API", "Akash CLI deploy", "Akash API key", "x-api-key", "Akash deploy logs",
+  "Akash Console API", "Akash CLI deploy", "akt deploy", "akt console", "Akash API key", "x-api-key", "Akash deploy logs",
   "stream Akash logs", "integrate Akash into my app", "@akashnetwork/chain-sdk",
   "@akashnetwork", "AkashML", "managed inference on Akash", "call an LLM on Akash",
   "playground.akashml.com", "api.akashml.com".
@@ -57,17 +57,18 @@ Only **stop and ask** when the prompt is genuinely silent about everything (no l
 
 Once a path is chosen, **stay on it** for the rest of the conversation. Do not silently switch. If the user explicitly asks to switch later, do so cleanly.
 
-There are **four deployment paths** (you host the workload) plus one **consumption path** (you call a hosted model):
+There are **five deployment paths** (you host the workload) plus one **consumption path** (you call a hosted model):
 
 | # | Method | Wallet model | Auth | When to use |
 |---|---|---|---|---|
 | 1 | **Console API** | Managed (Console account owns the wallet) | `x-api-key` header | CI/CD, server-to-server, any backend that wants HTTP + an API key. No private-key handling. |
-| 2 | **Akash CLI** | Self-custody (you hold the keys) | Local key + signature | Shell scripting, manual workflows, full control. |
-| 3 | **TypeScript SDK** | Self-custody (browser wallet, hardware, or local key) | SDK signs locally | dApps, Node.js services, anywhere you want JS/TS code to deploy. |
-| 4 | **Go SDK** | Self-custody | SDK signs locally | Backend Go services, custom tooling. |
-| 5 | **AkashML** *(consumption, not deployment)* | Managed (AkashML account, USD credits) | `Authorization: Bearer` | You want to **call** an LLM, not host one. OpenAI/Anthropic-compatible REST. No SDL, no wallet, no ACT. |
+| 2 | **akt CLI** | Managed through a Console API key, or self-custody through a local keyring | `AKT_CONSOLE_API_KEY` or a context credential; or a local key | Terminal and agent sessions: one `akt deploy` goes from SDL to a running service, and `akt console` reads logs, status and shell. |
+| 3 | **Akash CLI (`provider-services`)** | Self-custody (you hold the keys) | Local key + signature | Existing `provider-services` scripts and manual chain workflows. The official docs now point new CLI users to akt. |
+| 4 | **TypeScript SDK** | Self-custody (browser wallet, hardware, or local key) | SDK signs locally | dApps, Node.js services, anywhere you want JS/TS code to deploy. |
+| 5 | **Go SDK** | Self-custody | SDK signs locally | Backend Go services, custom tooling. |
+| 6 | **AkashML** *(consumption, not deployment)* | Managed (AkashML account, USD credits) | `Authorization: Bearer` | You want to **call** an LLM, not host one. OpenAI/Anthropic-compatible REST. No SDL, no wallet, no ACT. |
 
-Rows 1–4 are paths to **host your own workload** on Akash. Row 5 is the answer when the user wants to **consume** inference instead — different problem, different surface. See [@rules/deploy/akashml/overview.md](rules/deploy/akashml/overview.md) for the full split.
+Rows 1–5 are paths to **host your own workload** on Akash. Row 6 is the answer when the user wants to **consume** inference instead — different problem, different surface. See [@rules/deploy/akashml/overview.md](rules/deploy/akashml/overview.md) for the full split.
 
 ### The concept that bites everyone
 
@@ -86,6 +87,7 @@ If you see **any** of these signals, commit to the matching path silently and st
 
 | If the user mentions… | Commit to… |
 |---|---|
+| `"akt"`, `"akt deploy"`, `"akt console"`, `"akt context"`, `AKT_CONSOLE_API_KEY`, `"akash-network/tap/akt"`, or the user wants it done from this terminal and `command -v akt` finds it | akt CLI (its context decides Console or self-custody) |
 | `"I have an API key"`, a key starting `ac.sk.`, `"$AKASH_API_KEY"`, `"x-api-key"`, `"curl"`, `"CI/CD"`, `"GitHub Actions"`, `"backend"`, `"server-to-server"`, `"deploy from CI"`, `"automate"` | Console API |
 | `"Keplr"`, `"Ledger"`, `"hardware wallet"`, `"my wallet"`, `"self-custody"`, `"provider-services keys add"`, `"my mnemonic"` | CLI or SDK (ask only if they didn't also signal a language) |
 | `"React app"`, `"Next.js"`, `"akashjs"` (legacy), `"@akashnetwork/chain-sdk"`, `"my dApp"`, `"in the browser"` | TypeScript SDK |
@@ -94,11 +96,13 @@ If you see **any** of these signals, commit to the matching path silently and st
 | `"Console Air"`, `"web UI for my Keplr wallet"`, `"GUI"` + `"self-custody"` | Console Air (out-of-scope; one-line point to repo, then stop) |
 | `"easiest"`, `"simplest"`, `"first time"`, `"just want to try"` + no wallet/keys signal | Console (UI or API — recommend the UI for a one-off, the API for a script) |
 
+When cues point two ways, the specific one wins: a CI job or an API key plus a mention of akt stays on akt.
+
 **Ambiguity on LLMs — ask one short question.** If the user says *"run an LLM on Akash"* without saying *"my own"* or *"call"*, that cue is genuinely split between **AkashML** (call a hosted model) and **self-deploy with GPU SDL** (host the model yourself). One line: *"Do you want to call a hosted LLM, or run your own instance?"* — then commit. The two answers go to completely different files (AkashML vs `rules/sdl/examples/gpu-workload.md`).
 
 **Only ask** when the prompt is genuinely empty of signals — no language hint, no wallet hint, no CI/automation hint. When you do ask, the question is one line: *"Do you want this in a script (Console API) or a UI (Console for managed wallet, Console Air for self-custody)?"* — then proceed with their answer.
 
-A "first small deploy" with no other signals → just recommend Console UI and write the SDL; offer to switch to API/CLI in one line at the end. Do **not** make the user pick from a 4-row table before seeing any commands.
+A "first small deploy" with no other signals → just recommend Console UI and write the SDL. The answer's last line is a single question, ending in a question mark, that names the alternatives: *"Would you rather script it with the akt CLI or the Console API, or deploy from your own wallet?"* Do **not** make the user pick from the method table before seeing any commands.
 
 ### Language for the Console API — infer first, ask only if silent
 
@@ -127,7 +131,7 @@ This is a separate gate from the deployment-method selection. Once both are chos
 
 Two non-negotiable rules, applied silently:
 
-1. **Always reference the key via env var** in code: `$AKASH_API_KEY` (Bash), `process.env.AKASH_API_KEY` (Node), `os.environ["AKASH_API_KEY"]` (Python), `os.Getenv("AKASH_API_KEY")` (Go).
+1. **Always reference the key via env var** in code: `$AKASH_API_KEY` (Bash), `process.env.AKASH_API_KEY` (Node), `os.environ["AKASH_API_KEY"]` (Python), `os.Getenv("AKASH_API_KEY")` (Go). akt reads `AKT_CONSOLE_API_KEY` itself, so on the akt path export that name and never pass the key as an argument.
 2. **Never echo a literal key value** in code or chat, even if the user pasted one. If the user pastes a literal key, replace it with `$AKASH_API_KEY` in the response and add **one sentence** at the top: *"I've used `$AKASH_API_KEY` in the code below — export your key as that env var before running."*
 
 **When to add extra guidance** (only one of these — pick the smallest one that applies):
@@ -147,9 +151,10 @@ A pitfall table at the end of a code response *can* mention "don't use `Authoriz
 ### Once committed, stay there
 
 - On the **Console API** path: don't suggest `provider-services keys add`, don't suggest mTLS certs (deprecated for Console API — see `rules/deploy/cli/mtls-legacy.md`), don't suggest `provider-services query market bid list` — every read is an HTTP call with `x-api-key` in whatever language the user picked. Console records each deployment's SDL, so: change a running deployment with `PATCH /v1/deployments/{dseq}` (never the deprecated full-SDL `PUT`), send no `manifest` to `POST /v1/leases` and no `deposit` anywhere, and treat CPU, memory, storage, GPU or replica changes as a new deployment.
-- On the **CLI** path: don't suggest `/v1/deployments` HTTP calls. Don't suggest API keys. Stay on `provider-services tx ...` / `provider-services query ...`.
+- On the **akt** path: run `akt` commands, not curl and not `provider-services`. Check `akt version` first: 0.1.x needs `--deposit 0.5` on a Console deploy, and 1.0 refuses any deposit there. Anything unattended passes `--bid-select` and `--yes` and reads `-o json` or `-o jsonl`. Without a terminal there is no setup wizard, so create the context (`akt context create <name> --deploy-via console`) before the first command. akt has no sealed secrets or targeted patch; if the user needs one, say so and offer the Console API for that step. Setup and recipes: `rules/deploy/akt/`.
+- On the **Akash CLI (`provider-services`)** path: don't suggest `/v1/deployments` HTTP calls. Don't suggest API keys. Stay on `provider-services tx ...` / `provider-services query ...`.
 - On the **SDK** paths: don't reach for curl examples or CLI commands; the user wants code.
-- On the **AkashML** path: do not write SDL, do not talk about `uact`/`uakt`/leases/bids. The user is calling a hosted inference API, not deploying. Stay on `Authorization: Bearer $AKASHML_API_KEY` and `https://api.akashml.com/{v1,anthropic}` calls. If they later say *"actually I want to host my own"*, then switch cleanly to one of the four deployment paths.
+- On the **AkashML** path: do not write SDL, do not talk about `uact`/`uakt`/leases/bids. The user is calling a hosted inference API, not deploying. Stay on `Authorization: Bearer $AKASHML_API_KEY` and `https://api.akashml.com/{v1,anthropic}` calls. If they later say *"actually I want to host my own"*, then switch cleanly to one of the five deployment paths.
   - **Always query the live API for catalog/pricing/capabilities — never trust the model IDs, prices, or feature lists baked into this skill.** Before recommending a model, quoting pricing, or claiming a feature (tool use, reasoning, streaming, context length), call the relevant endpoint:
     - `GET https://api.akashml.com/v1/models` — pricing (per-million tokens), `context_length`, `supported_features`, `supported_sampling_parameters`, `max_output_length`, `quantization`
     - `GET https://api.akashml.com/anthropic/v1/models` — Anthropic-shape list (returns IDs aliased with `--`)
@@ -246,7 +251,10 @@ deployment:
   - `api-key-quickstart.md` — linear walkthrough from "I have an API key" to a running deployment
   - `account-and-funding.md` — account model, balance, automatic funding, 402 refusals (signup and adding credits are UI-only)
   - `operations.md` — provider JWT (`leases` shapes, scopes), logs/events/status/shell, TEE attestation
-- **@rules/deploy/cli/** — Akash CLI (self-custody path)
+- **@rules/deploy/akt/** — akt CLI (Console API key or local keyring; terminal and agent sessions)
+  - `overview.md` — install, the 0.1.x versus 1.0 differences (deposit), contexts and credentials without a terminal, JSON/JSONL output, the MCP server, how akt maps to the Console API
+  - `console-workflows.md` — SDL, deploy, logs/events/status/shell, update, funding, close, capacity, recovery, CI
+- **@rules/deploy/cli/** — Akash CLI (`provider-services`, self-custody path)
   - `mtls-legacy.md` — Legacy mTLS auth for CLI/SDK direct provider calls (deprecated for Console API)
 
 ### Managed Inference (consumption, not deployment)
@@ -358,5 +366,6 @@ services:
 - **[Akash Network Docs](https://akash.network/docs/)** — Official documentation
 - **[Console (managed wallet)](https://console.akash.network)** — Web UI; managed-wallet equivalent of this skill's Console API path
 - **[Console Air (self-custody, self-hosted)](https://github.com/akash-network/console-air)** — Web UI for Keplr or hardware wallets; clone and run locally
+- **[akt CLI docs](https://akash.network/docs/developers/deployment/akt/)** — The unified Akash CLI; its own agent skill, `akt-cli`, is at [akash.network/skills/akt-cli.zip](https://akash.network/skills/akt-cli.zip)
 - **[Console API OpenAPI spec](https://console-api.akash.network/v1/doc)** — The live contract, with deprecations marked (this skill curates the deployment-management subset; the spec also contains Console-UI internals like Stripe, alerts, user signup)
 - **[@akashnetwork/chain-sdk](https://www.npmjs.com/package/@akashnetwork/chain-sdk)** — TypeScript SDK (self-custody JWT signing, chain messages)

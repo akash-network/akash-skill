@@ -4,7 +4,7 @@ This repository packages Akash Network skills for multiple coding-agent clients.
 
 ## Skill Routing
 
-- For Akash workload deployment, SDL, Console API, CLI, SDK, authz, bid matching, or AkashML tasks, read `skills/akash/SKILL.md`.
+- For Akash workload deployment, SDL, Console API, the akt CLI, `provider-services`, SDK, authz, bid matching, or AkashML tasks, read `skills/akash/SKILL.md`.
 - For Akash provider setup, Kubernetes provider operations, attributes, pricing, bid engine, monitoring, or troubleshooting, read `skills/akash-provider/SKILL.md`.
 - For Akash full node, validator, state sync, validator security, slashing, or sentry-node tasks, read `skills/akash-node/SKILL.md`.
 

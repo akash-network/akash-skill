@@ -1,6 +1,6 @@
 # Deployment Methods Overview
 
-There are four ways to **deploy** to Akash and one way to **consume** managed inference on Akash. **Pick one and commit to it for the conversation** — methods are not interchangeable mid-flow because the auth model, command surface, and wallet semantics all differ.
+There are five ways to **deploy** to Akash and one way to **consume** managed inference on Akash. **Pick one and commit to it for the conversation** — methods are not interchangeable mid-flow because the auth model, command surface, and wallet semantics all differ.
 
 This page exists because conflating these methods is the most common mistake. The SKILL.md's "Choosing a Deployment Method" section is the canonical decision rule; this page is the longer reference for each option.
 
@@ -13,8 +13,8 @@ This page exists because conflating these methods is the most common mistake. Th
 
 **2. (Deployment only) Do you want Console to manage the wallet, or do you want self-custody?**
 
-- **Console-managed wallet** → Console API. You sign up on console.akash.network, generate an API key, and authenticate every request with `x-api-key`. The Console account owns the on-chain wallet, holds the funds, and signs transactions on your behalf. No private keys ever leave Console's infrastructure.
-- **Self-custody** → CLI, TypeScript SDK, or Go SDK. You hold the private key (in `~/.akash/keys`, a browser wallet like Keplr, a Ledger, or wherever), and your code signs each transaction locally before broadcasting.
+- **Console-managed wallet** → Console API, or the akt CLI on a Console context. You sign up on console.akash.network, generate an API key, and authenticate every request with `x-api-key` (akt sends it for you). The Console account owns the on-chain wallet, holds the funds, and signs transactions on your behalf. No private keys ever leave Console's infrastructure.
+- **Self-custody** → the akt CLI on a keyring context, the Akash CLI (`provider-services`), TypeScript SDK, or Go SDK. You hold the private key (in `~/.akash/keys`, a browser wallet like Keplr, a Ledger, or wherever), and your code signs each transaction locally before broadcasting.
 
 Within the deployment paths there is no "Console API + my own wallet." A Console account IS the wallet — the API key authenticates as that account, period. If a user wants to deploy from a self-custody wallet (Keplr or hardware), they need the CLI or an SDK.
 
@@ -25,12 +25,13 @@ AkashML sits *outside* the deploy/self-custody axis entirely: it is a managed co
 - **Standard Console** (`console.akash.network`) — managed wallet. The Console API in this skill drives this product.
 - **Console Air** ([github.com/akash-network/console-air](https://github.com/akash-network/console-air)) — self-custody UI for Keplr or hardware wallets. **Self-hosted** — there is no hosted URL at `console-air.akash.network`; users clone the repo and run it locally. It is a **UI**, not an API. This skill does not cover it; programmatic self-custody users go CLI or SDK.
 
-## The four deployment methods at a glance
+## The five deployment methods at a glance
 
 | Method | Wallet | Auth | Language surface | When to pick it |
 |---|---|---|---|---|
 | **Console API** | Managed | `x-api-key` header | HTTP + JSON | CI/CD, server-to-server, integrations, anything where you have a deploy account but no private keys |
-| **Akash CLI** | Self-custody | Local key + signature | `provider-services` binary | Shell scripting, manual workflows, full local control |
+| **akt CLI** | Managed or self-custody | Console API key, or local key | `akt` binary | Terminal and agent sessions: one command from SDL to running service, plus logs, status and shell without a wallet |
+| **Akash CLI (`provider-services`)** | Self-custody | Local key + signature | `provider-services` binary | Existing scripts, manual chain workflows, full local control |
 | **TypeScript SDK** | Self-custody | Wallet adapter (Keplr or mnemonic) | `@akashnetwork/chain-sdk` | dApps, Node.js services, any TS/JS integration |
 | **Go SDK** | Self-custody | Local key | Go modules | Backend Go services, custom tooling |
 
@@ -61,9 +62,25 @@ REST API at `https://console-api.akash.network/v1`. Authentication is `x-api-key
 
 See **@console-api/** for full reference.
 
-## Akash CLI
+## akt CLI
 
-Command-line `provider-services` binary against a self-custody wallet.
+The unified `akt` binary. On a Console context it drives the Console API with the account's API key; on a keyring context it signs chain transactions itself. The official docs present it as the replacement for the `akash` and `provider-services` CLIs.
+
+**Strengths**
+- One `akt deploy` creates the deployment, waits for bids, opens the lease, sends the manifest and waits for the service
+- Logs, events, status and shell through JWTs that Console mints, with no wallet or certificate
+- JSON and JSONL output, an offline SDL validator, and an MCP server that starts read-only
+
+**Limitations**
+- A binary to install and a context to configure first
+- No sealed secrets or targeted `PATCH`; those stay on the Console API
+- Flags differ between 0.1.x and 1.0 (the Console deposit above all), so check `akt version`
+
+See **@akt/** for setup and recipes.
+
+## Akash CLI (`provider-services`)
+
+Command-line `provider-services` binary against a self-custody wallet. akt's keyring rail now covers the same ground; this skill keeps the `provider-services` reference for existing scripts.
 
 **Strengths**
 - Full control
@@ -143,7 +160,19 @@ curl -X POST https://console-api.akash.network/v1/deployments \
 
 No `deposit`: Console funds the deployment from the account's credit balance. The response carries the `dseq`; accept a bid with `POST /v1/leases` and Console sends the provider its manifest. Full flow: **@console-api/api-key-quickstart.md**.
 
-### CLI (self-custody)
+### akt (Console context)
+
+```bash
+brew install akash-network/tap/akt
+# With AKT_CONSOLE_API_KEY exported from your secret store
+akt context create main --deploy-via console --set-current
+akt sdl validate deploy.yaml
+akt deploy deploy.yaml --bid-select cheapest --yes      # akt 0.1.x: add --deposit 0.5
+```
+
+Full recipes: **@akt/console-workflows.md**.
+
+### Akash CLI (`provider-services`, self-custody)
 
 ```bash
 # Install
@@ -211,13 +240,13 @@ Do **not** silently mix methods. If the user is mid-CLI workflow and you suggest
 
 ## Authentication summary
 
-| Auth mechanism | Console API | CLI | SDK | AkashML |
-|---|---|---|---|---|
-| `x-api-key` header | ✅ primary | ❌ | ❌ | ❌ |
-| `Authorization: Bearer <key>` (API key) | ❌ (Bearer is reserved for JWTs) | ❌ | ❌ | ✅ primary (`akml-...`) |
-| Local wallet key | ❌ | ✅ primary | ✅ primary | ❌ |
-| Browser wallet adapter (Keplr) | ❌ | ❌ | ✅ (TS SDK in browser) | ❌ |
-| `Authorization: Bearer <jwt>` | ✅ (for Console-account JWT session auth) | ❌ | ❌ | ❌ |
-| mTLS certificate | ❌ ([deprecated](cli/mtls-legacy.md) for Console API; CLI direct-to-provider calls still use it where applicable) | ✅ (CLI direct provider calls) | ✅ (SDK direct provider calls) | ❌ |
+| Auth mechanism | Console API | akt | Akash CLI (`provider-services`) | SDK | AkashML |
+|---|---|---|---|---|---|
+| `x-api-key` header | ✅ primary | ✅ sent for you on a Console context | ❌ | ❌ | ❌ |
+| `Authorization: Bearer <key>` (API key) | ❌ (Bearer is reserved for JWTs) | ❌ | ❌ | ❌ | ✅ primary (`akml-...`) |
+| Local wallet key | ❌ | ✅ on a keyring context | ✅ primary | ✅ primary | ❌ |
+| Browser wallet adapter (Keplr) | ❌ | ❌ | ❌ | ✅ (TS SDK in browser) | ❌ |
+| `Authorization: Bearer <jwt>` | ✅ (for Console-account JWT session auth) | Provider calls only, with JWTs minted for you | ❌ | ❌ | ❌ |
+| mTLS certificate | ❌ ([deprecated](cli/mtls-legacy.md) for Console API; CLI direct-to-provider calls still use it where applicable) | Optional for provider calls (`--provider-auth-type mtls`); JWT is the default | ✅ (CLI direct provider calls) | ✅ (SDK direct provider calls) | ❌ |
 
 The collision worth flagging: **`Authorization: Bearer`** means a JWT on the Console API and an API key on AkashML. They are different services on different hosts; don't carry credentials across.
