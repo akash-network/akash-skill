@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.6.0](https://github.com/akash-network/akash-skill/compare/v3.5.0...v3.6.0) (2026-10-07)
+
+
+### Features
+
+* **akash/console-api:** match the Console API docs to the live API ([#39](https://github.com/akash-network/akash-skill/issues/39)) ([197332a](https://github.com/akash-network/akash-skill/commit/197332a5f043a9d010ecf781e5523fc84998dc2d))
+* **akash:** document the http_options proxy block ([#36](https://github.com/akash-network/akash-skill/issues/36)) ([7369535](https://github.com/akash-network/akash-skill/commit/7369535f509de4f5f931dcf41c4355f142789447))
+
 ## [3.5.0](https://github.com/akash-network/akash-skill/compare/v3.4.0...v3.5.0) (2026-09-07)
 
 
