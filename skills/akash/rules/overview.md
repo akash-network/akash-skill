@@ -62,10 +62,12 @@ Providers run Kubernetes clusters and the Akash provider software to:
 
 ### Console API
 
-The [Console API](https://console-api.akash.network/v1/swagger) provides REST endpoints for:
-- Programmatic deployments
-- Managed wallet operations
-- SDL validation
+The [Console API](https://console-api.akash.network/v1/swagger) provides REST endpoints, authenticated with an API key, for:
+- Creating, updating and closing deployments from a Console account's managed wallet
+- Accepting bids and reading lease status
+- Provider data, GPU and region availability
+
+There is no SDL-validation endpoint; `POST /v1/deployments` answers 400 for an invalid SDL. See `rules/deploy/console-api/`.
 
 ## Network Details
 

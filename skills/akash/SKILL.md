@@ -86,7 +86,7 @@ If you see **any** of these signals, commit to the matching path silently and st
 
 | If the user mentions… | Commit to… |
 |---|---|
-| `"I have an API key"`, `"$AKASH_API_KEY"`, `"x-api-key"`, `"curl"`, `"CI/CD"`, `"GitHub Actions"`, `"backend"`, `"server-to-server"`, `"deploy from CI"`, `"automate"` | Console API |
+| `"I have an API key"`, a key starting `ac.sk.`, `"$AKASH_API_KEY"`, `"x-api-key"`, `"curl"`, `"CI/CD"`, `"GitHub Actions"`, `"backend"`, `"server-to-server"`, `"deploy from CI"`, `"automate"` | Console API |
 | `"Keplr"`, `"Ledger"`, `"hardware wallet"`, `"my wallet"`, `"self-custody"`, `"provider-services keys add"`, `"my mnemonic"` | CLI or SDK (ask only if they didn't also signal a language) |
 | `"React app"`, `"Next.js"`, `"akashjs"` (legacy), `"@akashnetwork/chain-sdk"`, `"my dApp"`, `"in the browser"` | TypeScript SDK |
 | `"Go service"`, `"golang"`, `"cosmos-sdk Go"`, `"my Go backend"` | Go SDK |
@@ -146,7 +146,7 @@ A pitfall table at the end of a code response *can* mention "don't use `Authoriz
 
 ### Once committed, stay there
 
-- On the **Console API** path: don't suggest `provider-services keys add`, don't suggest mTLS certs (deprecated for Console API — see `rules/deploy/cli/mtls-legacy.md`), don't suggest `provider-services query market bid list` — every read is an HTTP call with `x-api-key` in whatever language the user picked.
+- On the **Console API** path: don't suggest `provider-services keys add`, don't suggest mTLS certs (deprecated for Console API — see `rules/deploy/cli/mtls-legacy.md`), don't suggest `provider-services query market bid list` — every read is an HTTP call with `x-api-key` in whatever language the user picked. Console records each deployment's SDL, so: change a running deployment with `PATCH /v1/deployments/{dseq}` (never the deprecated full-SDL `PUT`), send no `manifest` to `POST /v1/leases` and no `deposit` anywhere, and treat CPU, memory, storage, GPU or replica changes as a new deployment.
 - On the **CLI** path: don't suggest `/v1/deployments` HTTP calls. Don't suggest API keys. Stay on `provider-services tx ...` / `provider-services query ...`.
 - On the **SDK** paths: don't reach for curl examples or CLI commands; the user wants code.
 - On the **AkashML** path: do not write SDL, do not talk about `uact`/`uakt`/leases/bids. The user is calling a hosted inference API, not deploying. Stay on `Authorization: Bearer $AKASHML_API_KEY` and `https://api.akashml.com/{v1,anthropic}` calls. If they later say *"actually I want to host my own"*, then switch cleanly to one of the four deployment paths.
@@ -239,12 +239,13 @@ deployment:
 ### Deployment Methods
 - **@rules/deploy/overview.md** — Method selection (start here)
 - **@rules/deploy/console-api/** — Console API (API key path)
-  - `overview.md` — base URL, auth, response shape
-  - `authentication.md` — API key (`x-api-key`), JWT minting, API Keys CRUD
-  - `deployment-endpoints.md` — full curated endpoint reference
+  - `overview.md` — base URL, envelopes, error codes, deprecated and UI-internal endpoints, endpoint map
+  - `authentication.md` — API keys (`x-api-key`, `ac.sk.…` format, CRUD), public endpoints, CI/CD
+  - `deployment-endpoints.md` — create, list, read, `PATCH`, close; leases, bids, runtime limits, providers, placement, bid screening
+  - `secrets.md` — `ac-secret://` references, `sealedSecrets`, `inheritSecretsFrom`
   - `api-key-quickstart.md` — linear walkthrough from "I have an API key" to a running deployment
-  - `account-and-funding.md` — Console account model, programmatic balance reads, automatic deployment funding (bootstrap + adding credits + arbitrary tx signing are UI-only)
-  - `operations.md` — JWT + provider proxy + logs/events/status/shell
+  - `account-and-funding.md` — account model, balance, automatic funding, 402 refusals (signup and adding credits are UI-only)
+  - `operations.md` — provider JWT (`leases` shapes, scopes), logs/events/status/shell, TEE attestation
 - **@rules/deploy/cli/** — Akash CLI (self-custody path)
   - `mtls-legacy.md` — Legacy mTLS auth for CLI/SDK direct provider calls (deprecated for Console API)
 
@@ -357,5 +358,5 @@ services:
 - **[Akash Network Docs](https://akash.network/docs/)** — Official documentation
 - **[Console (managed wallet)](https://console.akash.network)** — Web UI; managed-wallet equivalent of this skill's Console API path
 - **[Console Air (self-custody, self-hosted)](https://github.com/akash-network/console-air)** — Web UI for Keplr or hardware wallets; clone and run locally
-- **[Console API Swagger](https://console-api.akash.network/v1/doc)** — Full OpenAPI spec (this skill curates the deployment-management subset; the full spec also contains Console-UI internals like Stripe, alerts, user signup)
+- **[Console API OpenAPI spec](https://console-api.akash.network/v1/doc)** — The live contract, with deprecations marked (this skill curates the deployment-management subset; the spec also contains Console-UI internals like Stripe, alerts, user signup)
 - **[@akashnetwork/chain-sdk](https://www.npmjs.com/package/@akashnetwork/chain-sdk)** — TypeScript SDK (self-custody JWT signing, chain messages)

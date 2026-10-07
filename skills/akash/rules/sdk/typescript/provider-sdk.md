@@ -47,28 +47,30 @@ const jwt = await jwtMgr.generateToken({
 });
 ```
 
-The JWT payload follows [AEP-64](https://akash.network/roadmap/aep-64/). The `leases` claim has three forms:
+The JWT payload follows [AEP-64](https://akash.network/roadmap/aep-64/); `generateToken` validates it and throws on anything else. The `leases` claim has three forms:
 
 ```typescript
-// Full
-{ access: "full", scope: ["status", "logs", ...] }
+// Full: every action on every lease. Takes no scope.
+{ access: "full" }
 
-// Scoped
+// Scoped: the listed actions on every lease
 { access: "scoped", scope: ["logs"] }
 
-// Granular
+// Granular: per provider, either full, scoped, or per deployment
 {
   access: "granular",
-  permissions: [{
-    provider: "akash1prov...",
-    access: "scoped",
-    scope: ["logs"],
-    deployments: [{ dseq: "12345678", gseq: 1, scope: ["logs"] }],
-  }],
+  permissions: [
+    { provider: "akash1provA...", access: "scoped", scope: ["logs"] },
+    {
+      provider: "akash1provB...",
+      access: "granular",
+      deployments: [{ dseq: 12345678, gseq: 1, services: ["web"], scope: ["logs"] }],
+    },
+  ],
 }
 ```
 
-Valid scopes: `send-manifest`, `get-manifest`, `logs`, `shell`, `events`, `status`, `restart`. Grant the minimum.
+In a per-deployment entry, `dseq` is a number and `services` lists at least one service. Valid scopes: `send-manifest`, `get-manifest`, `logs`, `shell`, `events`, `status`, `restart`, `hostname-migrate`, `ip-migrate`, `attestation`. Grant the minimum.
 
 ### Managed wallet (Console API users)
 
@@ -77,10 +79,11 @@ You don't have the key — Console signs the JWT for you:
 ```bash
 curl -X POST https://console-api.akash.network/v1/create-jwt-token \
   -H "x-api-key: $AKASH_API_KEY" \
+  -H "Content-Type: application/json" \
   -d '{"data":{"ttl":1800,"leases":{"access":"scoped","scope":["logs"]}}}'
 ```
 
-See **@../../deploy/console-api/authentication.md**.
+See **@../../deploy/console-api/operations.md**.
 
 ## Resolve the provider's `hostUri`
 
@@ -98,9 +101,9 @@ const hostUri = prov.provider.hostUri;
 ```
 
 ```bash
-# Or via the Console API
+# Or via the Console API (public; the provider object is not wrapped in `data`)
 curl https://console-api.akash.network/v1/providers/$PROVIDER \
-  | jq -r .data.hostUri
+  | jq -r .hostUri
 ```
 
 ## Provider TLS — skip verification for now

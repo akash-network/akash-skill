@@ -125,15 +125,17 @@ The Akash Console API provides additional functionality:
 ### Console API Endpoints
 
 ```bash
-# Get deployment
-GET https://console-api.akash.network/v1/deployment/<dseq>
+# Your deployment (x-api-key)
+GET https://console-api.akash.network/v1/deployments/<dseq>
 
-# Validate SDL
-POST https://console-api.akash.network/v1/sdl/validate
+# Any deployment, read-only (public)
+GET https://console-api.akash.network/v1/deployment/<owner>/<dseq>
 
-# Get providers
+# Providers (public)
 GET https://console-api.akash.network/v1/providers
 ```
+
+There is no SDL-validation endpoint. The full reference is `rules/deploy/console-api/`.
 
 ## Provider Endpoints
 

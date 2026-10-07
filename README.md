@@ -135,11 +135,10 @@ In Claude Code, you can also invoke them explicitly: `/akash-network:akash`, `/a
 │   │   │   │   ├── overview.md  # Method selection
 │   │   │   │   ├── console-api/ # Console API (API key path)
 │   │   │   │   ├── cli/         # Akash CLI (self-custody)
-│   │   │   │   ├── akashml/     # AkashML managed inference (consumption path)
-│   │   │   │   └── certificates/
+│   │   │   │   └── akashml/     # AkashML managed inference (consumption path)
 │   │   │   ├── sdk/
 │   │   │   │   ├── typescript/  # @akashnetwork/chain-sdk
-│   │   │   │   └── go/          # github.com/akash-network/akash-api
+│   │   │   │   └── go/          # pkg.akt.dev/go
 │   │   │   ├── authz/           # Fee grants & delegated permissions
 │   │   │   ├── bid-matching/    # Deployer-facing bid explainers
 │   │   │   └── reference/       # GPU models, storage classes, RPC endpoints

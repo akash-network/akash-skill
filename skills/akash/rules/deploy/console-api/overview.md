@@ -1,190 +1,126 @@
 # Console API Overview
 
-The Akash Console API provides REST endpoints for programmatic deployments backed by a Console-managed wallet.
+The Console API is the REST surface behind [Akash Console](https://console.akash.network). An API key authenticates as a Console account, and that account's managed wallet funds and signs every deployment action. This file covers the deployment-management subset; the rest of the spec powers the Console UI.
 
-This document covers the **deployment-management subset** of the Console API. The live OpenAPI spec at `https://console-api.akash.network/v1/doc` exposes ~100 endpoints across ~27 tags — most are Console-UI internals (Stripe payments, user signup, alerts, blockchain explorer queries, GPU stats, analytics) and are not part of the supported deployment contract.
-
-## Base URL
+## Base URL and spec
 
 ```
-https://console-api.akash.network/v1
+https://console-api.akash.network
 ```
 
-## OpenAPI documentation
+Every path carries its own version prefix: `/v1/...` for almost everything, `/v2/deployment-settings` for runtime limits.
 
-- **Full spec (JSON):** `https://console-api.akash.network/v1/doc`
-- **Swagger UI:** `https://console-api.akash.network/v1/swagger`
-- **Official API reference:** [akash.network/docs/api-documentation/console-api/api-reference](https://akash.network/docs/api-documentation/console-api/api-reference/)
+| Resource | URL |
+|---|---|
+| OpenAPI spec (JSON) | `https://console-api.akash.network/v1/doc` |
+| Swagger UI | `https://console-api.akash.network/v1/swagger` |
+| Official API reference | [akash.network/docs/api-documentation/console-api/api-reference](https://akash.network/docs/api-documentation/console-api/api-reference/) |
 
-The full Swagger spec mixes deployment endpoints with Console-UI internals. If you only need the deployment management contract, use this skill's curated reference in `deployment-endpoints.md`.
-
-## Two stability tiers — read this before you write code
-
-Endpoints in this skill fall into two tiers. Code against the higher tier; treat the lower tier as best-effort.
-
-**Tier 1 — Documented in the official API reference.** The Akash team commits to these as the supported programmatic surface. 13 endpoints total:
-
-- Deployments — `POST /v1/deployments`, `GET /v1/deployments`, `GET /v1/deployments/{dseq}`, `PUT /v1/deployments/{dseq}`, `DELETE /v1/deployments/{dseq}`
-- Escrow — `POST /v1/deposit-deployment` (deprecated; funding is automatic)
-- Leases — `POST /v1/leases`
-- Bids — `GET /v1/bids?dseq=`
-- Deployment settings / runtime limits — `GET /v2/deployment-settings/{dseq}`, `POST /v2/deployment-settings`, `PATCH /v2/deployment-settings/{dseq}`
-- Providers (public, no auth) — `GET /v1/providers`, `GET /v1/providers/{address}`
-
-**Tier 2 — Swagger-only / undocumented.** Observed on the running Console API service but **not** in the official reference. They may change or be removed without notice. The skill documents them for completeness because some are genuinely useful (e.g., `GET /v1/balances`, `POST /v1/create-jwt-token` for the logs flow), but you should pin to a tested runtime version and watch for breakage on Console releases. Examples: `/v1/balances`, `/v1/create-jwt-token`, `/v1/api-keys` CRUD, `/v1/bid-screening`, `/v1/blockchain-status`, `/v1/weekly-cost`, `/v1/deployment/{owner}/{dseq}`, `/v1/provider-regions`, `/v1/provider-versions`, `/v1/provider-attributes-schema`, `/v1/auditors`.
-
-Each Tier-2 endpoint in this skill carries a "Swagger-only" banner at the section that documents it. If you're building something critical, prefer Tier-1 paths and use the UI for what Tier 2 covers.
+**The live spec is the contract.** It flags deprecated endpoints and fields with `deprecated: true` and describes each error case per endpoint. If this skill, the official reference and the spec disagree, trust the spec; the reference can trail a release by weeks.
 
 ## Authentication
 
-Two schemes are supported. Use whichever fits your client:
-
-| Scheme | Header | When |
+| Credential | Header | Use |
 |---|---|---|
-| **API key** | `x-api-key: <key>` | Server-to-server, CI/CD, scripts |
-| **JWT (session)** | `Authorization: Bearer <jwt>` | Browser sessions, short-lived access |
+| **API key** (`ac.sk.production.…`) | `x-api-key: <key>` | Scripts, CI/CD, backends |
+| Console session JWT | `Authorization: Bearer <jwt>` | The Console web app's own login session; not for scripts |
 
-**Do not** put an API key in `Authorization: Bearer` — that header is reserved for JWTs.
+**Never put an API key in `Authorization: Bearer`.** Keys are created in the Console UI; see **@authentication.md**. Calls to a *provider* (logs, shell, status) use a different JWT, minted by `POST /v1/create-jwt-token`; see **@operations.md**.
 
-Read **@authentication.md** for the full auth flow including API Keys CRUD and JWT minting via `POST /v1/create-jwt-token`.
+## Envelopes
 
-## Request envelope
-
-All write endpoints wrap their payload in a `data` object:
+**Requests.** Write endpoints wrap the payload in `data`:
 
 ```json
-{ "data": { ... } }
+{ "data": { "sdl": "version: \"2.0\"\n..." } }
 ```
 
-For example, creating a deployment:
+Three endpoints take a flat body instead: `POST /v1/leases`, `POST /v1/bid-screening` and `POST /v1/confidential-compute/attestation/validate`.
+
+**Responses.** Account and deployment endpoints answer `{ "data": ... }`. A few answer with the object itself: `GET /v1/providers`, `GET /v1/providers/{address}`, `GET /v1/placement-options`, `POST /v1/bid-screening`, `GET /v1/blockchain-status` and `POST /v1/confidential-compute/attestation/validate`. So a provider's URL is `.hostUri`, not `.data.hostUri`.
+
+## Errors
+
+Every error body has the same shape:
 
 ```json
 {
-  "data": {
-    "sdl": "version: \"2.0\"\n..."
-  }
+  "error": "BadRequestError",
+  "message": "Validation error",
+  "code": "validation_error",
+  "type": "validation_error",
+  "data": [ ... ]
 }
 ```
 
-No `deposit`: Console funds the deployment from the account's credit balance. A caller-supplied deposit is ignored, and the field is deprecated.
+Branch on the HTTP status, then on `code` where it is specific. `message` is for humans and changes wording without notice. When a status has no specific code, `code` is the generic one for it: `bad_request`, `unauthorized`, `payment_required`, `forbidden`, `not_found`, `conflict`, `rate_limited`, `service_unavailable` or `internal_server_error`. A request that fails schema validation answers 400 `validation_error`, with the failing fields in `data`.
 
-## Quick start
+The specific codes a deployment script should handle:
 
-### 1. Create an account and get an API key
-
-1. Visit https://console.akash.network and sign up.
-2. Add credits to your account (Stripe).
-3. Generate an API key under Settings → API Keys. Copy it once — the plaintext key is shown exactly one time.
-
-### 2. Create a deployment
-
-```bash
-curl -X POST https://console-api.akash.network/v1/deployments \
-  -H "x-api-key: $AKASH_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "data": {
-      "sdl": "version: \"2.0\"\nservices:\n  web:\n    image: nginx:1.25.3\n    expose:\n      - port: 80\n        as: 80\n        to:\n          - global: true\nprofiles:\n  compute:\n    web:\n      resources:\n        cpu:\n          units: 0.5\n        memory:\n          size: 512Mi\n        storage:\n          size: 1Gi\n  placement:\n    dcloud:\n      pricing:\n        web:\n          denom: uact\n          amount: 1000\ndeployment:\n  web:\n    dcloud:\n      profile: web\n      count: 1"
-    }
-  }'
-```
-
-The response contains a `dseq` (deployment sequence number), the manifest the server prepared, and the broadcast result of the `MsgCreateDeployment` transaction.
-
-### 3. List bids
-
-```bash
-curl "https://console-api.akash.network/v1/bids?dseq=<dseq>" \
-  -H "x-api-key: $AKASH_API_KEY"
-```
-
-Or by query string: `GET /v1/bids?dseq=<dseq>`.
-
-### 4. Accept bids and send the manifest (one call)
-
-```bash
-curl -X POST https://console-api.akash.network/v1/leases \
-  -H "x-api-key: $AKASH_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "manifest": "<manifest from create response>",
-    "leases": [
-      { "dseq": <dseq>, "gseq": 1, "oseq": 1, "provider": "akash1..." }
-    ]
-  }'
-```
-
-This is a **batch** endpoint — there is no single-lease creation endpoint. The manifest is sent in the same call.
-
-### 5. Read deployment state (status, ports, IPs, lease URIs)
-
-```bash
-curl https://console-api.akash.network/v1/deployments/<dseq> \
-  -H "x-api-key: $AKASH_API_KEY"
-```
-
-The response includes `leases[].status.forwarded_ports` and `leases[].status.ips`, which is how you discover the running service's URL.
-
-### 6. Stream logs and events
-
-Logs and events are not served by the Console API directly — they come from the **provider**, gated by a JWT minted via `/v1/create-jwt-token`. See **@operations.md** for the full flow.
-
-## Response shape
-
-Successful responses from the deployment endpoints return:
-
-```json
-{ "data": { ... endpoint-specific payload ... } }
-```
-
-Errors typically include an HTTP status and a JSON body with `code` and `message`. The exact error envelope varies by endpoint; rely on the HTTP status to branch.
-
-## Rate limits
-
-Rate limits exist and depend on your account tier; the exact numbers are managed by the Console team and can change. Implement exponential backoff for `429 Too Many Requests` responses (use the `Retry-After` header if present).
-
-## Endpoint summary (curated deployment subset)
-
-| Group | Methods | Endpoints | See |
+| Status | `code` | Meaning | Do this |
 |---|---|---|---|
-| Deployments | CRUD + update | 10 paths under `/v1/deployments` and `/v1/deposit-deployment` | @deployment-endpoints.md |
-| Leases | Batch create | `POST /v1/leases` | @deployment-endpoints.md |
-| Bids | List | `GET /v1/bids?dseq=` | @deployment-endpoints.md |
-| Providers | Read | `GET /v1/providers`, `GET /v1/providers/{address}`, ... | @deployment-endpoints.md |
-| Bid screening | Match deployment to providers | `POST /v1/bid-screening` | @deployment-endpoints.md |
-| API Keys | CRUD | `/v1/api-keys` | @authentication.md |
-| JWT minting | Provider-access tokens | `POST /v1/create-jwt-token` | @authentication.md, @operations.md |
-| Account & funding | Read-only balance + per-deployment runtime limits (signup, adding credits, and arbitrary tx signing are UI-only) | `GET /v1/balances`, `/v2/deployment-settings/*` | @account-and-funding.md |
-| Operations | Logs, events, status, shell (via provider proxy) | provider URL templates | @operations.md |
+| 402 | `insufficient_balance` | Not enough available credit to fund a new deployment. `data.requiredAmountUsd` and `data.availableAmountUsd` give the shortfall. | Add credits in the Console UI, then retry |
+| 402 | `balance_top_up_pending` | Auto recharge is already charging the card for the shortfall | Wait `Retry-After` seconds, then retry |
+| 402 | `payment_required` | The fee allowance ran out, or a free-trial account asked for a GPU the trial doesn't allow | Add credits; trial accounts upgrade by adding credits |
+| 502 | `provider_unreachable` | `POST /v1/leases`: the provider did not answer. No lease was created. | Choose another bid |
+| 502 | `manifest_not_delivered` | `POST /v1/leases`: the lease exists but the provider did not take the manifest | Send the identical request again, or close the deployment |
+| 422 | `deployment_resources_changed` | An update tried to change compute resources, replica counts, groups or globally exposed ports | Create a new deployment instead |
+| 409 | `deployment_definition_changed` | A concurrent `PATCH` changed the deployment first | Re-read the deployment, then re-send |
 
-For the curated reference: **@deployment-endpoints.md**.
+`PATCH /v1/deployments/{dseq}` and the secrets flow have a few more; they are listed next to those endpoints in **@deployment-endpoints.md** and **@secrets.md**.
 
-For a linear walkthrough from "I have an API key" to a running deployment: **@api-key-quickstart.md**.
+## Pagination and rate limits
 
-## What is NOT covered here
+- `GET /v1/deployments` pages by offset: `skip` plus `limit` (at most 100), and the response carries `data.pagination.hasMore`. `GET /v1/activities` pages by cursor (`nextCursor`).
+- On `429`, wait for `Retry-After` and back off exponentially. Don't hard-code a request budget: limits are set server-side and change.
 
-The full Swagger exposes ~80 additional endpoints that this skill intentionally omits because they are **Console-UI internals**, not a stable public API. Do not write code against them — use the Console UI for these operations instead.
+## Endpoint map
 
-| UI-only surface | Endpoint pattern | Use the UI for… |
+| Task | Endpoint | Reference |
 |---|---|---|
-| Account creation, auth, email verification | `/v1/auth/signup`, `/v1/register-user`, `/v1/send-verification-email`, `/v1/verify-email`, `/v1/verify-email-code`, `/v1/send-verification-code` | Sign up, log in, password reset, email verification |
-| Trial wallet provisioning | `/v1/start-trial` | First-time wallet creation (handled implicitly by signup in the UI) |
-| **Stripe payments and transactions** | `/v1/stripe/*` (payment methods, transactions, customer, coupons) | Adding cards, adding credits, viewing billing history |
-| Account-level Auto Top-Up | `/v1/wallet-settings`, `/v1/deployment-settings/*` (v1) | Settings → Auto Top-Up, which charges the card to keep the credit balance up. (Per-deployment runtime limits via `/v2/deployment-settings/*` *are* programmatic — see @deployment-endpoints.md.) |
-| Username & profile management | `/v1/user/me`, `/v1/user/updateSettings`, username availability checks | Editing your profile |
-| Favorite / saved templates | `/v1/user/addFavoriteTemplate`, `/v1/user/saveTemplate`, etc. | Bookmarking templates in the Console UI |
-| Alerts and notification channels | `/v1/alerts/*`, `/v1/deployment-alerts/*`, `/v1/notification-channels/*` | Configuring deployment health alerts |
-| Newsletter | `/v1/newsletter/*` | Email subscriptions |
-| Dashboard analytics | `/v1/bme/*`, `/v1/dashboard-data`, `/v1/network-capacity`, `/v1/graph-data/*`, `/v1/provider-graph-data/*`, `/v1/provider-dashboard/*`, `/v1/provider-earnings/*`, `/v1/leases-duration/*`, `/v1/market-data/*` | Browsing dashboards in the UI |
-| Blockchain explorer | `/v1/blocks/*`, `/v1/validators/*`, `/v1/proposals/*`, `/v1/transactions/*`, `/v1/addresses/{address}/*`, `/v1/predicted-*`, `/v1/gpu*` | Chain inspection in the UI |
-| Templates listing | `/v1/templates-list`, `/v1/templates/{id}` | Browsing the template marketplace |
+| Create a deployment | `POST /v1/deployments` | @deployment-endpoints.md |
+| List or read deployments | `GET /v1/deployments`, `GET /v1/deployments/{dseq}` | @deployment-endpoints.md |
+| Change image, env, command, ports or name | `PATCH /v1/deployments/{dseq}` | @deployment-endpoints.md |
+| Close a deployment | `DELETE /v1/deployments/{dseq}` | @deployment-endpoints.md |
+| List bids, accept bids | `GET /v1/bids?dseq=`, `POST /v1/leases` | @deployment-endpoints.md |
+| Runtime limit | `GET`, `PATCH /v2/deployment-settings/{dseq}` | @deployment-endpoints.md |
+| Provider details, regions, GPU availability | `GET /v1/providers/{address}`, `GET /v1/placement-options` | @deployment-endpoints.md |
+| Secrets that can't be read back | `GET /v1/sdl-secrets-context` + `sealedSecrets` | @secrets.md |
+| Balance and funding | `GET /v1/balances` | @account-and-funding.md |
+| API keys | `/v1/api-keys` | @authentication.md |
+| Logs, events, status, shell, attestation | `POST /v1/create-jwt-token`, then the provider | @operations.md |
 
-These endpoints exist to power the Console UI and may change without notice. They are not part of the deployment-management contract this skill documents.
+For a linear walkthrough from an API key to a running deployment: **@api-key-quickstart.md**.
+
+## Deprecated: don't generate code for these
+
+| Deprecated | Use instead |
+|---|---|
+| `PUT /v1/deployments/{dseq}` (resubmits the whole SDL) | `PATCH /v1/deployments/{dseq}` |
+| `manifest` in the `POST /v1/leases` body | Leave it out. Console sends the manifest it recorded when the deployment was created. |
+| `POST /v1/deposit-deployment`, and `deposit` on create | Nothing. Console funds every deployment from the account's credits. |
+| `POST /v1/certificates` (always answers 400) | Nothing. The API key replaces mTLS certificates. |
+
+## UI-internal endpoints: not covered
+
+The spec also exposes endpoints that exist to power the Console UI. They change without notice; don't write code against them.
+
+| Surface | Endpoint pattern | Instead |
+|---|---|---|
+| Signup, login, email verification, account deletion | `/v1/auth/*`, `/v1/register-user`, `/v1/send-verification-*`, `/v1/verify-email*`, `/v1/user/me/*-deletion` | Console UI |
+| Stripe payments, adding credits, Auto recharge | `/v1/stripe/*`, `/v1/wallet-settings` | Console UI → Billing |
+| Profile, favorites, saved templates, newsletter | `/v1/user/*`, `/v1/favorite-providers` | Console UI |
+| Alerts and notification channels | `/v1/alerts/*`, `/v1/deployment-alerts/*`, `/v1/notification-channels/*` | Console UI → Alerts |
+| Deploy-flow drafts, hardware requests, feed state | `/v1/configure-drafts/*`, `/v1/hardware-requests`, `/v1/activities/seen` | Console UI |
+| Legacy UI signing | `/v1/tx` (accepts six message types) | The dedicated deployment endpoints |
+| Dashboards, analytics, explorer | `/v1/dashboard-data`, `/v1/graph-data/*`, `/v1/bme/*`, `/v1/blocks/*`, `/v1/transactions/*`, `/v1/validators/*`, `/v1/proposals/*`, `/v1/gpu*`, `/v1/provider-dashboard/*`, `/v1/market-data/*` | Console UI, or a chain node for raw chain data |
+| Template gallery | `/v1/templates-list`, `/v1/templates/{id}` | [awesome-akash](https://github.com/akash-network/awesome-akash) |
 
 ## Related files
 
-- **@authentication.md** — `x-api-key` vs JWT, API Keys CRUD, JWT minting
-- **@deployment-endpoints.md** — Full endpoint reference with bodies and examples
-- **@api-key-quickstart.md** — End-to-end walkthrough for the API-key path
-- **@account-and-funding.md** — Account model, programmatic balance reads, automatic deployment funding; signup, adding credits, and arbitrary tx signing are UI-only
-- **@operations.md** — Post-deploy: logs, events, status, shell, manifest updates
+- **@authentication.md** — API keys: format, creation, CRUD, CI/CD
+- **@deployment-endpoints.md** — Every deployment endpoint with bodies, responses and errors
+- **@secrets.md** — `ac-secret://` references and sealed secrets
+- **@api-key-quickstart.md** — From an API key to a running deployment
+- **@account-and-funding.md** — Account model, balance, automatic funding, 402s
+- **@operations.md** — Provider JWT, logs, events, status, shell, attestation
