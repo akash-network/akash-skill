@@ -52,6 +52,7 @@ REST API at `https://console-api.akash.network/v1`. Authentication is `x-api-key
 - No private-key handling
 - Deployments funded automatically from account credits, in USD
 - Stripe-funded; no need to acquire AKT manually
+- Console keeps each deployment's SDL: change the image, env or ports in place with `PATCH`, and keep secrets sealed
 
 **Limitations**
 - Depends on Console as a service
@@ -140,7 +141,7 @@ curl -X POST https://console-api.akash.network/v1/deployments \
   }'
 ```
 
-No `deposit`: Console funds the deployment from the account's credit balance. Response includes `dseq`, the on-chain manifest, and the signed `MsgCreateDeployment` result.
+No `deposit`: Console funds the deployment from the account's credit balance. The response carries the `dseq`; accept a bid with `POST /v1/leases` and Console sends the provider its manifest. Full flow: **@console-api/api-key-quickstart.md**.
 
 ### CLI (self-custody)
 
@@ -217,6 +218,6 @@ Do **not** silently mix methods. If the user is mid-CLI workflow and you suggest
 | Local wallet key | ❌ | ✅ primary | ✅ primary | ❌ |
 | Browser wallet adapter (Keplr) | ❌ | ❌ | ✅ (TS SDK in browser) | ❌ |
 | `Authorization: Bearer <jwt>` | ✅ (for Console-account JWT session auth) | ❌ | ❌ | ❌ |
-| mTLS certificate | ❌ ([deprecated](../cli/mtls-legacy.md) for Console API; CLI direct-to-provider calls still use it where applicable) | ✅ (CLI direct provider calls) | ✅ (SDK direct provider calls) | ❌ |
+| mTLS certificate | ❌ ([deprecated](cli/mtls-legacy.md) for Console API; CLI direct-to-provider calls still use it where applicable) | ✅ (CLI direct provider calls) | ✅ (SDK direct provider calls) | ❌ |
 
 The collision worth flagging: **`Authorization: Bearer`** means a JWT on the Console API and an API key on AkashML. They are different services on different hosts; don't carry credentials across.

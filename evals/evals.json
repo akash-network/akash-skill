@@ -21,7 +21,7 @@
         {
           "id": "wraps_in_data_envelope",
           "type": "regex_present",
-          "pattern": "\"data\"\\s*:\\s*\\{",
+          "pattern": "(\"data\"|\\bdata)\\s*:\\s*\\{",
           "description": "Wraps request body in { \"data\": { ... } }"
         },
         {
@@ -57,8 +57,8 @@
         {
           "id": "no_deposit_on_create",
           "type": "regex_absent",
-          "pattern": "deposit",
-          "description": "Does NOT send a deposit; Console funds deployments automatically",
+          "pattern": "[\"']?deposit[\"']?\\s*:\\s*[\\d\\$\"']",
+          "description": "Does NOT send a deposit field; Console funds deployments automatically",
           "case_insensitive": true
         }
       ]
@@ -331,6 +331,248 @@
           "pattern": "(provider#430|provider/pull/430|not yet (honou?red|supported|merged|live|rendered|applied)|no provider (yet )?(honou?rs|supports|renders|applies))",
           "case_insensitive": true,
           "description": "Says the proxy block is not honored by providers yet"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "patch-deployment",
+      "prompt": "My Akash deployment (dseq 1785245500842) was created through the Console API; my key is in $AKASH_API_KEY. I need to roll the `api` service to image ghcr.io/acme/api:2.4.1 and set its LOG_LEVEL env var to debug, without touching anything else in the deployment. Give me the curl.",
+      "assertions": [
+        {
+          "id": "uses_patch",
+          "type": "regex_present",
+          "pattern": "(-[A-Za-z]*X\\s*PATCH|--request\\s+PATCH|method:\\s*[\"']PATCH)",
+          "description": "Updates with PATCH /v1/deployments/{dseq}"
+        },
+        {
+          "id": "no_put",
+          "type": "regex_absent",
+          "pattern": "(-[A-Za-z]*X\\s*PUT\\b|--request\\s+PUT\\b|method:\\s*[\"']PUT[\"'])",
+          "description": "Does NOT send the deprecated full-SDL PUT"
+        },
+        {
+          "id": "patches_by_service",
+          "type": "regex_present",
+          "pattern": "[\"']?services[\"']?\\s*:\\s*\\{\\s*[\"']?api[\"']?\\s*:",
+          "description": "Patches the api service by name under data.services"
+        },
+        {
+          "id": "sets_image",
+          "type": "regex_present",
+          "pattern": "[\"']?image[\"']?\\s*:\\s*[\"']ghcr\\.io/acme/api:2\\.4\\.1",
+          "description": "Sets the new image on the service"
+        },
+        {
+          "id": "env_as_map",
+          "type": "regex_present",
+          "pattern": "[\"']?env[\"']?\\s*:\\s*\\{\\s*[\"']?LOG_LEVEL[\"']?\\s*:",
+          "description": "Patches env as a name-to-value map, not a list of KEY=VALUE strings"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "accept-bid-no-manifest",
+      "prompt": "I created an Akash deployment with POST /v1/deployments (dseq 1785245500842) and bids have arrived. My API key is in $AKASH_API_KEY. Write the bash that picks the cheapest bid and creates the lease.",
+      "assertions": [
+        {
+          "id": "uses_leases",
+          "type": "regex_present",
+          "pattern": "/v1/leases\\b",
+          "description": "Creates the lease with POST /v1/leases"
+        },
+        {
+          "id": "no_manifest_field",
+          "type": "regex_absent",
+          "pattern": "manifest[\"']?\\s*:\\s*[\\$\"'<]",
+          "description": "Does NOT send the deprecated manifest field; Console sends the manifest it stored at create"
+        },
+        {
+          "id": "provider_from_bid_id",
+          "type": "regex_present",
+          "pattern": "(\\.id\\.provider|\\$id\\.provider|\\.bid\\.id\\b)",
+          "description": "Copies the provider from bid.id"
+        },
+        {
+          "id": "sorts_by_price",
+          "type": "regex_present",
+          "pattern": "price\\.amount",
+          "description": "Picks the cheapest bid by price.amount"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "name": "sealed-secrets",
+      "prompt": "I'm deploying a Postgres-backed app to Akash from a Node.js script using the Console API (key in AKASH_API_KEY). The DB password and a Stripe secret key must not be readable back from the Console API after the deploy. How do I pass them? Show the code.",
+      "assertions": [
+        {
+          "id": "secret_references",
+          "type": "regex_present",
+          "pattern": "ac-secret://",
+          "description": "References each secret in the SDL as ac-secret://NAME"
+        },
+        {
+          "id": "sealed_secrets_field",
+          "type": "regex_present",
+          "pattern": "sealedSecrets",
+          "description": "Sends the values in sealedSecrets"
+        },
+        {
+          "id": "sealing_context",
+          "type": "regex_present",
+          "pattern": "/v1/sdl-secrets-context",
+          "description": "Fetches the sealing key from GET /v1/sdl-secrets-context"
+        },
+        {
+          "id": "jwe_alg",
+          "type": "regex_present",
+          "pattern": "RSA-OAEP-256",
+          "description": "Seals with RSA-OAEP-256"
+        },
+        {
+          "id": "jwe_enc",
+          "type": "regex_present",
+          "pattern": "A256GCM",
+          "description": "Encrypts the content with A256GCM"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "name": "list-deployments-paginated",
+      "prompt": "Using the Akash Console API with $AKASH_API_KEY, write a bash script that prints the dseq and name of every deployment I own, including closed ones.",
+      "assertions": [
+        {
+          "id": "pages_on_has_more",
+          "type": "regex_present",
+          "pattern": "hasMore",
+          "description": "Pages on data.pagination.hasMore"
+        },
+        {
+          "id": "asks_for_closed",
+          "type": "regex_present",
+          "pattern": "state=closed",
+          "description": "Asks for closed deployments explicitly; the list defaults to active ones"
+        },
+        {
+          "id": "page_size_within_cap",
+          "type": "regex_absent",
+          "pattern": "(?i)limit=(\\d{4,}|[2-9]\\d\\d|1[1-9]\\d|10[1-9])\\b",
+          "description": "Does NOT ask for more than 100 deployments per page"
+        },
+        {
+          "id": "reads_deployments_array",
+          "type": "regex_present",
+          "pattern": "\\.data\\.deployments",
+          "description": "Reads data.deployments, not a bare array"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "name": "jwt-full-access",
+      "prompt": "From my CI job (Akash Console API key in $AKASH_API_KEY), I want a single provider JWT that allows every action on every lease I own: logs, shell, events, status, everything. What's the create-jwt-token request?",
+      "assertions": [
+        {
+          "id": "mints_jwt",
+          "type": "regex_present",
+          "pattern": "/v1/create-jwt-token",
+          "description": "Mints the JWT with POST /v1/create-jwt-token"
+        },
+        {
+          "id": "full_without_scope",
+          "type": "regex_present",
+          "pattern": "[\"']?access[\"']?\\s*:\\s*[\"']full[\"']\\s*\\}",
+          "description": "Uses leases { access: full } with nothing else"
+        },
+        {
+          "id": "no_scope_on_full",
+          "type": "regex_absent",
+          "pattern": "[\"']?access[\"']?\\s*:\\s*[\"']full[\"']\\s*,\\s*[\"']?scope",
+          "description": "Does NOT attach a scope list to access: full, which the JWT schema rejects"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "name": "account-balance",
+      "prompt": "Quick one: with my Akash Console API key in $AKASH_API_KEY, how do I check from a script how much credit I have left and how much is held by my running deployments?",
+      "assertions": [
+        {
+          "id": "uses_balances",
+          "type": "regex_present",
+          "pattern": "/v1/balances",
+          "description": "Reads GET /v1/balances"
+        },
+        {
+          "id": "no_address_needed",
+          "type": "regex_absent",
+          "pattern": "balances\\?address=",
+          "description": "Does NOT require the wallet address; the API key identifies the account"
+        },
+        {
+          "id": "names_escrow",
+          "type": "regex_present",
+          "pattern": "(?i)escrow",
+          "description": "Calls the held part escrow"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "name": "tee-attestation",
+      "prompt": "I have a confidential compute (TEE) deployment on Akash that I created via the Console API (dseq 1785245500842, gseq 1, oseq 1; API key in $AKASH_API_KEY). How do I fetch and verify its attestation evidence from a script?",
+      "assertions": [
+        {
+          "id": "fetches_quote",
+          "type": "regex_present",
+          "pattern": "/attestation/quote",
+          "description": "Fetches the evidence from the provider's /lease/{dseq}/{gseq}/{oseq}/attestation/quote"
+        },
+        {
+          "id": "attestation_scope",
+          "type": "regex_present",
+          "pattern": "[\"']attestation[\"']",
+          "description": "Mints a JWT carrying the attestation scope"
+        },
+        {
+          "id": "validates_via_console",
+          "type": "regex_present",
+          "pattern": "/v1/confidential-compute/attestation/validate",
+          "description": "Validates the evidence with POST /v1/confidential-compute/attestation/validate"
+        },
+        {
+          "id": "sends_nonce",
+          "type": "regex_present",
+          "pattern": "nonce",
+          "description": "Sends a fresh nonce"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "name": "change-resources",
+      "prompt": "My Akash deployment 1785245500842 (created via the Console API, key in $AKASH_API_KEY) needs 4 CPUs instead of 2 and 8Gi of memory instead of 4Gi. How do I update it in place?",
+      "assertions": [
+        {
+          "id": "no_put",
+          "type": "regex_absent",
+          "pattern": "(-[A-Za-z]*X\\s*PUT\\b|--request\\s+PUT\\b|method:\\s*[\"']PUT[\"'])",
+          "description": "Does NOT send a full-SDL PUT, which is deprecated and refuses resource changes"
+        },
+        {
+          "id": "needs_new_deployment",
+          "type": "regex_present",
+          "pattern": "(?i)(new deployment|re-?deploy|create (a )?new|fresh deployment)",
+          "description": "Explains a resource change needs a new deployment"
+        },
+        {
+          "id": "not_in_place",
+          "type": "regex_present",
+          "pattern": "(?i)(422|deployment_resources_changed|can(no|')t (be )?change|cannot be changed|fixed at create|not possible in place|can't be updated in place|cannot be updated in place)",
+          "description": "Says compute resources cannot change in place"
         }
       ]
     }

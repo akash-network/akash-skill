@@ -43,6 +43,15 @@ TEE deployments are deliberately simple on the tenant side:
 There is exactly one control — the `tee` string. Everything else (runtime class,
 platform detection, attestation) is handled provider-side.
 
+## Verifying a running deployment
+
+The sidecar answers attestation requests. Fetch hardware-signed evidence from the
+provider with a fresh nonce (`POST {hostUri}/lease/{dseq}/{gseq}/{oseq}/attestation/quote`,
+JWT scope `attestation`), then check it against AMD, Intel and NVIDIA with the Console
+API's `POST /v1/confidential-compute/attestation/validate` (it takes a Console API key),
+or verify the reports against the vendors' roots yourself. The steps are in
+[../deploy/console-api/operations.md](../deploy/console-api/operations.md#attestation-confidential-compute).
+
 ## `cpu-gpu` requires GPU resources
 
 The `cpu-gpu` value requires the service's compute profile to declare `gpu`

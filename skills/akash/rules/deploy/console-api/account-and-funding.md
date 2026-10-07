@@ -1,89 +1,86 @@
 # Console Account & Funding
 
-When you sign up on console.akash.network, your account *is* a managed wallet. There isn't a separate "wallet" product to enable — the API key authenticates as your account, and deployments spend from that account's wallet automatically.
-
-This file covers the lifecycle around the account: how to bootstrap one (UI-only) and how to read account state programmatically. Wallet operations happen through the dedicated deployment endpoints in **@deployment-endpoints.md**, not through any account-level "send arbitrary tx" endpoint (no such programmatic endpoint exists in the documented API).
-
-**Funding a deployment is not something you do.** You add credits to the account, and Console keeps every deployment funded from that balance for as long as the credits last. There is no deposit to send on create and no top-up call to make. Each deployment still has its own on-chain escrow account — Console just fills it for you, and the Console UI reports the held total as "Escrow" against an "Available" balance. See [How Funding Works](https://akash.network/docs/getting-started/how-funding-works/).
+A Console account *is* a managed wallet. The API key authenticates as the account, and deployments spend from the account's credits automatically. There is no separate wallet to enable and nothing to fund per deployment.
 
 ## The model
 
 ```
 Console account
-├── email + password (or OAuth)
-├── managed wallet (the on-chain address that signs your deployments)
-│   ├── credit balance (USD internally; uact on-chain), split into
-│   │   available and escrow held by running deployments
-│   └── Auto Top-Up settings — charges the card to keep credits up (UI-only)
-└── API keys (one or more — each authenticates as this account)
+├── login (email + password, or OAuth)
+├── managed wallet: signs every deployment action
+│   └── credits (USD), split into
+│       ├── Available: free to fund new and running deployments
+│       └── Escrow: held by running deployments, returned as each one closes
+└── API keys: each one acts as the whole account
 ```
 
-The API key doesn't carry a wallet of its own. It's an authentication credential that authorizes operations on the account, and the account is what holds the wallet.
+Each deployment still has its own escrow account on Akash; Console fills it for you. The Console UI shows the split as **Available** and **Escrow**, the same words the API uses.
 
-## Bootstrap order (UI for setup, API for runtime)
+## Setup happens in the UI
 
-The following steps are **UI-only** at [console.akash.network](https://console.akash.network) — there is no programmatic API for any of them, and the underlying endpoints (`/v1/auth/signup`, `/v1/send-verification-email`, `/v1/verify-email`, `/v1/start-trial`, all `/v1/stripe/*` payment endpoints, `/v1/wallet-settings`, `/v1/deployment-settings`, `/v1/user/*` profile endpoints) are not part of the supported programmatic surface and may change without notice.
+None of these steps has a supported API:
 
-1. **Sign up** in the Console UI (email + password, or OAuth).
-2. **Verify email** via the link sent to your inbox.
-3. **Add a payment method** in Settings → Payment Methods (Stripe).
-4. **Add credits** via the UI; the balance becomes spendable as ACT.
-5. **(Optional) Enable Auto Top-Up** in Settings so the card is charged before the balance runs out.
-6. **Generate an API key** in Settings → API Keys. Plaintext is shown once at creation; copy it and store as `AKASH_API_KEY`.
+1. **Sign up** at [console.akash.network](https://console.akash.network) and verify the email address. New accounts may start on a free trial with a small credit and some limits (certain GPU models, a restricted provider list); a trial account may have to accept the Fair Use Policy in the UI before its first deploy (`403 fair_use_policy_required` otherwise).
+2. **Add credits** under **Billing**, by card through Stripe.
+3. **Optionally turn on Auto recharge** under Billing, so the card is charged before credits run out.
+4. **Create an API key** under **Settings → API Keys** (**@authentication.md**).
 
-Only after step 6 do you have an API key to authenticate the programmatic endpoints below.
+## Reading the balance
 
-## Programmatic surface — reading balance and signing transactions
-
-These are the only two account-related operations supported via the API. Everything else listed above is UI-only.
-
-### Read your balance
-
-> ⚠️ **Swagger-only (Tier 2).** Not in the [official API reference](https://akash.network/docs/api-documentation/console-api/api-reference/) — observed on the live service but may change without notice. Pin to a tested runtime version.
-
-```
-GET /v1/balances?address=<your-akash-address>
+```bash
+curl -s https://console-api.akash.network/v1/balances -H "x-api-key: $AKASH_API_KEY" | jq .data
 ```
 
-**Auth:** Public (the endpoint is gated on knowing the address, which is public anyway).
-
-**Response:**
 ```json
-{
-  "data": {
-    "balance": <usd-available-to-spend>,
-    "deployments": <usd-held-in-deployment-escrow>,
-    "total": <balance + deployments>
-  }
-}
+{ "balance": 42.17, "deployments": 6.3, "total": 48.47 }
 ```
 
-All values are USD numbers; the conversion from `uact` happens server-side. This is the programmatic form of the split the Console UI shows: `balance` is **Available**, `deployments` is **Escrow** — held by running deployments, not spent, and returned to `balance` as each one closes.
+All values are USD. `balance` is **Available**, `deployments` is the **Escrow** held by running deployments (not spent: it returns to `balance` as they close), and `total` is the sum. With the API key and no query string, the call reads your own account; `?address=akash1...` reads any address without a key.
 
-Your account's wallet address is shown in the Console UI under Settings; copy it once and store it alongside your API key (e.g., `AKASH_WALLET_ADDRESS`).
+Related reads:
 
-### Deployment funding
+| Endpoint | Returns |
+|---|---|
+| `GET /v1/weekly-cost` | USD per week across your running deployments |
+| `GET /v1/usage/history?address=&startDate=&endDate=` | Daily spend for an address (public; at most 366 days). Your wallet address is the `owner` of any of your deployments (`deployment.id.owner`). |
+| `GET /v1/deployment-funding-config` | The constants automatic funding runs on (below) |
 
-Nothing to configure: Console funds each deployment automatically and keeps it topped up while the account has credits. The one funding knob that *is* programmatic is a deployment's **runtime limit** — see **@deployment-endpoints.md** § "Deployment settings v2 (runtime limits)". Account-level Auto Top-Up (`/v1/wallet-settings`) is UI-only.
+## How automatic funding works
 
-If a deployment is running low, the answer is credits on the account, not a call to `/v1/deposit-deployment` — that endpoint is deprecated and does nothing that automatic funding does not already do.
+Console funds every deployment from the account's credits; there is no deposit to send and no top-up to call. `GET /v1/deployment-funding-config` (public) returns the constants:
 
-## What this file deliberately does NOT cover
+```json
+{ "data": { "targetRunwayHours": 48, "balanceHeadroomUsd": 5, "defaultDepositUsd": 0.5 } }
+```
 
-The following are real Console-UI features but are **not** part of the documented programmatic API. Use the UI for these; don't write code against the underlying endpoints.
+- Each deployment starts with `defaultDepositUsd` in escrow. Creating one with less available answers **402 `insufficient_balance`**.
+- Once its lease starts, Console tops the escrow up toward `targetRunwayHours` of runtime and keeps it there while credits last.
+- Top-ups leave about `balanceHeadroomUsd` of the available balance untouched, so a new deployment can still be created.
+- When the credits run out, running deployments live on what their escrow holds, up to about `targetRunwayHours`, then close. Adding credits is the fix; it is a UI action.
 
-- **Account creation, password reset, email verification, OAuth flows** — UI only.
-- **Stripe payment methods, payment confirmation, transaction history, customer management** — UI only. All `/v1/stripe/*` endpoints back the Console's billing screens.
-- **Account-level Auto Top-Up** (`/v1/wallet-settings`) — UI only. (Per-deployment runtime limits via `/v2/deployment-settings/*` *are* documented as programmatic — covered in `deployment-endpoints.md`.)
-- **Username and profile management** (`/v1/user/*`) — UI only.
-- **Favorite templates, saved templates, newsletter signup** — UI only.
-- **Alerts and notification channels** — UI only.
-- **Console dashboard analytics** (`/v1/bme/*`, `/v1/dashboard-data`, etc.) — UI only.
-- **Arbitrary signed transactions.** The Console API documentation explicitly states "you cannot export private keys or sign arbitrary transactions." There is no documented endpoint to broadcast a custom `Msg*` from the managed wallet — use the dedicated deployment endpoints, and if you need a chain message they don't cover, switch to a self-custody SDK.
-- **Self-custody wallets.** Keplr or Ledger don't touch the Console API at all. Use the CLI or an SDK (see `../cli/` and `../../sdk/`).
+The one programmatic knob is a deployment's **runtime limit**, which closes it after a set number of hours: `runtimeLimitHours` on create, or `PATCH /v2/deployment-settings/{dseq}` (**@deployment-endpoints.md**). Don't call `POST /v1/deposit-deployment`: it is deprecated and does nothing automatic funding doesn't already do.
+
+## When a create is refused for money
+
+| Response | Meaning | Do this |
+|---|---|---|
+| 402 `insufficient_balance` | Available credit is below what the new deployment needs. `data.requiredAmountUsd` and `data.availableAmountUsd` give the gap. | Tell the user to add credits in the Console UI, or close deployments they no longer need |
+| 402 `balance_top_up_pending` | Auto recharge is already charging the card | Retry after the `Retry-After` header |
+| 402 `payment_required` | The fee allowance ran out, or a trial account asked for something the trial excludes | Add credits |
+
+## Not programmatic
+
+These are Console UI features, and the endpoints behind them are internal (listed in **@overview.md**):
+
+- Signup, login, email verification, account deletion
+- Payment methods, adding credits, invoices and billing history
+- Auto recharge settings
+- Profile, favorites, saved templates, alerts and notification channels
+- **Signing arbitrary transactions.** The managed wallet's key can't be exported, and no endpoint signs a message of your choosing; `/v1/tx` is the Console UI's legacy signer and accepts only six message types (deployment, lease, deposit and certificate messages). Use the dedicated endpoints, and switch to a self-custody SDK for anything they don't cover.
+- **Self-custody wallets.** Keplr and Ledger never touch the Console API; they use the CLI or an SDK (`../cli/`, `../../sdk/`).
 
 ## Related files
 
-- **@authentication.md** — `x-api-key` setup
-- **@deployment-endpoints.md** — Full endpoint reference (Deployments, Leases, Bids, runtime limits)
+- **@authentication.md** — API keys
+- **@deployment-endpoints.md** — Deployments, leases, bids, runtime limits
 - **@api-key-quickstart.md** — End-to-end walkthrough
