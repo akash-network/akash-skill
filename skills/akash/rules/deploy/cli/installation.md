@@ -2,6 +2,8 @@
 
 Install the `provider-services` CLI for command-line deployments and provider interaction.
 
+The official docs now point new CLI users to `akt`, which covers these self-custody flows on a keyring context and adds Console-backed deploys: see [../akt/overview.md](../akt/overview.md). This folder documents `provider-services` for existing scripts.
+
 ## Quick Install
 
 ### Linux/macOS (Recommended)

@@ -4,7 +4,7 @@ A portable skill bundle for Claude Code, Codex, OpenCode, and other coding agent
 
 | Skill | Persona | What it covers |
 |---|---|---|
-| `akash-network:akash` | Deployer | SDL syntax, Console API (with API key), Akash CLI, TypeScript/Go SDKs, **AkashML managed inference** (OpenAI/Anthropic-compatible LLM APIs on Akash compute), authz, bid-matching, payment in `uact` |
+| `akash-network:akash` | Deployer | SDL syntax, Console API (with API key), the akt CLI, Akash CLI (`provider-services`), TypeScript/Go SDKs, **AkashML managed inference** (OpenAI/Anthropic-compatible LLM APIs on Akash compute), authz, bid-matching, payment in `uact` |
 | `akash-network:akash-provider` | Provider operator | Kubernetes prereqs, provider installation, attributes & pricing, bid engine, monitoring, troubleshooting |
 | `akash-network:akash-node` | Node / validator operator | Full node setup, state sync, validator setup, slashing avoidance, sentry nodes, key management |
 
@@ -134,7 +134,8 @@ In Claude Code, you can also invoke them explicitly: `/akash-network:akash`, `/a
 │   │   │   ├── deploy/
 │   │   │   │   ├── overview.md  # Method selection
 │   │   │   │   ├── console-api/ # Console API (API key path)
-│   │   │   │   ├── cli/         # Akash CLI (self-custody)
+│   │   │   │   ├── akt/         # akt CLI (Console API key or local keyring)
+│   │   │   │   ├── cli/         # Akash CLI, provider-services (self-custody)
 │   │   │   │   └── akashml/     # AkashML managed inference (consumption path)
 │   │   │   ├── sdk/
 │   │   │   │   ├── typescript/  # @akashnetwork/chain-sdk
