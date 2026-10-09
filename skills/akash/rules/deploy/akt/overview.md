@@ -7,7 +7,7 @@
 | Console (`console-api`) | Console's managed wallet, from the account's USD credits | Console API key | The user has a Console account and no wallet to manage |
 | Chain (`keyring`) | The user's own key, in ACT | Local keyring account | Self-custody |
 
-One context can hold both credentials; its preference picks the rail for `akt deploy`, `akt update` and `akt close`. `akt console …` commands always use Console and `akt tx …` always signs locally.
+One context can hold both credentials; its preference picks the rail for `akt deploy`, `akt update`, `akt redeploy` and `akt close`. `akt console …` commands always use Console and `akt tx …` always signs locally.
 
 Official docs: [akash.network/docs/developers/deployment/akt](https://akash.network/docs/developers/deployment/akt/). Source and releases: [github.com/akash-network/akt](https://github.com/akash-network/akt).
 
@@ -15,34 +15,39 @@ Official docs: [akash.network/docs/developers/deployment/akt](https://akash.netw
 
 - The user mentions akt, or `command -v akt` finds it, and wants something deployed or inspected from a terminal. Use akt rather than hand-written Console API calls or `provider-services`: one `akt deploy` creates the deployment, waits for bids, picks one, opens the lease, sends the manifest and waits for the service.
 - Code that deploys on behalf of an application, or a pipeline that shouldn't install tools, is still better served by the Console API over HTTP: [../console-api/](../console-api/).
-- akt has no sealed secrets (`sealedSecrets`, `ac-secret://`), no targeted `PATCH` and no `inheritSecretsFrom`. Those need the Console API.
+- On akt 1.0.1 and later, Console secrets work from the CLI: `ac-secret://NAME` references with values from `--secrets-file`, partial updates with `akt update --patch`, and `akt redeploy`, which carries stored secrets over to a new deployment. 0.1.x and the 1.0.0-rc0 pre-release have none of these, so upgrade first.
 
 ## Install
 
 ```bash
 brew tap akash-network/tap
-brew install akash-network/tap/akt     # latest stable release
+brew install akash-network/tap/akt     # latest stable release (1.0.1 or later)
+brew upgrade akash-network/tap/akt     # an existing 0.1.x install
 akt version
 ```
 
-Homebrew ships stable releases only. Release candidates are archives on [GitHub Releases](https://github.com/akash-network/akt/releases) (a universal macOS zip, Linux amd64 and arm64 zips, `.deb` and `.rpm`); check them against the release's `akt_<version>_checksums.txt`. Full steps: [installation docs](https://akash.network/docs/developers/deployment/akt/installation/).
+Homebrew ships stable releases; 1.0.1 is the first stable 1.0. Every release is also on [GitHub Releases](https://github.com/akash-network/akt/releases) (a universal macOS zip, Linux amd64 and arm64 zips, `.deb` and `.rpm`), which is the way to pin a version in CI; check the archive against the release's `akt_<version>_checksums.txt`. Full steps: [installation docs](https://akash.network/docs/developers/deployment/akt/installation/).
 
-akt has its own agent skill, `akt-cli`, about driving the binary itself: every command family, context inspection, recovery. Get it from `https://akash.network/skills/akt-cli.zip` or the release's `akt_<version>_skill.zip`, and extract the whole `akt-cli/` folder into the agent's skills directory (`~/.claude/skills/` for Claude Code, `~/.agents/skills/` for Codex).
+akt has its own agent skill, `akt-cli`, about driving the binary itself: every command family, context inspection, recovery. Take the `akt_<version>_skill.zip` from the release that matches `akt version`; the copy at `https://akash.network/skills/akt-cli.zip` can trail the latest release. Extract the whole `akt-cli/` folder into the agent's skills directory (`~/.claude/skills/` for Claude Code, `~/.agents/skills/` for Codex).
 
 ## Check the version first
 
 Console-rail behavior changed between releases. Run `akt version` before giving commands:
 
-| | akt 0.1.x (Homebrew stable) | akt 1.0 (release candidate) |
+| | akt 0.1.x | akt 1.0.1 and later |
 |---|---|---|
 | Deposit on a Console deploy | Required: `--deposit 0.5` or more, in USD (`0.5`, `0.5usd`, `$0.50`). Console ignores the amount and funds the deployment itself | Refused: any deposit on the Console rail is an error, so pass none |
-| `akt console deployment create` | Takes a USD deposit argument | No deposit argument |
+| `akt console deployment create` | Takes a USD deposit argument | No deposit argument; takes `--secrets-file` |
 | `akt console deployment settings <dseq>` | `true` or `false` toggles the old auto top-up | `<hours>` sets a runtime limit, `none` removes it |
 | `akt console deployment deposit` | Calls an endpoint Console has deprecated; don't use it | Removed |
+| Secrets (`ac-secret://`, `--secrets-file`) | Absent | On `deploy`, `update`, `redeploy` and `akt console deployment create` and `update` |
+| `akt update` on Console | Resubmits the whole SDL; a resource change fails with a 422 | Sends only what changed and keeps stored secrets; `--patch` takes a patch file; a resource change is refused before sending |
+| `akt redeploy`, `akt console deployment sdl` | Absent | Present |
+| `akt console lease create` | Sends the manifest cached by `deployment create`, so it only works on the same machine | Console builds the manifest from its saved definition, on any machine |
 | `akt console screen --gpu-model` | Ignored, so every model returns the same providers | Filters by model |
 | `akt sdl init --architecture` | Absent | `amd64` or `arm64` |
 
-When an example here and the installed binary disagree, `akt <command> --help` wins.
+The 1.0.0-rc0 pre-release matches 1.0.1 on deposits, settings, screening and architecture, but has none of the secret, patch or redeploy features and still caches the manifest. When an example here and the installed binary disagree, `akt <command> --help` wins.
 
 ## Set up a Console context
 
@@ -83,8 +88,8 @@ If the network isn't listed, add it with `akt context network create` (see its `
 
 ## Machine-readable output
 
-- Use `-o json` for reads and `-o jsonl` for `deploy`, `update` and `close`, which write one record per workflow step.
-- Each JSONL record has `workflow`, `id`, `step`, `result` (`completed`, `skipped` or `error`), `errors` and `txs`, plus the step's `outputs`. The new dseq is in the `create-deployment` record: `jq -r 'select(.step=="create-deployment") | .outputs.dseq'`. A failed step can also carry `dseq`, `provider`, `recovery` and `cleanup`, the last two being commands to run next.
+- Use `-o json` for reads and `-o jsonl` for `deploy`, `update`, `redeploy` and `close`, which write one record per workflow step.
+- Each JSONL record has `workflow`, `id`, `step`, `result` (`completed`, `skipped` or `error`; `planned` under `--dry-run`), `errors` and `txs`, plus the step's `outputs`. The new dseq is in the `create-deployment` record: `jq -r 'select(.step=="create-deployment") | .outputs.dseq'`. A failed step can also carry `dseq`, `provider`, `recovery` and `cleanup`, the last two being commands to run next.
 - Check the exit status too. `akt sdl validate` exits 0 when valid, 1 when invalid and 2 when it can't read the file.
 - `akt sdl init` writes raw YAML: redirect it to a file and don't pass `-o`.
 - Pretty output shows amounts in dollars. JSON keeps micro-denominations (`uact`), so convert before quoting a price.
@@ -104,9 +109,12 @@ Add `--enable-writes` to the second command only if the user wants the agent to 
 
 ## How akt maps to the Console API
 
-akt calls the endpoints documented in [../console-api/](../console-api/), with two differences:
+akt calls the endpoints documented in [../console-api/](../console-api/). On 1.0.1:
 
-- `akt update` and `akt console deployment update` resubmit the whole SDL through `PUT /v1/deployments/{dseq}`, which the API has deprecated in favor of `PATCH`. It still works, but akt has no command for a targeted patch.
-- `akt deploy` and `akt console lease create` still send a manifest to `POST /v1/leases`, which Console no longer needs.
+- `akt deploy`, `akt redeploy` and `akt console deployment create` send `POST /v1/deployments` with a `sealedSecrets` JWE built on the user's machine from `GET /v1/sdl-secrets-context` ([../console-api/secrets.md](../console-api/secrets.md)). akt seals an empty map when there are no secrets, so plain variables stay readable and only `ac-secret://` values are stored as secrets. `akt redeploy` adds `inheritSecretsFrom`.
+- `akt update` and `akt console deployment update` diff the file against Console's saved SDL and send the difference through `PATCH /v1/deployments/{dseq}` with `ifManifestVersion`. Only a deployment Console holds no definition for falls back to the full-SDL `PUT`.
+- `akt deploy` and `akt console lease create` send no manifest to `POST /v1/leases`; Console builds it. `--manifest` is only for a deployment with no saved definition.
+
+akt 0.1.x resubmits the whole SDL through the deprecated `PUT` and sends a cached manifest with every lease.
 
 Recipes for the Console rail: [console-workflows.md](console-workflows.md).

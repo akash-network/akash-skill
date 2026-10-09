@@ -73,8 +73,8 @@ The unified `akt` binary. On a Console context it drives the Console API with th
 
 **Limitations**
 - A binary to install and a context to configure first
-- No sealed secrets or targeted `PATCH`; those stay on the Console API
-- Flags differ between 0.1.x and 1.0 (the Console deposit above all), so check `akt version`
+- Secrets, patches and redeploy need akt 1.0.1 or later; 0.1.x has none of them
+- Flags differ between 0.1.x and 1.0.1 (the Console deposit above all), so check `akt version`
 
 See **@akt/** for setup and recipes.
 
