@@ -579,7 +579,7 @@
     {
       "id": 17,
       "name": "akt-ci-console-deploy",
-      "prompt": "Our GitHub Actions runner has akt 1.0.0 (the Akash CLI) installed, and the Console API key is in a repository secret. Write the workflow steps that deploy `app.yaml` to Akash through Console with no prompts, take whichever bid is cheapest, and pass the deployment's dseq to later steps.",
+      "prompt": "Our GitHub Actions runner has akt 1.0.1 (the Akash CLI) installed, and the Console API key is in a repository secret. Write the workflow steps that deploy `app.yaml` to Akash through Console with no prompts, take whichever bid is cheapest, and pass the deployment's dseq to later steps.",
       "assertions": [
         {
           "id": "uses_akt_deploy",
@@ -627,7 +627,7 @@
           "id": "no_deposit_on_1_0",
           "type": "regex_absent",
           "pattern": "akt deploy[^\\n]*(--deposit|\\.ya?ml[\"']?\\s+[\"']?\\$?\\d)",
-          "description": "Passes no deposit, which akt 1.0 rejects on the console rail"
+          "description": "Passes no deposit, which akt 1.0.1 rejects on the console rail"
         },
         {
           "id": "no_raw_api",
@@ -643,16 +643,22 @@
       "prompt": "I installed akt with Homebrew (`akt version` prints 0.1.2) and set up a Console context. Running `akt deploy svc.yaml --bid-select cheapest --yes` stops with: deposit \"auto\": console-api deployments require an explicit USD amount of at least $0.50. I thought Console funds deployments on its own now. What should I run?",
       "assertions": [
         {
-          "id": "passes_usd_deposit",
+          "id": "recommends_upgrade",
           "type": "regex_present",
-          "pattern": "akt deploy[^\\n]*--deposit[ =][\"']?\\$?(0?\\.5|[1-9])",
-          "description": "On 0.1.x, passes a USD deposit of at least $0.50"
+          "pattern": "brew upgrade[^\\n]*\\bakt\\b",
+          "description": "Upgrades through Homebrew, which now ships akt 1.0.1"
         },
         {
-          "id": "mentions_upgrade",
+          "id": "deploys_without_deposit",
           "type": "regex_present",
-          "pattern": "(?i)(upgrad|akt\\s+v?1\\.0\\b|v?1\\.0\\.0)",
-          "description": "Says akt 1.0 drops the deposit requirement"
+          "pattern": "akt deploy\\s+[\"']?svc\\.ya?ml(?![^\\n]*--deposit)[^\\n]*--bid-select",
+          "description": "After upgrading, deploys with no deposit, which 1.0.1 refuses on the console rail"
+        },
+        {
+          "id": "fallback_usd_deposit",
+          "type": "regex_present",
+          "pattern": "akt deploy[^\\n]*--deposit[ =][\"']?\\$?(0?\\.5|[1-9])",
+          "description": "Gives the 0.1.x fallback of a USD deposit of at least $0.50"
         },
         {
           "id": "deposit_not_used",
@@ -701,8 +707,8 @@
         {
           "id": "update_sdl_then_dseq",
           "type": "regex_present",
-          "pattern": "akt update\\s+[\"']?\\S*stack\\.ya?ml[\"']?\\s+7712004\\b",
-          "description": "Runs `akt update <sdl> <dseq>` with the SDL first"
+          "pattern": "akt update\\s+[\"']?\\S+\\.ya?ml[\"']?\\s+7712004\\b",
+          "description": "Runs `akt update <file> <dseq>` with the file first (the edited SDL or a --patch file)"
         },
         {
           "id": "not_reversed",
@@ -711,10 +717,10 @@
           "description": "Does not put the dseq before the SDL"
         },
         {
-          "id": "validates_sdl",
+          "id": "checks_before_applying",
           "type": "regex_present",
-          "pattern": "akt sdl validate\\b",
-          "description": "Validates the edited SDL before updating"
+          "pattern": "(akt sdl validate\\b|akt update[^\\n]*--dry-run\\b)",
+          "description": "Validates the SDL or dry-runs the update before applying it"
         },
         {
           "id": "stays_on_akt",
@@ -801,6 +807,99 @@
           "type": "regex_absent",
           "pattern": "provider-services\\s+(tx|query|keys|send-manifest|lease-\\w+)\\b",
           "description": "Does not run provider-services commands"
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "name": "akt-secret-env",
+      "prompt": "My API needs STRIPE_SECRET_KEY at runtime. I have akt 1.0.1 and a working Console context, and `api.yaml` is ready. Deploy it so the key can't be read back from the deployment's stored SDL and doesn't end up in my shell history.",
+      "assertions": [
+        {
+          "id": "secret_reference",
+          "type": "regex_present",
+          "pattern": "STRIPE_SECRET_KEY=ac-secret://[A-Za-z_]\\w*",
+          "description": "Puts an ac-secret:// reference in the SDL instead of the value"
+        },
+        {
+          "id": "secrets_file",
+          "type": "regex_present",
+          "pattern": "akt deploy[^\\n]*--secrets-file\\b",
+          "description": "Supplies the value to akt deploy with --secrets-file"
+        },
+        {
+          "id": "no_value_in_args",
+          "type": "regex_absent",
+          "pattern": "(--arg\\s+\\w+\\s+[\"']?sk_|STRIPE_SECRET_KEY=sk_)",
+          "description": "Does not put the key's value in a command argument or the SDL"
+        },
+        {
+          "id": "stays_on_akt",
+          "type": "regex_absent",
+          "pattern": "(curl[^\\n]*/v1/|sdl-secrets-context)",
+          "description": "Lets akt seal the secret instead of calling the Console API by hand"
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "name": "akt-resource-change-redeploy",
+      "prompt": "Deployment 5520931 was created with `akt deploy app.yaml` on my Console context (akt 1.0.1). The worker now needs 8Gi of memory instead of 2Gi. What do I run?",
+      "assertions": [
+        {
+          "id": "uses_redeploy",
+          "type": "regex_present",
+          "pattern": "akt redeploy\\s+5520931\\b",
+          "description": "Creates the new deployment with `akt redeploy <dseq>`"
+        },
+        {
+          "id": "sdl_override",
+          "type": "regex_present",
+          "pattern": "akt redeploy[^\\n]*--sdl-file\\b",
+          "description": "Passes the edited SDL with --sdl-file"
+        },
+        {
+          "id": "old_deployment_stays_open",
+          "type": "regex_present",
+          "pattern": "(?i)(akt close\\s+5520931\\b|(old|original|source|previous) (deployment|one)[^\\n.]*(still|keeps?|stays?|remains?|leaves?|running|open|close)|leaves? (the )?(old|original|source|previous))",
+          "description": "Says the source deployment stays open and must be closed separately"
+        },
+        {
+          "id": "not_update",
+          "type": "regex_absent",
+          "pattern": "akt update\\s+[\"']?\\S+\\.ya?ml[\"']?\\s+5520931\\b(?![^\\n]*--dry-run)",
+          "description": "Does not run akt update for a resource change, which Console refuses"
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "name": "akt-patch-env",
+      "prompt": "With akt 1.0.1 on my Console context: on deployment 6610042, service `api`, set LOG_LEVEL to debug and remove the FEATURE_X variable. Change nothing else, and I don't have the original SDL file anymore.",
+      "assertions": [
+        {
+          "id": "uses_patch",
+          "type": "regex_present",
+          "pattern": "akt update[^\\n]*6610042[^\\n]*--patch|akt update[^\\n]*--patch[^\\n]*6610042",
+          "description": "Applies a patch with `akt update <file> <dseq> --patch`"
+        },
+        {
+          "id": "sets_log_level",
+          "type": "regex_present",
+          "pattern": "(LOG_LEVEL:\\s*[\"']?debug|\"LOG_LEVEL\":\\s*\"debug\")",
+          "description": "Sets LOG_LEVEL in the patch's env map"
+        },
+        {
+          "id": "null_removes",
+          "type": "regex_present",
+          "pattern": "(FEATURE_X:\\s*null|\"FEATURE_X\":\\s*null)",
+          "description": "Removes FEATURE_X with null"
+        },
+        {
+          "id": "stays_on_akt",
+          "type": "regex_absent",
+          "pattern": "(-[A-Za-z]*X\\s*(PATCH|PUT)\\b|--request\\s+(PATCH|PUT)\\b)",
+          "description": "Stays on akt instead of switching to raw HTTP"
         }
       ]
     }
