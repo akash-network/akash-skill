@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.7.0](https://github.com/akash-network/akash-skill/compare/v3.6.0...v3.7.0) (2026-10-09)
+
+
+### Features
+
+* **akash:** document the akt CLI ([#40](https://github.com/akash-network/akash-skill/issues/40)) ([f8781fe](https://github.com/akash-network/akash-skill/commit/f8781fecd43ff0bfdf55374e1471b692e0747b13))
+* **akash:** update the akt pages for akt 1.0.1 ([#42](https://github.com/akash-network/akash-skill/issues/42)) ([548c1d7](https://github.com/akash-network/akash-skill/commit/548c1d7e9cf0cee8a961869fe78f75a579ea9d32))
+
 ## [3.6.0](https://github.com/akash-network/akash-skill/compare/v3.5.0...v3.6.0) (2026-10-07)
 
 
