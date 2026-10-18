@@ -83,7 +83,7 @@ curl -X POST https://console-api.akash.network/v1/create-jwt-token \
   -d '{"data":{"ttl":1800,"leases":{"access":"scoped","scope":["logs"]}}}'
 ```
 
-See **@../../deploy/console-api/operations.md**.
+See **@../../deploy/console-api/operations.md**. A key limited to some projects (bound to a project, or held by a team `member` or `viewer`) gets 403 `project_forbidden` for this `scoped` claim and must name its deployments with the `granular` form.
 
 ## Resolve the provider's `hostUri`
 

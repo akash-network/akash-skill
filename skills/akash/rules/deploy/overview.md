@@ -13,10 +13,10 @@ This page exists because conflating these methods is the most common mistake. Th
 
 **2. (Deployment only) Do you want Console to manage the wallet, or do you want self-custody?**
 
-- **Console-managed wallet** → Console API, or the akt CLI on a Console context. You sign up on console.akash.network, generate an API key, and authenticate every request with `x-api-key` (akt sends it for you). The Console account owns the on-chain wallet, holds the funds, and signs transactions on your behalf. No private keys ever leave Console's infrastructure.
+- **Console-managed wallet** → Console API, or the akt CLI on a Console context. You sign up on console.akash.network, generate an API key, and authenticate every request with `x-api-key` (akt sends it for you). Console holds the on-chain wallet of your personal account, or of the team the key belongs to, keeps its funds, and signs transactions on your behalf. No private keys ever leave Console's infrastructure.
 - **Self-custody** → the akt CLI on a keyring context, the Akash CLI (`provider-services`), TypeScript SDK, or Go SDK. You hold the private key (in `~/.akash/keys`, a browser wallet like Keplr, a Ledger, or wherever), and your code signs each transaction locally before broadcasting.
 
-Within the deployment paths there is no "Console API + my own wallet." A Console account IS the wallet — the API key authenticates as that account, period. If a user wants to deploy from a self-custody wallet (Keplr or hardware), they need the CLI or an SDK.
+Within the deployment paths there is no "Console API + my own wallet." Console holds the wallet: an API key acts in the personal account or team it was created in, with its creator's role and optionally limited to one project, and that wallet pays (`console-api/teams-and-projects.md`). If a user wants to deploy from a self-custody wallet (Keplr or hardware), they need the CLI or an SDK.
 
 AkashML sits *outside* the deploy/self-custody axis entirely: it is a managed consumption surface, not a wallet model. Bringing it up alongside Console API in a "managed vs self-custody" comparison is a category error — they solve different problems.
 
@@ -57,7 +57,7 @@ REST API at `https://console-api.akash.network/v1`. Authentication is `x-api-key
 
 **Limitations**
 - Depends on Console as a service
-- Can only spend from the Console account's wallet
+- Can only spend from the wallet of the key's personal account or team, within what the key's role and project allow
 - Rate limits apply
 
 See **@console-api/** for full reference.
