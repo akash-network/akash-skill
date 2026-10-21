@@ -4,8 +4,8 @@ The whole flow for the API-key path: no CLI, no certificates, no private keys. I
 
 ## What you need
 
-- An API key in the environment variable `AKASH_API_KEY`. No key yet? See **@authentication.md**.
-- Credits on the Console account. A few dollars covers a small test.
+- An API key in the environment variable `AKASH_API_KEY`. No key yet? See **@authentication.md**. A key created in a team deploys for that team, and a key bound to a project deploys into that project (**@teams-and-projects.md**).
+- Credits on the Console account, or on the team for a team key. A few dollars covers a small test.
 - An SDL file, here `deploy.yaml`, and `jq`.
 
 ### Where the key lives
@@ -73,7 +73,7 @@ DSEQ=$(echo "$RESPONSE" | jq -r '.data.dseq')
 echo "Deployment $DSEQ created"
 ```
 
-No deposit: Console funds the deployment from the account's credits. A `402` here means the account is short of credit; the body's `code` says why (**@account-and-funding.md**). Secrets in `env` need nothing extra to stay out of later reads, but to seal only some values and keep the rest readable, see **@secrets.md**.
+No deposit: Console funds the deployment from the credits of the key's account or team. A `402` here means those credits are short; the body's `code` says why (**@account-and-funding.md**). In a team, add `projectId` to `data` to pick the project; a key bound to a project needs nothing extra, and `400 project_required` means a project must be named (**@teams-and-projects.md**). Secrets in `env` need nothing extra to stay out of later reads, but to seal only some values and keep the rest readable, see **@secrets.md**.
 
 ## Step 3 — Wait for bids
 
@@ -142,7 +142,7 @@ websocat -k "wss://${HOSTURI#https://}/lease/$DSEQ/$GSEQ/$OSEQ/logs?follow=true&
   -H "Authorization: Bearer $JWT"
 ```
 
-`-k` is there because providers serve self-signed certificates; the JWT is the authentication.
+`-k` is there because providers serve self-signed certificates; the JWT is the authentication. A key bound to a project, or a team `member`'s or `viewer`'s key, gets 403 `project_forbidden` for this `scoped` token: it names the deployment with the `granular` shape instead (**@operations.md**).
 
 ## Step 7 — Change it, then close it
 
@@ -180,7 +180,10 @@ If a step ever needs one of these, the workflow has drifted onto the CLI or SDK 
 | `401 Invalid API key` | Key revoked, expired or mistyped | Check it starts `ac.sk.production.`; create a new one if needed |
 | `401` with a valid key | Key sent as `Authorization: Bearer` | Use `x-api-key` |
 | `400 validation_error` on create | Body not wrapped in `{"data": {...}}`, or the SDL built by string splicing | Build the body with `jq --rawfile` |
-| `402 insufficient_balance` | Not enough credit | Add credits in the Console UI |
+| `402 insufficient_balance` | Not enough credit | Add credits in the Console UI; for a team key, on the team's Billing page (owner or billing member) |
+| `400 project_required` on create | The key reaches several projects and can't deploy into the default one | Pass `data.projectId` from `GET /v1/projects` |
+| `403 project_forbidden` | The deployment or project is outside the key's projects | Stay within the key's project, or use a key that reaches the other one |
+| `400 organization_mismatch` | `x-organization-id` names another team than the key's | Drop the header; use a key created in that team |
 | No bids | Resources or price match no provider | `rules/bid-matching/` |
 | `502 provider_unreachable` on lease | The provider is down | Accept another bid |
 | `PUT` used to update | Deprecated full-SDL update | `PATCH` with only the fields that change |
@@ -196,3 +199,4 @@ If a step ever needs one of these, the workflow has drifted onto the CLI or SDK 
 - **@secrets.md** — Sealed secrets
 - **@account-and-funding.md** — Balance and automatic funding
 - **@operations.md** — Logs, events, status, shell, attestation
+- **@teams-and-projects.md**: Team keys, projects and the team errors

@@ -63,7 +63,7 @@ Providers run Kubernetes clusters and the Akash provider software to:
 ### Console API
 
 The [Console API](https://console-api.akash.network/v1/swagger) provides REST endpoints, authenticated with an API key, for:
-- Creating, updating and closing deployments from a Console account's managed wallet
+- Creating, updating and closing deployments from the managed wallet of a Console account or team, filed into projects
 - Accepting bids and reading lease status
 - Provider data, GPU and region availability
 

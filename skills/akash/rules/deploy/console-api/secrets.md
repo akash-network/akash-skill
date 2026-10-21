@@ -104,7 +104,7 @@ A patch that writes env values through `services.<name>.env` stores them encrypt
 
 ## Redeploying without re-entering values
 
-`inheritSecretsFrom: "<dseq>"` on create starts the new deployment from the secrets another of your deployments stored, even a closed one. Values in `sealedSecrets` override inherited names. This is how to resize: take `consoleSettings.sdl` from the old deployment (its references are already in place), change the resources, create with `inheritSecretsFrom`, lease it, then close the old one.
+`inheritSecretsFrom: "<dseq>"` on create starts the new deployment from the secrets stored for another deployment you can change in the same account or team, even a closed one. Values in `sealedSecrets` override inherited names. This is how to resize: take `consoleSettings.sdl` from the old deployment (its references are already in place), change the resources, create with `inheritSecretsFrom`, lease it, then close the old one.
 
 ## Errors
 
