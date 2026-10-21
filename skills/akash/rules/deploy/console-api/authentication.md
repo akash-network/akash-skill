@@ -91,7 +91,7 @@ curl -sX POST https://console-api.akash.network/v1/api-keys \
 }
 ```
 
-`expiresAt` is optional; omit it for a key that doesn't expire.
+`expiresAt` is optional and at most 1 year away; omit it and the key expires 365 days after creation. A later date answers 400. Every new key expires, so plan its rotation (below).
 
 ### What a key can do
 

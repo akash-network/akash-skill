@@ -159,6 +159,8 @@ Creating a team, accepting an invitation, leaving a team, deleting a team and de
 | 403 | `project_forbidden` | The request reaches outside its projects: `x-project-id` names a project the caller can't reach (or another project than the key's), a write targets a deployment filed in a project the caller can't change, or a provider JWT doesn't name its deployments one by one | Stay within the key's projects, name the deployments in the JWT, or use a key that reaches the other project |
 | 400 | `project_required` | A create found no project to file the deployment in | Pass `data.projectId` |
 | 403 | `project_budget_exceeded` | The deposit would take the project past its monthly budget; `data.projectIds` names it | An owner or admin raises the budget. Don't retry. |
+| 403 | `project_limit_reached` | `POST /v1/projects` found the team at its project limit, given in `data.limit`: 10, counting the default project | Use an existing project, or have an owner or admin delete one it no longer uses (one with no open deployment) |
+| 403 | `organization_limit_reached` | Creating a team found the user at their limit of teams they created that still exist, given in `data.limit`: 3 | Delete a team you created and no longer use, or join an existing team by invitation |
 | 403 | `session_required` | A session-only action was sent with an API key | Do it in the Console web app |
 
 A read of a deployment outside the caller's projects answers 404, as for one that doesn't exist. A `viewer` or `billing` member's key gets a plain 403 (`forbidden`) on a create, lease, patch or close.
@@ -170,7 +172,7 @@ All of these run in the request's team and take the same `x-api-key`; the live s
 | Task | Endpoint |
 |---|---|
 | The team, rename it (owner, admin) | `GET /v1/organizations`, `PATCH /v1/organizations/{id}` |
-| Projects | `GET`, `POST /v1/projects`; `GET`, `PATCH`, `DELETE /v1/projects/{id}` (delete only with no open deployment) |
+| Projects (only owners and admins create one; up to 10 per team, counting the default) | `GET`, `POST /v1/projects`; `GET`, `PATCH`, `DELETE /v1/projects/{id}` (delete only with no open deployment; the default project can't be deleted) |
 | Who reaches a project | `GET /v1/projects/{id}/members`; `POST /v1/project-members`; `PATCH`, `DELETE /v1/project-members/{id}` |
 | Members | `GET /v1/organization-members`; `PATCH`, `DELETE /v1/organization-members/{id}` |
 | Invitations by email (accepting is session-only) | `GET`, `POST /v1/organization-invitations`; `DELETE /v1/organization-invitations/{id}` |
