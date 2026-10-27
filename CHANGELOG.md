@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.8.0](https://github.com/akash-network/akash-skill/compare/v3.7.0...v3.8.0) (2026-10-27)
+
+
+### Features
+
+* **akash/console-api:** document Console teams and projects ([#43](https://github.com/akash-network/akash-skill/issues/43)) ([2ba212a](https://github.com/akash-network/akash-skill/commit/2ba212a3d84706aa53580c3acb9dabbd6ae1b68d))
+
 ## [3.7.0](https://github.com/akash-network/akash-skill/compare/v3.6.0...v3.7.0) (2026-10-09)
 
 
