@@ -4,7 +4,7 @@ Every endpoint below lives under `https://console-api.akash.network` and takes `
 
 ## Quick links
 
-- [Deployments](#deployments): create, list, read, patch, close
+- [Deployments](#deployments): create, list, read, patch, close, move between projects
 - [Leases](#leases)
 - [Bids](#bids)
 - [Runtime limits](#runtime-limits-deployment-settings-v2)
@@ -31,9 +31,10 @@ POST /v1/deployments
 | `name` | no | 1 to 256 characters, shown wherever the deployment is listed. Defaults to the SDL's service names joined with `+`. |
 | `runtimeLimitHours` | no | 1 to 48. Console closes the deployment that many hours after its lease starts and returns the unspent credits. Omit for always-on funding. |
 | `sealedSecrets` | no | A JWE carrying secret values the SDL references as `ac-secret://NAME`. See **@secrets.md**. |
-| `inheritSecretsFrom` | no | Dseq of one of your deployments, open or closed, whose stored secrets this one starts from. See **@secrets.md**. |
+| `inheritSecretsFrom` | no | Dseq of a deployment you can change in the same account or team, open or closed, whose stored secrets this one starts from. See **@secrets.md**. |
+| `projectId` | no | The project to file the deployment in. Without it: the key's project for a key bound to one, otherwise the default project, and 400 `project_required` when the caller can't deploy there. See **@teams-and-projects.md**. |
 
-Don't send `deposit`. Console funds every deployment from the account's credits and ignores the field.
+Don't send `deposit`. Console funds every deployment from the credits of the key's account or team and ignores the field.
 
 **Example:**
 
@@ -63,10 +64,10 @@ Keep `dseq`. You don't need `manifest`: Console records the deployment's definit
 
 | Status | When |
 |---|---|
-| 400 | The SDL is invalid, or a secret reference has no value, or `sealedSecrets` is malformed, expired or names a value no service references |
+| 400 | The SDL is invalid, or a secret reference has no value, or `sealedSecrets` is malformed, expired or names a value no service references. `code: project_required`: no project could be chosen, so pass `projectId`. |
 | 402 | Not enough credit. `code` is `insufficient_balance` or `balance_top_up_pending` (see **@overview.md**). Free-trial refusals, such as a GPU model the trial excludes, answer `payment_required`. |
-| 403 | `sealedSecrets` was sealed for another user or another SDL. Free-trial accounts also get 403 when the deployment exceeds the trial's resource limits, or `code: fair_use_policy_required` until the Fair Use Policy is accepted in the Console UI. |
-| 404 | `inheritSecretsFrom` names no deployment of yours |
+| 403 | `sealedSecrets` was sealed for another user or another SDL. Free-trial accounts also get 403 when the deployment exceeds the trial's resource limits, or `code: fair_use_policy_required` until the Fair Use Policy is accepted in the Console UI. `code: project_budget_exceeded`: the project's monthly budget is spent. A team `viewer` or `billing` member's key can't deploy at all. |
+| 404 | `inheritSecretsFrom` names no deployment you can change, or `projectId` names a project you can't deploy into |
 | 409 | The seal used a retired key (refetch `GET /v1/sdl-secrets-context` and seal again), or `code` is `inherited_secrets_unreadable` (permanent: supply the values in `sealedSecrets` instead) |
 | 503 | The key service was briefly unreachable. Retry. |
 
@@ -83,6 +84,7 @@ GET /v1/deployments?state=active&skip=0&limit=100
 | `reverse` | `false` | `true` lists newest first; the default is oldest first |
 | `skip` | `0` | Offset |
 | `limit` | `100` | Page size, 1 to 100 |
+| `projectId` | none | Only the deployments filed in this project. A project you can't reach lists nothing. |
 
 **Response:**
 
@@ -95,6 +97,7 @@ GET /v1/deployments?state=active&skip=0&limit=100
         "leases": [ ... ],
         "escrow_account": { ... },
         "name": "web-prod",
+        "projectId": "3f0c...",
         "groups": [ ... ],
         "settings": { "name": "web-prod", "runtimeLimitHours": null, "runtimeEndsAt": null, "closed": false }
       }
@@ -104,7 +107,7 @@ GET /v1/deployments?state=active&skip=0&limit=100
 }
 ```
 
-Page on `hasMore`, not on `total`: `total` comes from Console's index, can briefly lag, and is `null` when the index can't answer. Leases in this list carry no live `status`; read one deployment for that. A `search` over an account with more deployments than a search can span answers 422; page without `search` instead.
+Page on `hasMore`, not on `total`: `total` comes from Console's index, can briefly lag, and is `null` when the index can't answer. Leases in this list carry no live `status`; read one deployment for that. A `search` over an account with more deployments than a search can span answers 422; page without `search` instead. In a team, the list covers the projects the key reaches, each deployment carries its `projectId`, and a team with more open deployments than one list can check answers 422 too: filter with `projectId`.
 
 ```bash
 for STATE in active closed; do
@@ -160,6 +163,8 @@ This is the canonical read for a running deployment:
 - **Reclamation.** A lease whose provider has flagged its capacity for reclamation carries `reclamation.deadline` (unix seconds). See `rules/sdl/reclamation.md`.
 - **GPUs.** `offeredGpus` is what the provider bid with, which is what an "any model" request resolved to. `detectedGpus` is what Console observed inside the containers, with the driver version.
 
+A deployment outside the projects the key reaches answers 404, as if it didn't exist.
+
 ### Patch a deployment
 
 ```
@@ -208,6 +213,7 @@ The response is the deployment, plus the `manifestVersion` the patch recorded. E
 |---|---|---|
 | 400 | | Names a service, port or volume the stored SDL doesn't declare, leaves a secret reference without a value, or moves a port in a way that is refused |
 | 403 | | `sealedSecrets` was sealed for another user, or bound to an SDL other than the stored one |
+| 403 | `project_forbidden` | The deployment is filed in a project the key can't change |
 | 404 | | Console holds no definition for this deployment; record one first (below) |
 | 409 | `deployment_definition_changed` | Another patch landed first. Re-read, then re-send. A 409 without this code means the seal used a retired key. |
 | 422 | `deployment_resources_changed` | The change needs a new deployment |
@@ -236,7 +242,7 @@ Closes the deployment and its leases. Whatever escrow is left returns to the acc
 - Without `async`, the call returns `200 { "data": { "success": true } }` once the close went through.
 - With `async=true`, Console checks the request, then answers `202 { "data": { "activityId": "<uuid>" } }` and finishes in the background. Poll `GET /v1/activities/{activityId}` until `status` is `succeeded` or `failed` (`meta.error` says why). The same call can still answer 200: when the deployment was already closed, or when background close isn't enabled for the account.
 
-Closing an already-closed deployment is a no-op, so a retried close is safe.
+Closing an already-closed deployment is a no-op, so a retried close is safe. A deployment filed in a project the key can't change answers 403 `project_forbidden`.
 
 ```bash
 RESP=$(curl -s -w '\n%{http_code}' -X DELETE "https://console-api.akash.network/v1/deployments/$DSEQ?async=true" \
@@ -254,12 +260,28 @@ fi
 
 `GET /v1/activities` lists recent actions newest first (`limit` up to 100, `cursor`, `status`, `type=deployment_close`), with a `nextCursor` for the next page.
 
+### Move a deployment to another project
+
+```
+PATCH /v1/deployments/{dseq}/project
+```
+
+```bash
+curl -sX PATCH "https://console-api.akash.network/v1/deployments/$DSEQ/project" \
+  -H "x-api-key: $AKASH_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "$(jq -nc --arg project "$TARGET_PROJECT_ID" '{data: {projectId: $project}}')"
+```
+
+Refiles the deployment in another project of the same account or team and answers `{ "data": { "dseq", "projectId" } }`. Nothing changes on chain: the lease, the provider and the escrow stay. Only team owners and admins may move (403 otherwise), and 404 means the deployment or the project is out of the key's reach. See **@teams-and-projects.md**.
+
 ### Other deployment reads
 
 | Endpoint | Auth | Returns |
 |---|---|---|
 | `GET /v1/deployment-names?dseq=…&dseq=…` | key | `{ data: { "<dseq>": name or null } }` |
-| `GET /v1/weekly-cost` | key | `{ data: { weeklyCost } }`: USD per week across the account's running deployments |
+| `GET /v1/deployment-locations/{dseq}` | key | `{ data: { organizationId, organizationSlug, projectId } }`: where the deployment is filed, within the key's reach |
+| `GET /v1/weekly-cost` | key | `{ data: { weeklyCost } }`: USD per week across the running deployments of the key's account or team |
 | `GET /v1/deployment-funding-config` | public | The constants automatic funding runs on (see **@account-and-funding.md**) |
 | `GET /v1/deployment/{owner}/{dseq}` | public | A read-only view of any deployment: monthly cost, provider, events. For your own, prefer `GET /v1/deployments/{dseq}`. |
 
@@ -305,6 +327,7 @@ The response is the deployment object. Lease status fills in once the provider s
 |---|---|---|
 | 502 | `provider_unreachable` | The provider didn't answer. No lease was created; choose another bid. |
 | 502 | `manifest_not_delivered` | The lease exists but the provider didn't take the manifest. Send the same request again, or close the deployment to stop paying for it. |
+| 403 | `project_forbidden` | The deployment is filed in a project the key can't change |
 | 400 | | A bid is no longer open, or the body is malformed |
 
 There is no endpoint to close a single lease, and none to read one: close the deployment, and read leases from `GET /v1/deployments/{dseq}`.

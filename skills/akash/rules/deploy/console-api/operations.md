@@ -35,6 +35,8 @@ JWT=$(curl -sX POST https://console-api.akash.network/v1/create-jwt-token \
 
 `ttl` is in seconds and required; the Console UI uses 1800. There is no refresh endpoint: mint a new token when one expires. The response is `201 { "data": { "token": "<jwt>" } }`.
 
+**Keys limited to some projects.** A key bound to a project, a request with `x-project-id`, and the key of a team `member` or `viewer` (only owners and admins reach every project) can't mint `full` or `scoped` tokens: those answer 403 `project_forbidden`. They name each deployment with the `granular` shape below, `granular` on every provider entry too, and only deployments the key reaches. In a team, `ttl` is at most 3600. See **@teams-and-projects.md**.
+
 ### Self-custody (CLI or SDK)
 
 Console can't sign for a key it doesn't hold. Sign locally with `@akashnetwork/chain-sdk`:
@@ -60,13 +62,13 @@ Three shapes; the JWT schema rejects anything else.
 { "access": "full" }
 ```
 
-Every action on every lease you own. **`full` takes no `scope`**; adding one makes the token invalid.
+Every action on every lease of the wallet (your personal account's, or the key's team's). **`full` takes no `scope`**; adding one makes the token invalid.
 
 ```json
 { "access": "scoped", "scope": ["logs", "status"] }
 ```
 
-The listed actions on every lease you own.
+The listed actions on every lease of the wallet.
 
 ```json
 {
@@ -82,7 +84,7 @@ The listed actions on every lease you own.
 }
 ```
 
-Per provider: `full`, `scoped` with a `scope`, or `granular` with `deployments`. Each `deployments` entry needs `dseq` (a number), `scope` and `services` (at least one service name); `gseq` and `oseq` are optional. Each provider may appear once.
+Per provider: `full`, `scoped` with a `scope`, or `granular` with `deployments`. Each `deployments` entry needs `dseq` (a number), `scope` and `services` (at least one service name); `gseq` and `oseq` are optional. Each provider may appear once. A key limited to some projects may only use the `granular` form, on every provider.
 
 **Scopes:** `send-manifest`, `get-manifest`, `logs`, `shell`, `events`, `status`, `restart`, `hostname-migrate`, `ip-migrate`, `attestation`. Grant the narrowest set that works: a token with `shell` can read the container's environment, sealed secrets included.
 
@@ -250,7 +252,8 @@ ws.on("close", () => process.exit(0));
 | Symptom | Cause | Fix |
 |---|---|---|
 | 401 or 403 from the provider | Token expired, or its scope lacks the action | Mint a new token with the needed scope |
-| 400 from `create-jwt-token` | Malformed `leases` claim, such as `scope` on `access: "full"` | Use one of the three shapes above |
+| 400 from `create-jwt-token` | Malformed `leases` claim, such as `scope` on `access: "full"`, or a `ttl` over 3600 in a team | Use one of the three shapes above |
+| 403 `project_forbidden` from `create-jwt-token` | The key is limited to some projects and the token doesn't name its deployments, or names one outside them | `granular`, listing each deployment of the key's projects |
 | 404 on `/events` | `events` is a UI alias | Use `/kubeevents` |
 | Connection refused | Wrong host | Resolve `hostUri` from `GET /v1/providers/{address}` |
 | TLS certificate rejected | Provider certificate is self-signed | Skip verification server-side, or use a provider proxy |
@@ -263,5 +266,6 @@ ws.on("close", () => process.exit(0));
 - **@authentication.md** — API keys
 - **@deployment-endpoints.md** — Where `provider`, `gseq` and `oseq` come from
 - **@api-key-quickstart.md** — End to end, with logs at the end
+- **@teams-and-projects.md**: Tokens for keys limited to some projects
 - **@../../sdk/typescript/provider-sdk.md** — The same flow through the SDK's provider client
 - **AEP-64** — https://akash.network/roadmap/aep-64/ — the JWT specification

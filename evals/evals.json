@@ -902,6 +902,258 @@
           "description": "Stays on akt instead of switching to raw HTTP"
         }
       ]
+    },
+    {
+      "id": 26,
+      "name": "project-key-deploy",
+      "prompt": "Our CI deploys to Akash through the Console API with a key in $AKASH_API_KEY. A teammate created that key for our team's `checkout` project only. Give me the curl steps to deploy deploy.yaml and accept the cheapest bid, and tell me what it means if a call comes back 403 with code project_forbidden.",
+      "assertions": [
+        {
+          "id": "uses_x_api_key",
+          "type": "regex_present",
+          "pattern": "x-api-key",
+          "description": "Uses the x-api-key header"
+        },
+        {
+          "id": "creates_deployment",
+          "type": "regex_present",
+          "pattern": "/v1/deployments\\b",
+          "description": "Creates the deployment with POST /v1/deployments"
+        },
+        {
+          "id": "accepts_with_leases",
+          "type": "regex_present",
+          "pattern": "/v1/leases\\b",
+          "description": "Accepts the bid with POST /v1/leases"
+        },
+        {
+          "id": "explains_project_scope",
+          "type": "regex_present",
+          "pattern": "((another|other|different|second) project|outside (of )?(the|its|this|that|your) (key's )?projects?|not (in|within) (the|its|this|that) (key's )?projects?|projects? (the|this) key (can't|cannot|doesn't|does not))",
+          "description": "Explains project_forbidden as a request reaching outside the key's project",
+          "case_insensitive": true
+        },
+        {
+          "id": "no_full_rights_claim",
+          "type": "regex_absent",
+          "pattern": "full (rights|access|permissions) (of|to|on|over) (the|your) (whole |entire )?(console )?account",
+          "description": "Does NOT claim the key carries the full rights of the account",
+          "case_insensitive": true
+        },
+        {
+          "id": "no_authorization_bearer_for_apikey",
+          "type": "regex_absent",
+          "pattern": "Authorization:\\s*Bearer\\s*\\$?\\{?AKASH_API_KEY",
+          "description": "Does NOT use Authorization: Bearer with the API key"
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "name": "deploy-into-named-project",
+      "prompt": "Our Akash Console team has two projects, `staging` and `prod`. My API key ($AKASH_API_KEY) belongs to the team and isn't limited to a project. Give me a bash script that deploys deploy.yaml into prod rather than the default project.",
+      "assertions": [
+        {
+          "id": "looks_up_projects",
+          "type": "regex_present",
+          "pattern": "/v1/projects\\b",
+          "description": "Finds the prod project's id with GET /v1/projects"
+        },
+        {
+          "id": "names_project",
+          "type": "regex_present",
+          "pattern": "([\"']?projectId[\"']?\\s*:|x-project-id)",
+          "description": "Files the deployment with data.projectId, or narrows the request with x-project-id"
+        },
+        {
+          "id": "creates_deployment",
+          "type": "regex_present",
+          "pattern": "/v1/deployments\\b",
+          "description": "Creates the deployment with POST /v1/deployments"
+        },
+        {
+          "id": "uses_x_api_key",
+          "type": "regex_present",
+          "pattern": "x-api-key",
+          "description": "Uses the x-api-key header"
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "name": "list-and-move-by-project",
+      "prompt": "I'm an admin of our Akash Console team and my API key is in $AKASH_API_KEY. Write a bash script that prints the dseq and name of every active deployment in project $STAGING_PROJECT_ID, then moves deployment 1785245500842 into project $PROD_PROJECT_ID.",
+      "assertions": [
+        {
+          "id": "filters_by_project",
+          "type": "regex_present",
+          "pattern": "projectId=",
+          "description": "Lists with GET /v1/deployments?projectId="
+        },
+        {
+          "id": "pages_on_has_more",
+          "type": "regex_present",
+          "pattern": "hasMore",
+          "description": "Pages on data.pagination.hasMore"
+        },
+        {
+          "id": "move_route",
+          "type": "regex_present",
+          "pattern": "/v1/deployments/[^\\s\"'/]+/project\\b",
+          "description": "Moves with /v1/deployments/{dseq}/project"
+        },
+        {
+          "id": "uses_patch",
+          "type": "regex_present",
+          "pattern": "(-[A-Za-z]*X\\s*PATCH|--request\\s+PATCH|method:\\s*[\"']PATCH|\\bPATCH\\b[^\\n]{0,80}/v1/deployments/[^\\s\"'/]+/project\\b)",
+          "description": "Sends the move as a PATCH"
+        },
+        {
+          "id": "body_project_id",
+          "type": "regex_present",
+          "pattern": "[\"']?projectId[\"']?\\s*:",
+          "description": "Names the target project as data.projectId"
+        },
+        {
+          "id": "no_close_to_move",
+          "type": "regex_absent",
+          "pattern": "(-[A-Za-z]*X\\s*DELETE|--request\\s+DELETE)",
+          "description": "Does NOT close and recreate the deployment to move it"
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "name": "team-credits-402",
+      "prompt": "Deploys from our team's CI key ($AKASH_API_KEY) started failing with 402 insufficient_balance, but my personal Akash Console account still has $200 of credits. Can the script spend my personal credits instead, or top the team up through the API?",
+      "assertions": [
+        {
+          "id": "team_wallet_separate",
+          "type": "regex_present",
+          "pattern": "(team'?s? (own )?(wallet|balance|credits)|separate (wallet|balance|credits)|own (wallet|balance|credits))",
+          "description": "Explains the team pays from its own wallet, separate from the personal account",
+          "case_insensitive": true
+        },
+        {
+          "id": "owner_or_billing_member",
+          "type": "regex_present",
+          "pattern": "(owner|billing (role|member))",
+          "description": "Says an owner or billing member adds the team's credits",
+          "case_insensitive": true
+        },
+        {
+          "id": "credits_dont_move",
+          "type": "regex_present",
+          "pattern": "(can'?t|cannot|can not|no way to|won'?t|doesn'?t|does not|never)[^.\\n]{0,60}(switch|move|transfer|spend|use|draw)[^.\\n]{0,60}(personal|team|credits|wallet)",
+          "description": "Says the team key can't spend personal credits and credits don't move between them",
+          "case_insensitive": true
+        },
+        {
+          "id": "no_stripe_api",
+          "type": "regex_absent",
+          "pattern": "/v1/stripe",
+          "description": "Does NOT script the UI-internal Stripe endpoints"
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "name": "session-only-team-actions",
+      "prompt": "Using my Akash Console API key ($AKASH_API_KEY), write a script that creates a new team called ml-research, then accepts the invitation link a colleague sent me to join their team.",
+      "assertions": [
+        {
+          "id": "needs_session",
+          "type": "regex_present",
+          "pattern": "(session_required|signed[- ]in (console |web )?session|(console|browser|web) session)",
+          "description": "Says both actions need a signed-in Console session, not an API key",
+          "case_insensitive": true
+        },
+        {
+          "id": "no_key_script",
+          "type": "regex_absent",
+          "pattern": "-[A-Za-z]*X\\s*POST\\s+[\"']?(https://console-api\\.akash\\.network|\\$\\{?API\\}?)/v1/(organizations|invitations/accept)\\b",
+          "description": "Does NOT script team creation or invitation acceptance with the API key"
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "name": "project-key-provider-jwt",
+      "prompt": "My Akash Console API key ($AKASH_API_KEY) is limited to one project of our team. I need a provider JWT to stream logs for deployment 1785245500842 (service web, gseq 1, oseq 1, provider akash1q7spv2cw06yszgfp4f9ed59lkka6ytn8g4tkjf). What's the create-jwt-token request?",
+      "assertions": [
+        {
+          "id": "mints_jwt",
+          "type": "regex_present",
+          "pattern": "/v1/create-jwt-token",
+          "description": "Mints the JWT with POST /v1/create-jwt-token"
+        },
+        {
+          "id": "granular_everywhere",
+          "type": "count_at_least",
+          "pattern": "[\"']?access[\"']?\\s*:\\s*[\"']granular",
+          "min_count": 2,
+          "description": "Uses access: granular at the top and on the provider entry"
+        },
+        {
+          "id": "names_deployment",
+          "type": "regex_present",
+          "pattern": "[\"']?dseq[\"']?\\s*:\\s*\"?1785245500842",
+          "description": "Names the deployment by dseq"
+        },
+        {
+          "id": "lists_services",
+          "type": "regex_present",
+          "pattern": "[\"']?services[\"']?\\s*:\\s*\\[",
+          "description": "Lists the services the deployment entry covers"
+        },
+        {
+          "id": "no_full_or_scoped",
+          "type": "regex_absent",
+          "pattern": "[\"']access[\"']\\s*:\\s*[\"'](full|scoped)[\"']",
+          "description": "Does NOT send full or scoped access in the request body, which a project-limited key gets refused"
+        },
+        {
+          "id": "ttl_within_hour",
+          "type": "regex_absent",
+          "pattern": "[\"']?ttl[\"']?\\s*:\\s*(36[0-9][1-9]|36[1-9][0-9]|3[7-9][0-9]{2}|[4-9][0-9]{3}|[0-9]{5,})\\b",
+          "description": "Does NOT ask for a ttl over 3600 seconds, the most a team allows"
+        }
+      ]
+    },
+    {
+      "id": 32,
+      "name": "contractor-project-key",
+      "prompt": "I want to give a contractor an Akash Console API key that can only touch our team's `website` project, not billing or our other projects. Is that possible, and how should I set it up?",
+      "assertions": [
+        {
+          "id": "binds_project",
+          "type": "regex_present",
+          "pattern": "(projectId|limit(ed)? (it |the key )?to (one|a single|a|the `?website`?) project|bound to (one|a|the) project|one project only)",
+          "description": "Says a key can be limited to one project",
+          "case_insensitive": true
+        },
+        {
+          "id": "suggests_invite",
+          "type": "regex_present",
+          "pattern": "invit",
+          "description": "Suggests inviting the contractor with access to that project, since a key acts as its creator",
+          "case_insensitive": true
+        },
+        {
+          "id": "mentions_role",
+          "type": "regex_present",
+          "pattern": "\\b(member|viewer|role)\\b",
+          "description": "Talks about the contractor's role in the team",
+          "case_insensitive": true
+        },
+        {
+          "id": "no_full_rights_claim",
+          "type": "regex_absent",
+          "pattern": "(no per-key scopes|keys? (always )?(acts?|carr(y|ies)) (with )?(the )?full (rights|access)|every key (acts|has) (with )?full)",
+          "description": "Does NOT claim every key carries the full rights of the account",
+          "case_insensitive": true
+        }
+      ]
     }
   ]
 }

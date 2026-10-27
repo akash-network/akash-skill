@@ -4,6 +4,7 @@ description: >
   Build, validate, and deploy workloads to the Akash Network — the decentralized cloud
   marketplace. Covers SDL syntax & examples, choosing a deployment method (Console API,
   the akt CLI, provider-services, TypeScript/Go SDKs), authentication (API key, JWT, self-custody wallets),
+  Console teams and projects (team and project API keys, team billing),
   deployment lifecycle, fetching logs/events via the provider proxy, and fee grants/authz.
   Also covers AkashML — the managed inference surface for calling open-source LLMs on
   Akash compute via OpenAI/Anthropic-compatible APIs. Use for "deploy to Akash", "Akash SDL",
@@ -61,7 +62,7 @@ There are **five deployment paths** (you host the workload) plus one **consumpti
 
 | # | Method | Wallet model | Auth | When to use |
 |---|---|---|---|---|
-| 1 | **Console API** | Managed (Console account owns the wallet) | `x-api-key` header | CI/CD, server-to-server, any backend that wants HTTP + an API key. No private-key handling. |
+| 1 | **Console API** | Managed (Console holds the wallet of the key's personal account or team) | `x-api-key` header | CI/CD, server-to-server, any backend that wants HTTP + an API key. No private-key handling. |
 | 2 | **akt CLI** | Managed through a Console API key, or self-custody through a local keyring | `AKT_CONSOLE_API_KEY` or a context credential; or a local key | Terminal and agent sessions: one `akt deploy` goes from SDL to a running service, and `akt console` reads logs, status and shell. |
 | 3 | **Akash CLI (`provider-services`)** | Self-custody (you hold the keys) | Local key + signature | Existing `provider-services` scripts and manual chain workflows. The official docs now point new CLI users to akt. |
 | 4 | **TypeScript SDK** | Self-custody (browser wallet, hardware, or local key) | SDK signs locally | dApps, Node.js services, anywhere you want JS/TS code to deploy. |
@@ -72,7 +73,9 @@ Rows 1–5 are paths to **host your own workload** on Akash. Row 6 is the answer
 
 ### The concept that bites everyone
 
-**A Console account *is* a wallet.** When you sign up on `console.akash.network` and generate an API key, that API key authenticates as your Console account — and your account has a managed wallet underneath it. Deployments spend from that wallet. There is no separate "Console API + bring your own wallet" mode.
+**Console holds the wallet, and a key acts in one place.** Every Console user has a personal account and can belong to teams; each of them has its own managed wallet and credits. An API key is created in one of them and acts only there, with its creator's role, and it may be limited to one project. Deployments spend from that wallet. There is no separate "Console API + bring your own wallet" mode.
+
+So a key does not always carry full account rights: a team `viewer` or `billing` member's key can't deploy, a project key only reaches its project (anything else answers 403 `project_forbidden`), and a key never spends outside the one personal account or team it was created in. Read the key's reach from `GET /v1/organizations` and `GET /v1/projects` instead of assuming it; see `rules/deploy/console-api/teams-and-projects.md`.
 
 If a user has a self-custody wallet (Keplr or Ledger) and wants to deploy from *that* wallet, they need the **CLI** or **an SDK**. The Console API will not sign with an external wallet.
 
@@ -88,7 +91,7 @@ If you see **any** of these signals, commit to the matching path silently and st
 | If the user mentions… | Commit to… |
 |---|---|
 | `"akt"`, `"akt deploy"`, `"akt redeploy"`, `"akt console"`, `"akt context"`, `AKT_CONSOLE_API_KEY`, `"akash-network/tap/akt"`, or the user wants it done from this terminal and `command -v akt` finds it | akt CLI (its context decides Console or self-custody) |
-| `"I have an API key"`, a key starting `ac.sk.`, `"$AKASH_API_KEY"`, `"x-api-key"`, `"curl"`, `"CI/CD"`, `"GitHub Actions"`, `"backend"`, `"server-to-server"`, `"deploy from CI"`, `"automate"` | Console API |
+| `"I have an API key"`, a key starting `ac.sk.`, `"$AKASH_API_KEY"`, `"x-api-key"`, `"x-project-id"`, `"x-organization-id"`, a Console team or project, `"curl"`, `"CI/CD"`, `"GitHub Actions"`, `"backend"`, `"server-to-server"`, `"deploy from CI"`, `"automate"` | Console API |
 | `"Keplr"`, `"Ledger"`, `"hardware wallet"`, `"my wallet"`, `"self-custody"`, `"provider-services keys add"`, `"my mnemonic"` | CLI or SDK (ask only if they didn't also signal a language) |
 | `"React app"`, `"Next.js"`, `"akashjs"` (legacy), `"@akashnetwork/chain-sdk"`, `"my dApp"`, `"in the browser"` | TypeScript SDK |
 | `"Go service"`, `"golang"`, `"cosmos-sdk Go"`, `"my Go backend"` | Go SDK |
@@ -151,6 +154,7 @@ A pitfall table at the end of a code response *can* mention "don't use `Authoriz
 ### Once committed, stay there
 
 - On the **Console API** path: don't suggest `provider-services keys add`, don't suggest mTLS certs (deprecated for Console API — see `rules/deploy/cli/mtls-legacy.md`), don't suggest `provider-services query market bid list` — every read is an HTTP call with `x-api-key` in whatever language the user picked. Console records each deployment's SDL, so: change a running deployment with `PATCH /v1/deployments/{dseq}` (never the deprecated full-SDL `PUT`), send no `manifest` to `POST /v1/leases` and no `deposit` anywhere, and treat CPU, memory, storage, GPU or replica changes as a new deployment.
+  - **In a team:** deploy into the intended project (`data.projectId`; a key bound to a project needs none), list with `?projectId=`, move with `PATCH /v1/deployments/{dseq}/project`, and explain `project_forbidden`, `project_required`, `project_budget_exceeded`, `organization_forbidden`, `organization_mismatch` and `session_required` from `rules/deploy/console-api/teams-and-projects.md`. Team credits, cards and Auto recharge are set on the team's Billing page by an owner or billing member, never from a script.
 - On the **akt** path: run `akt` commands, not curl and not `provider-services`. Check `akt version` first: 1.0.1 and later refuse any deposit on a Console deploy, and 0.1.x needs `--deposit 0.5` there (better: `brew upgrade akash-network/tap/akt`). Anything unattended passes `--bid-select` and `--yes` and reads `-o json` or `-o jsonl`. Without a terminal there is no setup wizard, so create the context (`akt context create <name> --deploy-via console`) before the first command. On 1.0.1, secrets are `ac-secret://NAME` references with values in `--secrets-file` (never on the command line), `akt update --patch` changes single fields, and a resource change is `akt redeploy <dseq> --sdl-file <new>`, which leaves the old deployment running. Setup and recipes: `rules/deploy/akt/`.
 - On the **Akash CLI (`provider-services`)** path: don't suggest `/v1/deployments` HTTP calls. Don't suggest API keys. Stay on `provider-services tx ...` / `provider-services query ...`.
 - On the **SDK** paths: don't reach for curl examples or CLI commands; the user wants code.
@@ -250,6 +254,7 @@ deployment:
   - `secrets.md` — `ac-secret://` references, `sealedSecrets`, `inheritSecretsFrom`
   - `api-key-quickstart.md` — linear walkthrough from "I have an API key" to a running deployment
   - `account-and-funding.md` — account model, balance, automatic funding, 402 refusals (signup and adding credits are UI-only)
+  - `teams-and-projects.md`: teams and roles, keys bound to a team or project, `x-organization-id` and `x-project-id`, deploying into, listing by and moving between projects, project budgets, team billing, the team errors
   - `operations.md` — provider JWT (`leases` shapes, scopes), logs/events/status/shell, TEE attestation
 - **@rules/deploy/akt/** — akt CLI (Console API key or local keyring; terminal and agent sessions)
   - `overview.md` — install, the 0.1.x versus 1.0 differences (deposit), contexts and credentials without a terminal, JSON/JSONL output, the MCP server, how akt maps to the Console API
@@ -358,7 +363,7 @@ services:
 
 ### Payment Options
 - **uact** — Micro-denomination of ACT (the deployment-payment token, separate from AKT). The denom for SDL pricing (`amount: 1000`), deployment escrow, and lease payments. `uakt` is only accepted via a rare burn-mint (BME) fallback, not a normal alternative.
-- Note: Console API deployments take no deposit at all — Console funds them from the account's USD credit balance.
+- Note: Console API deployments take no deposit at all. Console funds them from the USD credit balance of the key's personal account or team.
 
 ## Additional Resources
 

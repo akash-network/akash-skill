@@ -1,6 +1,6 @@
 # Console API Overview
 
-The Console API is the REST surface behind [Akash Console](https://console.akash.network). An API key authenticates as a Console account, and that account's managed wallet funds and signs every deployment action. This file covers the deployment-management subset; the rest of the spec powers the Console UI.
+The Console API is the REST surface behind [Akash Console](https://console.akash.network). An API key authenticates as the Console user who created it, acting in one personal account or team, and that account's or team's managed wallet funds and signs every deployment action. A key can also be limited to one project; see **@teams-and-projects.md**. This file covers the deployment-management subset; the rest of the spec powers the Console UI.
 
 With `akt` installed, `akt deploy` and the `akt console` commands make these calls for you: see [../akt/overview.md](../akt/overview.md).
 
@@ -28,6 +28,8 @@ Every path carries its own version prefix: `/v1/...` for almost everything, `/v2
 | Console session JWT | `Authorization: Bearer <jwt>` | The Console web app's own login session; not for scripts |
 
 **Never put an API key in `Authorization: Bearer`.** Keys are created in the Console UI; see **@authentication.md**. Calls to a *provider* (logs, shell, status) use a different JWT, minted by `POST /v1/create-jwt-token`; see **@operations.md**.
+
+A key always acts in the team it was created in. Two optional headers narrow a request: `x-organization-id` (can only repeat the key's own team) and `x-project-id` (one project the key reaches). Scripts rarely need either; see **@teams-and-projects.md**.
 
 ## Envelopes
 
@@ -68,6 +70,12 @@ The specific codes a deployment script should handle:
 | 502 | `manifest_not_delivered` | `POST /v1/leases`: the lease exists but the provider did not take the manifest | Send the identical request again, or close the deployment |
 | 422 | `deployment_resources_changed` | An update tried to change compute resources, replica counts, groups or globally exposed ports | Create a new deployment instead |
 | 409 | `deployment_definition_changed` | A concurrent `PATCH` changed the deployment first | Re-read the deployment, then re-send |
+| 403 | `project_forbidden` | The request reaches outside its projects: a write on a deployment filed in a project the key can't change, an `x-project-id` it can't reach, or a provider JWT that doesn't name its deployments | Stay within the key's projects; see **@teams-and-projects.md** |
+| 400 | `project_required` | `POST /v1/deployments` found no project to file the deployment in | Pass `data.projectId` |
+| 403 | `project_budget_exceeded` | The deposit would take the project past its monthly budget | An owner or admin raises the budget; don't retry |
+| 403 | `organization_forbidden` | The key's creator is no longer a member of its team | Use a key of a current member |
+| 400 | `organization_mismatch` | `x-organization-id` names another team than the key's | Drop the header, or use that team's key |
+| 403 | `session_required` | Creating, leaving or deleting a team, or accepting an invitation, with an API key | Do it in the Console web app |
 
 `PATCH /v1/deployments/{dseq}` and the secrets flow have a few more; they are listed next to those endpoints in **@deployment-endpoints.md** and **@secrets.md**.
 
@@ -90,6 +98,9 @@ The specific codes a deployment script should handle:
 | Secrets that can't be read back | `GET /v1/sdl-secrets-context` + `sealedSecrets` | @secrets.md |
 | Balance and funding | `GET /v1/balances` | @account-and-funding.md |
 | API keys | `/v1/api-keys` | @authentication.md |
+| The key's team and projects | `GET /v1/organizations`, `GET /v1/projects` | @teams-and-projects.md |
+| Deploy into a project, list by project | `data.projectId` on create, `GET /v1/deployments?projectId=` | @teams-and-projects.md |
+| Move a deployment to another project | `PATCH /v1/deployments/{dseq}/project` | @teams-and-projects.md |
 | Logs, events, status, shell, attestation | `POST /v1/create-jwt-token`, then the provider | @operations.md |
 
 For a linear walkthrough from an API key to a running deployment: **@api-key-quickstart.md**.
@@ -110,7 +121,7 @@ The spec also exposes endpoints that exist to power the Console UI. They change 
 | Surface | Endpoint pattern | Instead |
 |---|---|---|
 | Signup, login, email verification, account deletion | `/v1/auth/*`, `/v1/register-user`, `/v1/send-verification-*`, `/v1/verify-email*`, `/v1/user/me/*-deletion` | Console UI |
-| Stripe payments, adding credits, Auto recharge | `/v1/stripe/*`, `/v1/wallet-settings` | Console UI → Billing |
+| Stripe payments, adding credits, Auto recharge | `/v1/stripe/*`, `/v1/wallet-settings` | Console UI → Billing (for a team, its owner or a billing member, on the team's Billing page) |
 | Profile, favorites, saved templates, newsletter | `/v1/user/*`, `/v1/favorite-providers` | Console UI |
 | Alerts and notification channels | `/v1/alerts/*`, `/v1/deployment-alerts/*`, `/v1/notification-channels/*` | Console UI → Alerts |
 | Deploy-flow drafts, hardware requests, feed state | `/v1/configure-drafts/*`, `/v1/hardware-requests`, `/v1/activities/seen` | Console UI |
@@ -126,3 +137,4 @@ The spec also exposes endpoints that exist to power the Console UI. They change 
 - **@api-key-quickstart.md** — From an API key to a running deployment
 - **@account-and-funding.md** — Account model, balance, automatic funding, 402s
 - **@operations.md** — Provider JWT, logs, events, status, shell, attestation
+- **@teams-and-projects.md**: Teams, projects, keys bound to them, team billing, the team errors

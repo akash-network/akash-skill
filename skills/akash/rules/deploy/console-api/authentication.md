@@ -22,8 +22,9 @@ A key starting `ac.sk.` is a Console API key. AkashML keys start `akml-` and bel
 
 1. Sign up at [console.akash.network](https://console.akash.network). The account comes with its managed wallet.
 2. Add credits under **Billing** (card via Stripe).
-3. Open **Settings → API Keys** (`console.akash.network/user/api-keys`) and create a key.
-4. Copy it immediately. The full key is shown once; afterwards only a masked form (`ac.sk.production.abc123***def456`) is visible.
+3. To deploy for a team, switch to that team first. A key acts in the personal account or team selected when it is created, and only there.
+4. Open **Settings → API Keys** (`console.akash.network/user/api-keys`) and create a key. Leave it on **All projects**, or limit it to one project.
+5. Copy it immediately. The full key is shown once; afterwards only a masked form (`ac.sk.production.abc123***def456`) is visible.
 
 The first key always comes from the UI: every `/v1/api-keys` call needs an existing key or a Console session.
 
@@ -60,8 +61,8 @@ resp, err := http.DefaultClient.Do(req)
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/v1/api-keys` | List keys: `id`, `name`, `keyFormat` (masked), `createdAt`, `lastUsedAt`, `expiresAt` |
-| `POST` | `/v1/api-keys` | Create a key. The response's `apiKey` is the only time the full key is returned. |
+| `GET` | `/v1/api-keys` | List your keys in the current team: `id`, `name`, `keyFormat` (masked), `organizationId`, `projectId`, `createdAt`, `lastUsedAt`, `expiresAt` |
+| `POST` | `/v1/api-keys` | Create a key in the current team, optionally limited to one project with `projectId`. The response's `apiKey` is the only time the full key is returned. |
 | `GET` | `/v1/api-keys/{id}` | One key's metadata |
 | `PATCH` | `/v1/api-keys/{id}` | Rename: `{ "data": { "name": "..." } }`. Nothing else can change. |
 | `DELETE` | `/v1/api-keys/{id}` | Revoke |
@@ -80,6 +81,8 @@ curl -sX POST https://console-api.akash.network/v1/api-keys \
     "name": "ci-prod-deploy",
     "apiKey": "ac.sk.production.<copy this now>",
     "keyFormat": "ac.sk.production.9f2e4d***a17c03",
+    "organizationId": "1b6e...",
+    "projectId": null,
     "expiresAt": "2027-01-01T00:00:00.000Z",
     "createdAt": "...",
     "updatedAt": "...",
@@ -88,7 +91,17 @@ curl -sX POST https://console-api.akash.network/v1/api-keys \
 }
 ```
 
-`expiresAt` is optional; omit it for a key that doesn't expire. Every key acts with the full rights of the account: there are no per-key scopes, so give each service its own key and revoke the ones you stop using.
+`expiresAt` is optional and at most 1 year away; omit it and the key expires 365 days after creation. A later date answers 400. Every new key expires, so plan its rotation (below).
+
+### What a key can do
+
+A key acts as the user who created it, in one place, never more than that user can:
+
+- **One team.** `organizationId` is the personal account or team the key was created in, and every request runs there. It is `null` on keys from before teams, which act in their creator's personal account. A key can't switch teams: create one in each team it should deploy for.
+- **The creator's role.** In a team, the key can do what its creator's role allows today: a `viewer` or `billing` member's key can't deploy, and once the creator leaves the team the key answers 403 `organization_forbidden`.
+- **Optionally one project.** `projectId` limits the key to one project of its team; `null` means every project its creator reaches. A project key deploys into that project, can't touch other projects' deployments (403 `project_forbidden`), and can't manage keys, members or billing.
+
+The binding is fixed: `PATCH` only renames. Give each service its own key, bound as narrowly as it needs, and revoke the ones you stop using. Details and the team errors: **@teams-and-projects.md**.
 
 ### Rotation
 
@@ -108,7 +121,7 @@ These need no key:
 | `POST /v1/bid-screening` | Providers that would bid on a group |
 | `GET /v1/deployment-funding-config` | Automatic funding constants |
 | `GET /v1/deployment/{owner}/{dseq}` | Read-only view of any deployment |
-| `GET /v1/balances?address=<akash1...>` | Balance split for any address. With your key and no `address`, your own. |
+| `GET /v1/balances?address=<akash1...>` | Balance split for any address. With a key and no `address`, the balance of the key's personal account or team. |
 | `GET /v1/blockchain-status` | `{ "isBlockchainReachable": true }` |
 
 ## Auth errors
@@ -121,6 +134,10 @@ Errors use the shared envelope (see **@overview.md**).
 | 401 | The key went in `Authorization: Bearer`, or no credential was sent | Send it in `x-api-key` |
 | 400 | Both `Authorization` and `x-api-key` were sent | Send only `x-api-key` |
 | 403 | The key is valid but the account may not do this, such as a free-trial account over the trial's limits or without the Fair Use Policy accepted (`fair_use_policy_required`) | Act on the `code` and `message` |
+| 403 `organization_forbidden` | The key's creator is no longer a member of the key's team | Use a key of a current member |
+| 400 `organization_mismatch` | `x-organization-id` names another team than the key's | Drop the header; a key only acts in its own team |
+| 403 `project_forbidden` | The request reaches a project the key can't, such as another project than the one it is bound to | Stay within the key's project (**@teams-and-projects.md**) |
+| 403 `session_required` | The action needs a signed-in Console session: creating, leaving or deleting a team, accepting an invitation, deleting the account | Do it in the Console web app |
 
 ## CI/CD
 
