@@ -225,3 +225,18 @@ deployment:
 - Higher counts require more resources and higher pricing budget
 - Database services typically use `count: 1` unless using replication
 - Stateless services (web, API) can scale horizontally with higher counts
+
+## How Traffic Is Spread Across Replicas
+
+With `count` above 1, the provider spreads traffic across the replicas:
+
+| Exposure | Routed by | Default |
+|---|---|---|
+| HTTP: a global port published `as: 80` (deployment hostname or custom domain) | The provider's ingress controller | Round-robin, request by request. No sticky sessions. |
+| Any other global port (provider host and forwarded port) | Kubernetes service routing | A random replica for each new connection |
+| A port exposed to another service | Kubernetes service routing | A random replica for each new connection |
+
+- Two HTTP requests from one client can reach different replicas. A WebSocket or TCP connection stays on the replica that accepted it.
+- Replicas share no memory or disk. With persistent storage, each replica gets its own volume.
+- These are provider defaults. A provider can configure its balancing differently.
+- The SDL has no session-affinity option. For an app that needs sticky sessions or shared state: keep the session in a signed cookie or token, move the state to a shared service in the deployment (Redis, PostgreSQL) exposed only to the replicas, run `count: 1`, or declare each backend as its own `count: 1` service behind a proxy service you control that applies the affinity.

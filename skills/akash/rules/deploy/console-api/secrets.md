@@ -4,14 +4,51 @@ Console records each deployment's SDL so it can send manifests and take patches 
 
 ## What Console stores readable
 
-The stored SDL comes back from `GET /v1/deployments/{dseq}` (`consoleSettings.sdl`) and `GET /v2/deployment-settings/{dseq}` (`sdl`). Which values it shows depends on one thing: whether the create sent `sealedSecrets`.
+The stored SDL comes back from `GET /v1/deployments/{dseq}` (`consoleSettings.sdl`) and `GET /v2/deployment-settings/{dseq}` (`sdl`). Which values it shows depends on what the create said about secrets: `secretEnv`, `sealedSecrets`, or neither.
 
 | Create request | Env values | Registry credentials |
 |---|---|---|
-| No `sealedSecrets` | Every value is stored encrypted and shown as an `ac-secret://` reference | Encrypted |
-| With `sealedSecrets`, even a seal of `{}` | Stored as written, except the ones the SDL references as `ac-secret://NAME` | Encrypted |
+| Neither `secretEnv` nor `sealedSecrets` | Every value is stored encrypted and shown as an `ac-secret://` reference | Encrypted |
+| `secretEnv: ["NAME", ...]` | The named variables are stored encrypted. Every other value is stored as written. | Encrypted |
+| `secretEnv: []` | Stored as written | Encrypted |
+| `sealedSecrets` without `secretEnv`, even a seal of `{}` | Stored as written, except the ones the SDL references as `ac-secret://NAME` | Encrypted |
 
-The container always receives the real values. So a plain SDL with secrets in `env` is already safe from later reads, at the cost of every env value becoming unreadable. For readable config plus a few real secrets, reference the secrets and seal them, as below. That also keeps the secrets out of the SDL text and out of the request body in plaintext.
+The container always receives the real values. So a plain SDL with secrets in `env` is already safe from later reads, at the cost of every env value becoming unreadable. For readable config plus a few real secrets, pick one of two ways:
+
+- **Name them in `secretEnv`** (next section). No encryption on your side: the values travel in the SDL over TLS and Console encrypts the named ones before storing anything.
+- **Reference them and seal them** (`ac-secret://` plus `sealedSecrets`, below). The values never appear in the SDL text or in the request body in plaintext.
+
+## Naming the secret variables: `secretEnv`
+
+`secretEnv` is a list of env variable names. Console encrypts the value of each named variable in every service that sets it, and stores every other env value as written, so it stays readable in the Console UI and in `consoleSettings.sdl`.
+
+```bash
+SDL=$(cat deploy.yaml)
+curl -sX POST https://console-api.akash.network/v1/deployments \
+  -H "x-api-key: $AKASH_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "$(jq -nc --arg sdl "$SDL" '{data: {sdl: $sdl, secretEnv: ["SMTP_PASSWORD", "SESSION_SIGNING_KEY"]}}')"
+```
+
+With this SDL, `NODE_ENV` reads back as written and the other two read back as `ac-secret://` references:
+
+```yaml
+services:
+  app:
+    image: ghcr.io/acme/app:1.8.0
+    env:
+      - "NODE_ENV=production"
+      - "SMTP_PASSWORD=<INSERT_SECRET>"
+      - "SESSION_SIGNING_KEY=<INSERT_SECRET>"
+```
+
+- Names are env variable names, matched exactly and case-sensitively. They are not `ac-secret://` names.
+- A name applies to every service in the SDL that sets that variable.
+- `secretEnv: []` says no env value is secret: all of them stay readable.
+- A name no service sets answers 400, so a typo can't leave a secret readable.
+- Registry credentials are encrypted whatever the list says.
+- The 201 response's `manifest` is built from the SDL you sent, so it repeats the values once. No later read returns them.
+- `secretEnv` and `sealedSecrets` combine: `secretEnv` decides which plain values are encrypted, and `ac-secret://` references still take their values from the seal.
 
 ## Referencing a secret in the SDL
 
@@ -100,7 +137,21 @@ Python can do the same with `jwcrypto` or `authlib`; any JOSE library that suppo
 { "data": { "sealedSecrets": "<JWE of {\"SMTP_PASSWORD\": \"new-value\"}>" } }
 ```
 
-A patch that writes env values through `services.<name>.env` stores them encrypted unless it carries `sealedSecrets`. To write a plain, readable variable, send a seal of `{}` with the patch.
+A patch that writes env values through `services.<name>.env` stores all of them encrypted unless it says which are secret. `secretEnv` does that without a seal: it names the variables this patch writes whose values Console encrypts, and every other written value is stored as written.
+
+```json
+{
+  "data": {
+    "services": { "app": { "env": { "LOG_LEVEL": "debug", "SMTP_PASSWORD": "<INSERT_SECRET>" } } },
+    "secretEnv": ["SMTP_PASSWORD"]
+  }
+}
+```
+
+- `secretEnv: []` keeps every value the patch writes readable.
+- Variables the patch doesn't write keep what they hold, encrypted or readable. To encrypt a variable that is stored readable, write it again and name it.
+- A name the patch doesn't write answers 400.
+- A patch carrying `sealedSecrets` and no `secretEnv` also stores its written values as written; a seal of `{}` was the way to write a readable variable before `secretEnv`.
 
 ## Redeploying without re-entering values
 
@@ -110,7 +161,7 @@ A patch that writes env values through `services.<name>.env` stores them encrypt
 
 | Status | When | Fix |
 |---|---|---|
-| 400 | Malformed, tampered or expired seal; wrong `alg` or `enc`; a reference without a value; a sealed name nothing references | Fix the request |
+| 400 | Malformed, tampered or expired seal; wrong `alg` or `enc`; a reference without a value; a sealed name nothing references; a `secretEnv` name the request sets no variable for | Fix the request |
 | 403 | `sub` is not you, or `sdlHash` doesn't match the SDL | Reseal from a fresh context, hashing the exact SDL string |
 | 409 | The seal names a key Console no longer holds | Fetch `GET /v1/sdl-secrets-context` again and reseal |
 | 409 `inherited_secrets_unreadable` | The source deployment's secrets can no longer be decrypted | Permanent. Supply the values in `sealedSecrets`. |
