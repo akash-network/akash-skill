@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.9.0](https://github.com/akash-network/akash-skill/compare/v3.8.0...v3.9.0) (2026-11-14)
+
+
+### Features
+
+* **akash/console-api:** document secretEnv, creating a deployment without SDL, and replica traffic ([#45](https://github.com/akash-network/akash-skill/issues/45)) ([fcc06ea](https://github.com/akash-network/akash-skill/commit/fcc06ea388bb84006f922c7726c015e18477047f))
+
 ## [3.8.0](https://github.com/akash-network/akash-skill/compare/v3.7.0...v3.8.0) (2026-10-27)
 
 
