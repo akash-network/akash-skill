@@ -136,7 +136,7 @@ curl -sX POST https://console-api.akash.network/v1/deployments \
 
 | Status | When |
 |---|---|
-| 400 | The request names no source or more than one (`Send one of sdl, service or templateId`, `Send either sdl or service, not both`), `service` is combined with `templateId`, `overrides` is sent with `sdl` or without `templateId`, a `service` field is missing or malformed (no port, a port listed twice, a size without a unit), or `overrides` names a service or a port the template does not declare |
+| 400 | The request names no source or more than one (`Send one of sdl, service or templateId`, `Send either sdl or service, not both`), `service` is combined with `templateId`, `overrides` is sent with `sdl` or without `templateId`, a `service` field is missing or malformed (no port, a port listed twice, a size without a unit), or `overrides` names a service, port or volume the template does not declare, or moves a port in a way `PATCH` refuses |
 | 404 | `templateId` without `sdl` names a template the gallery does not list |
 
 ### List deployments
