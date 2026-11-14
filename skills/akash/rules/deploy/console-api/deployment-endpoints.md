@@ -4,7 +4,7 @@ Every endpoint below lives under `https://console-api.akash.network` and takes `
 
 ## Quick links
 
-- [Deployments](#deployments): create, list, read, patch, close, move between projects
+- [Deployments](#deployments): create (from an SDL, or [without one](#create-a-deployment-without-an-sdl)), list, read, patch, close, move between projects
 - [Leases](#leases)
 - [Bids](#bids)
 - [Runtime limits](#runtime-limits-deployment-settings-v2)
@@ -13,7 +13,7 @@ Every endpoint below lives under `https://console-api.akash.network` and takes `
 - [Deprecated endpoints](#deprecated-endpoints)
 - [Endpoints that do not exist](#endpoints-that-do-not-exist)
 
-Secrets (`sealedSecrets`, `inheritSecretsFrom`, `ac-secret://` references) have their own file: **@secrets.md**. Logs, events, status and shell come from the provider: **@operations.md**.
+Secrets (`secretEnv`, `sealedSecrets`, `inheritSecretsFrom`, `ac-secret://` references) have their own file: **@secrets.md**. Logs, events, status and shell come from the provider: **@operations.md**.
 
 ## Deployments
 
@@ -27,9 +27,13 @@ POST /v1/deployments
 
 | Field | Required | Description |
 |---|---|---|
-| `sdl` | yes | The SDL as a YAML string, at most 512 KiB |
+| `sdl` | one of `sdl`, `service`, `templateId` | The SDL as a YAML string, at most 512 KiB |
+| `service` | one of | An image, resources, ports and env, from which Console writes the SDL. See [Create a deployment without an SDL](#create-a-deployment-without-an-sdl). |
+| `templateId` | one of | Without `sdl`: the gallery template to deploy, with `overrides` applied. With `sdl`: only records which template the SDL came from. |
+| `overrides` | no | Changes to the template's SDL, keyed by service name. Only with `templateId` and no `sdl`. |
 | `name` | no | 1 to 256 characters, shown wherever the deployment is listed. Defaults to the SDL's service names joined with `+`. |
 | `runtimeLimitHours` | no | 1 to 48. Console closes the deployment that many hours after its lease starts and returns the unspent credits. Omit for always-on funding. |
+| `secretEnv` | no | Names of the env variables whose values are secret, such as `["API_KEY"]`. Console encrypts those and stores every other env value readable; `[]` keeps all of them readable. Needs no encryption on your side. Without it, and without `sealedSecrets`, every env value is encrypted. See **@secrets.md**. |
 | `sealedSecrets` | no | A JWE carrying secret values the SDL references as `ac-secret://NAME`. See **@secrets.md**. |
 | `inheritSecretsFrom` | no | Dseq of a deployment you can change in the same account or team, open or closed, whose stored secrets this one starts from. See **@secrets.md**. |
 | `projectId` | no | The project to file the deployment in. Without it: the key's project for a key bound to one, otherwise the default project, and 400 `project_required` when the caller can't deploy there. See **@teams-and-projects.md**. |
@@ -64,12 +68,76 @@ Keep `dseq`. You don't need `manifest`: Console records the deployment's definit
 
 | Status | When |
 |---|---|
-| 400 | The SDL is invalid, or a secret reference has no value, or `sealedSecrets` is malformed, expired or names a value no service references. `code: project_required`: no project could be chosen, so pass `projectId`. |
+| 400 | The SDL is invalid, or a secret reference has no value, or `secretEnv` names a variable no service sets, or `sealedSecrets` is malformed, expired or names a value no service references. `code: project_required`: no project could be chosen, so pass `projectId`. |
 | 402 | Not enough credit. `code` is `insufficient_balance` or `balance_top_up_pending` (see **@overview.md**). Free-trial refusals, such as a GPU model the trial excludes, answer `payment_required`. |
 | 403 | `sealedSecrets` was sealed for another user or another SDL. Free-trial accounts also get 403 when the deployment exceeds the trial's resource limits, or `code: fair_use_policy_required` until the Fair Use Policy is accepted in the Console UI. `code: project_budget_exceeded`: the project's monthly budget is spent. A team `viewer` or `billing` member's key can't deploy at all. |
 | 404 | `inheritSecretsFrom` names no deployment you can change, or `projectId` names a project you can't deploy into |
 | 409 | The seal used a retired key (refetch `GET /v1/sdl-secrets-context` and seal again), or `code` is `inherited_secrets_unreadable` (permanent: supply the values in `sealedSecrets` instead) |
 | 503 | The key service was briefly unreachable. Retry. |
+
+### Create a deployment without an SDL
+
+The same `POST /v1/deployments` takes simple inputs in place of `sdl`. Console writes the SDL and records it, so the deployment then behaves like any other: its SDL shows on the Update tab and in `consoleSettings.sdl`, `PATCH` changes it, and a redeploy starts from it. Bids, the lease, and everything after are the same calls.
+
+Send exactly one of `sdl`, `service`, or `templateId` without `sdl`.
+
+**From an image (`data.service`).** One service, which Console names `app`:
+
+| Field | Required | Description |
+|---|---|---|
+| `service.image` | yes | Container image with its tag, such as `ghcr.io/acme/api:1.4.0` |
+| `service.resources.cpu` | yes | CPU units; `0.5` is half a core |
+| `service.resources.memory` | yes | A number and a unit, such as `512Mi`. Units: `k`, `Ki`, `M`, `Mi`, `G`, `Gi`, `T`, `Ti`. |
+| `service.resources.storage` | yes | Ephemeral disk, written the same way, such as `1Gi` |
+| `service.resources.gpu` | no | `{ "units": 1, "model": "rtx4090" }`. NVIDIA only; leave `model` out to take any NVIDIA GPU. |
+| `service.ports` | yes | At least one `{ "port": 3000, "as": 80 }`. `port` is the container port; `as` is the port it is reached on and defaults to `port`. Every port is public. A port reached on 80 gets a hostname from the provider; any other is reached on the provider's host through a port the provider picks. |
+| `service.env` | no | Map of variable name to value. `secretEnv` says which values are secret, exactly as it does for an SDL. |
+
+```bash
+curl -sX POST https://console-api.akash.network/v1/deployments \
+  -H "x-api-key: $AKASH_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": {
+      "name": "api-prod",
+      "service": {
+        "image": "ghcr.io/acme/api:1.4.0",
+        "resources": { "cpu": 1, "memory": "1Gi", "storage": "2Gi" },
+        "ports": [{ "port": 3000, "as": 80 }],
+        "env": { "LOG_LEVEL": "info", "API_KEY": "<INSERT_SECRET>" }
+      },
+      "secretEnv": ["API_KEY"]
+    }
+  }'
+```
+
+The SDL Console writes has one replica, the Console's default price ceiling, and no placement requirements. Patch the service as `app`, for example `{"data": {"services": {"app": {"image": "ghcr.io/acme/api:1.4.1"}}}}`. Write an SDL instead when the workload needs more than one service, more than one replica, persistent storage, a private port, a start command, or private registry credentials.
+
+**From a gallery template (`data.templateId` without `sdl`).** Console deploys the template's own SDL. `GET /v1/templates-list` (public, no key) lists the gallery by category, with each template's `id`; `GET /v1/templates/{id}` returns its SDL in `data.deploy`, which shows the service names. `data.overrides` changes that SDL before it is deployed. It is keyed by service name and takes the same fields as `services` in `PATCH /v1/deployments/{dseq}` (`image`, `env`, `command`, `args`, `credentials`, `expose`, `storage`), with the same limits: no resource, replica or placement changes.
+
+```bash
+curl -sX POST https://console-api.akash.network/v1/deployments \
+  -H "x-api-key: $AKASH_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": {
+      "templateId": "<template id from /v1/templates-list>",
+      "overrides": {
+        "<service name>": { "env": { "LOG_LEVEL": "debug", "API_KEY": "<INSERT_SECRET>" } }
+      },
+      "secretEnv": ["API_KEY"]
+    }
+  }'
+```
+
+`templateId` sent together with `sdl` keeps its older meaning: it only records which template the SDL came from, and `overrides` is refused.
+
+**Errors**, on top of the ones above:
+
+| Status | When |
+|---|---|
+| 400 | The request names no source or more than one (`Send one of sdl, service or templateId`, `Send either sdl or service, not both`), `service` is combined with `templateId`, `overrides` is sent with `sdl` or without `templateId`, a `service` field is missing or malformed (no port, a port listed twice, a size without a unit), or `overrides` names a service or a port the template does not declare |
+| 404 | `templateId` without `sdl` names a template the gallery does not list |
 
 ### List deployments
 
@@ -184,6 +252,7 @@ Changes the definition Console stored, then sends the deployment update and the 
 | `services.<name>.expose.<containerPort>` | Keyed by the container port the stored SDL declares: `port`, `as`, `accept` (replaces the custom-domain list), `httpOptions` (`maxBodySize`, `readTimeout`, `sendTimeout`, `nextTries`, `nextTimeout`, `nextCases`) |
 | `services.<name>.storage.<volume>` | `mount` and `readOnly` only |
 | `name` | Renames the deployment. On its own it sends no update and works even when Console holds no definition. |
+| `secretEnv` | Names of the env variables this patch writes whose values are secret. Console encrypts those and stores the other written values readable; `[]` keeps all of them readable. See **@secrets.md**. |
 | `sealedSecrets` | New values for the secret names this patch replaces; omitted names keep their stored values. See **@secrets.md**. |
 | `ifManifestVersion` | Optimistic lock: the `manifestVersion` you read. Without it the patch still refuses to overwrite a concurrent one. |
 
@@ -203,7 +272,7 @@ curl -sX PATCH "https://console-api.akash.network/v1/deployments/$DSEQ" \
   }'
 ```
 
-The response is the deployment, plus the `manifestVersion` the patch recorded. Env values written by a patch without `sealedSecrets` are stored sealed: the container gets them, but `GET` shows `ac-secret://` references in their place. To keep plain values readable, send a seal of an empty map with the patch (**@secrets.md**).
+The response is the deployment, plus the `manifestVersion` the patch recorded. Env values written by a patch that carries neither `secretEnv` nor `sealedSecrets` are stored encrypted: the container gets them, but `GET` shows `ac-secret://` references in their place. To keep plain values readable, send `secretEnv` with the patch: the names of the written variables that are secret, or `[]` when none is (**@secrets.md**).
 
 **What a patch can't change.** Compute resources (CPU, memory, storage sizes, GPUs), replica counts, groups and placement, and the protocol, kind or number of exposed endpoints are fixed when the deployment is created. Asking for them answers 422 `deployment_resources_changed`, and nothing is sent. To resize, create a new deployment from the stored SDL (`consoleSettings.sdl`, edited), pass `inheritSecretsFrom: <old dseq>` so its secrets carry over, lease it, then close the old one. Moving a global port onto or off `as: 80` also changes the endpoint kind and is refused.
 
@@ -211,7 +280,7 @@ The response is the deployment, plus the `manifestVersion` the patch recorded. E
 
 | Status | `code` | When |
 |---|---|---|
-| 400 | | Names a service, port or volume the stored SDL doesn't declare, leaves a secret reference without a value, or moves a port in a way that is refused |
+| 400 | | Names a service, port or volume the stored SDL doesn't declare, leaves a secret reference without a value, names a variable in `secretEnv` it doesn't write, or moves a port in a way that is refused |
 | 403 | | `sealedSecrets` was sealed for another user, or bound to an SDL other than the stored one |
 | 403 | `project_forbidden` | The deployment is filed in a project the key can't change |
 | 404 | | Console holds no definition for this deployment; record one first (below) |

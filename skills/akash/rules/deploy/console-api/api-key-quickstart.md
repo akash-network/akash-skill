@@ -60,6 +60,8 @@ deployment:
 
 `denom: uact` is the deployment-payment denom. SDL syntax is in `../../sdl/`.
 
+No SDL at hand? Step 2 also takes an image with its resources and ports (`data.service`) or a gallery template (`data.templateId`), and Console writes the SDL. See "Create a deployment without an SDL" in **@deployment-endpoints.md**.
+
 ## Step 2 — Create the deployment
 
 ```bash
@@ -73,7 +75,7 @@ DSEQ=$(echo "$RESPONSE" | jq -r '.data.dseq')
 echo "Deployment $DSEQ created"
 ```
 
-No deposit: Console funds the deployment from the credits of the key's account or team. A `402` here means those credits are short; the body's `code` says why (**@account-and-funding.md**). In a team, add `projectId` to `data` to pick the project; a key bound to a project needs nothing extra, and `400 project_required` means a project must be named (**@teams-and-projects.md**). Secrets in `env` need nothing extra to stay out of later reads, but to seal only some values and keep the rest readable, see **@secrets.md**.
+No deposit: Console funds the deployment from the credits of the key's account or team. A `402` here means those credits are short; the body's `code` says why (**@account-and-funding.md**). In a team, add `projectId` to `data` to pick the project; a key bound to a project needs nothing extra, and `400 project_required` means a project must be named (**@teams-and-projects.md**). Secrets in `env` need nothing extra to stay out of later reads, but every env value is then unreadable. To keep the rest readable, name the secret variables: `secretEnv: ["API_KEY"]` in `data` (**@secrets.md**).
 
 ## Step 3 — Wait for bids
 

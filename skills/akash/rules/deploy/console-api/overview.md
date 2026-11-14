@@ -89,13 +89,15 @@ The specific codes a deployment script should handle:
 | Task | Endpoint | Reference |
 |---|---|---|
 | Create a deployment | `POST /v1/deployments` | @deployment-endpoints.md |
+| Create a deployment without writing SDL | `POST /v1/deployments` with `data.service`, or `data.templateId` and `data.overrides` | @deployment-endpoints.md |
+| Find a gallery template to deploy by id | `GET /v1/templates-list`, `GET /v1/templates/{id}` (public) | @deployment-endpoints.md |
 | List or read deployments | `GET /v1/deployments`, `GET /v1/deployments/{dseq}` | @deployment-endpoints.md |
 | Change image, env, command, ports or name | `PATCH /v1/deployments/{dseq}` | @deployment-endpoints.md |
 | Close a deployment | `DELETE /v1/deployments/{dseq}` | @deployment-endpoints.md |
 | List bids, accept bids | `GET /v1/bids?dseq=`, `POST /v1/leases` | @deployment-endpoints.md |
 | Runtime limit | `GET`, `PATCH /v2/deployment-settings/{dseq}` | @deployment-endpoints.md |
 | Provider details, regions, GPU availability | `GET /v1/providers/{address}`, `GET /v1/placement-options` | @deployment-endpoints.md |
-| Secrets that can't be read back | `GET /v1/sdl-secrets-context` + `sealedSecrets` | @secrets.md |
+| Secrets that can't be read back | `secretEnv` on create and patch, or `GET /v1/sdl-secrets-context` + `sealedSecrets` | @secrets.md |
 | Balance and funding | `GET /v1/balances` | @account-and-funding.md |
 | API keys | `/v1/api-keys` | @authentication.md |
 | The key's team and projects | `GET /v1/organizations`, `GET /v1/projects` | @teams-and-projects.md |
@@ -127,13 +129,12 @@ The spec also exposes endpoints that exist to power the Console UI. They change 
 | Deploy-flow drafts, hardware requests, feed state | `/v1/configure-drafts/*`, `/v1/hardware-requests`, `/v1/activities/seen` | Console UI |
 | Legacy UI signing | `/v1/tx` (accepts six message types) | The dedicated deployment endpoints |
 | Dashboards, analytics, explorer | `/v1/dashboard-data`, `/v1/graph-data/*`, `/v1/bme/*`, `/v1/blocks/*`, `/v1/transactions/*`, `/v1/validators/*`, `/v1/proposals/*`, `/v1/gpu*`, `/v1/provider-dashboard/*`, `/v1/market-data/*` | Console UI, or a chain node for raw chain data |
-| Template gallery | `/v1/templates-list`, `/v1/templates/{id}` | [awesome-akash](https://github.com/akash-network/awesome-akash) |
 
 ## Related files
 
 - **@authentication.md** — API keys: format, creation, CRUD, CI/CD
 - **@deployment-endpoints.md** — Every deployment endpoint with bodies, responses and errors
-- **@secrets.md** — `ac-secret://` references and sealed secrets
+- **@secrets.md** — `secretEnv`, `ac-secret://` references and sealed secrets
 - **@api-key-quickstart.md** — From an API key to a running deployment
 - **@account-and-funding.md** — Account model, balance, automatic funding, 402s
 - **@operations.md** — Provider JWT, logs, events, status, shell, attestation
