@@ -293,7 +293,7 @@ The response is the deployment, plus the `manifestVersion` the patch recorded. E
 | 404 | | Console holds no definition for this deployment; [record one](#record-a-definition) first |
 | 409 | `deployment_definition_changed` | Another change landed first. Re-read, then re-send. A 409 without this code means the seal used a retired key. |
 | 422 | `deployment_resources_changed` | The change needs a new deployment |
-| 500 | `stored_secrets_unreadable`, `stored_sdl_unreadable` | The stored state is permanently unreadable; a retry won't help |
+| 500 | `stored_secrets_unreadable`, `stored_sdl_unreadable` | The stored state is permanently unreadable; a retry won't help. Recover with the full SDL and every secret value on the deprecated [`PUT /v1/deployments/{dseq}`](#full-sdl-update). |
 | 503 | | The key service was briefly unreachable. Retry. |
 
 If the deployment update fails after the definition was recorded, re-send the identical request: it recomputes the same manifest version and finishes the update.
@@ -433,7 +433,7 @@ An error status means the check itself couldn't run:
 | 400 | Neither or both of `sdl` and `definition`, or a malformed, tampered or expired `sealedSecrets` |
 | 403 | The seal was made for another user or another document. `project_forbidden` on the deployment check. |
 | 404 | The deployment check: Console holds no definition for that dseq. The create check: `inheritSecretsFrom` names no deployment you can change. |
-| 409 | The seal used a retired key (reseal), or `inherited_secrets_unreadable` |
+| 409 | The seal used a retired key (reseal), or `inherited_secrets_unreadable`. On the deployment check, `stored_secrets_unavailable` (see [Replace a whole definition](#replace-a-whole-definition)). |
 | 500 | The deployment's stored SDL or secrets can't be read; permanent |
 | 503 | The key service was briefly unreachable. Retry. |
 
@@ -498,9 +498,9 @@ To see the outcome first, send the same `sdl` or `definition`, `secretEnv` and `
 | 403 | `project_forbidden` | The deployment is filed in a project the key can't change |
 | 404 | | Console holds no definition for this deployment; [record one](#record-a-definition) first |
 | 409 | `deployment_definition_changed` | The deployment changed since `ifManifestVersion`, or during the request. Re-read, then re-send. A 409 without a code means the seal used a retired key: reseal. |
-| 409 | `stored_secrets_unavailable` | In a team, the stored secrets were sealed for a member who has since deleted their account. Send the full document with every secret value. |
+| 409 | `stored_secrets_unavailable` | In a team, the stored secrets were sealed for a member who has since deleted their account. This route and `PATCH` open the stored secrets first, so re-sending here fails again: send the full SDL with every secret value to the deprecated [`PUT /v1/deployments/{dseq}`](#full-sdl-update). |
 | 422 | `deployment_resources_changed` | The change needs a new deployment; nothing was recorded |
-| 500 | `stored_secrets_unreadable`, `stored_sdl_unreadable` | The stored state is permanently unreadable; a retry won't help |
+| 500 | `stored_secrets_unreadable`, `stored_sdl_unreadable` | The stored state is permanently unreadable; a retry won't help. Recover with the full SDL and every secret value on the deprecated [`PUT /v1/deployments/{dseq}`](#full-sdl-update). |
 | 503 | | The key service was briefly unreachable. Retry. |
 
 ### Record a definition
@@ -708,7 +708,7 @@ From an SDL file, the matcher in `rules/bid-matching/` is simpler: it reads the 
 PUT /v1/deployments/{dseq}
 ```
 
-Deprecated and scheduled for removal. It resubmits the whole SDL and every secret value with it, and refuses resource changes with the same 422 `deployment_resources_changed`. Don't generate new code for it: use `PATCH` to change named fields, or [`PUT /v1/deployments/{dseq}/definition`](#replace-a-whole-definition) to send a whole SDL while keeping the stored secrets.
+Deprecated and scheduled for removal. It resubmits the whole SDL and every secret value with it, and refuses resource changes with the same 422 `deployment_resources_changed`. Don't generate new code for it: use `PATCH` to change named fields, or [`PUT /v1/deployments/{dseq}/definition`](#replace-a-whole-definition) to send a whole SDL while keeping the stored secrets. The one exception: it never reads the stored SDL or secrets, so it is for now the only way out of `stored_secrets_unavailable`, `stored_secrets_unreadable` or `stored_sdl_unreadable`, by sending the full SDL with every secret value.
 
 ### Deposit
 

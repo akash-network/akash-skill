@@ -176,7 +176,7 @@ A replacement keeps the stored secrets without asking for them again. Start from
 | 400 | Malformed, tampered or expired seal; wrong `alg` or `enc`; a reference without a value; a sealed name nothing references; a `secretEnv` name the request sets no variable for | Fix the request |
 | 403 | `sub` is not you, or `sdlHash` doesn't match the SDL | Reseal from a fresh context, hashing the exact SDL string |
 | 409 | The seal names a key Console no longer holds | Fetch `GET /v1/sdl-secrets-context` again and reseal |
-| 409 `stored_secrets_unavailable` | A team deployment's stored secrets were sealed for a member who has since deleted their account | Send the full SDL with every secret value to `PUT /v1/deployments/{dseq}/definition` |
+| 409 `stored_secrets_unavailable` | A team deployment's stored secrets were sealed for a member who has since deleted their account | Send the full SDL with every secret value to the deprecated `PUT /v1/deployments/{dseq}`. `PATCH` and `PUT /v1/deployments/{dseq}/definition` open the stored secrets first and fail the same way. |
 | 409 `inherited_secrets_unreadable` | The source deployment's secrets can no longer be decrypted | Permanent. Supply the values in `sealedSecrets`. |
 | 503 | The key service is briefly unreachable | Retry |
 
