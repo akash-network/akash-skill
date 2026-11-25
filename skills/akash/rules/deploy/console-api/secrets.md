@@ -13,6 +13,8 @@ The stored SDL comes back from `GET /v1/deployments/{dseq}` (`consoleSettings.sd
 | `secretEnv: []` | Stored as written | Encrypted |
 | `sealedSecrets` without `secretEnv`, even a seal of `{}` | Stored as written, except the ones the SDL references as `ac-secret://NAME` | Encrypted |
 
+`GET /v1/deployments/{dseq}/secrets` lists the secrets the stored SDL references, by name, with each env variable or registry credential they fill, and never a value (**@deployment-endpoints.md**, "List a deployment's secrets"). Names like `s0_e1` are ones Console picked when it encrypted a plain value for you.
+
 The container always receives the real values. So a plain SDL with secrets in `env` is already safe from later reads, at the cost of every env value becoming unreadable. For readable config plus a few real secrets, pick one of two ways:
 
 - **Name them in `secretEnv`** (next section). No encryption on your side: the values travel in the SDL over TLS and Console encrypts the named ones before storing anything.
@@ -78,8 +80,8 @@ services:
 2. Encrypt the JSON with `alg: "RSA-OAEP-256"` and `enc: "A256GCM"`. Put these in the protected header:
    - `kid` and `sub`, copied from the context
    - `exp`: unix seconds, at most 15 minutes ahead (5 is a good default)
-   - `sdlHash` (recommended on create): base64url of the SHA-256 of the **exact** `sdl` string you send. It binds the seal to that SDL, so the seal can't be replayed with another one.
-3. Send it as `data.sealedSecrets` beside `data.sdl`.
+   - `sdlHash` (recommended on create and on a definition replacement): base64url of the SHA-256 of the **exact** `sdl` string you send. With `data.definition` instead, hash `JSON.stringify(definition)`, keys in the order you send them. It binds the seal to that document, so the seal can't be replayed with another one.
+3. Send it as `data.sealedSecrets` beside `data.sdl` or `data.definition`.
 
 Node.js with [`jose`](https://www.npmjs.com/package/jose):
 
@@ -125,7 +127,7 @@ const res = await fetch(`${API}/v1/deployments`, {
 const { data } = await res.json();
 ```
 
-Hash the same string you put in `data.sdl`. Reformatting the YAML after hashing it gives a 403.
+Hash the same string you put in `data.sdl`. Reformatting the YAML, or reordering a `definition`'s keys, after hashing gives a 403.
 
 Python can do the same with `jwcrypto` or `authlib`; any JOSE library that supports `RSA-OAEP-256` with `A256GCM` and custom protected-header fields works.
 
@@ -153,9 +155,19 @@ A patch that writes env values through `services.<name>.env` stores all of them 
 - A name the patch doesn't write answers 400.
 - A patch carrying `sealedSecrets` and no `secretEnv` also stores its written values as written; a seal of `{}` was the way to write a readable variable before `secretEnv`.
 
+### Sending a whole SDL: `PUT /v1/deployments/{dseq}/definition`
+
+A replacement keeps the stored secrets without asking for them again. Start from `consoleSettings.sdl` or `consoleSettings.definition`, where every secret already stands as `ac-secret://NAME`, edit it, and send it back:
+
+- A reference you send no value for keeps its stored value. To rotate one, put the new value in a `sealedSecrets` holding only that name, sealed with `sdlHash` over the document you send (a seal bound to the stored SDL answers 403).
+- A stored secret the new document no longer references is dropped.
+- Plain values you add or change are encrypted unless the request carries `secretEnv` (`[]` keeps them all readable) or a `sealedSecrets`. Values left as stored keep what they hold, unless `secretEnv` names them.
+
+`POST /v1/deployments/{dseq}/definition/validate` with the same body answers `keptSecrets`, the names whose stored values would be kept, and lists any reference left without a value. Endpoint details: **@deployment-endpoints.md**, "Replace a whole definition".
+
 ## Redeploying without re-entering values
 
-`inheritSecretsFrom: "<dseq>"` on create starts the new deployment from the secrets stored for another deployment you can change in the same account or team, even a closed one. Values in `sealedSecrets` override inherited names. This is how to resize: take `consoleSettings.sdl` from the old deployment (its references are already in place), change the resources, create with `inheritSecretsFrom`, lease it, then close the old one.
+`inheritSecretsFrom: "<dseq>"` on create starts the new deployment from the secrets stored for another deployment you can change in the same account or team, even a closed one. Values in `sealedSecrets` override inherited names. This is how to resize: take `consoleSettings.sdl` from the old deployment (its references are already in place), change the resources, create with `inheritSecretsFrom`, lease it, then close the old one. `POST /v1/deployments/validate` with the same `sdl` and `inheritSecretsFrom` lists the inherited names in `keptSecrets` and reports any reference left without a value.
 
 ## Errors
 
@@ -164,6 +176,7 @@ A patch that writes env values through `services.<name>.env` stores all of them 
 | 400 | Malformed, tampered or expired seal; wrong `alg` or `enc`; a reference without a value; a sealed name nothing references; a `secretEnv` name the request sets no variable for | Fix the request |
 | 403 | `sub` is not you, or `sdlHash` doesn't match the SDL | Reseal from a fresh context, hashing the exact SDL string |
 | 409 | The seal names a key Console no longer holds | Fetch `GET /v1/sdl-secrets-context` again and reseal |
+| 409 `stored_secrets_unavailable` | A team deployment's stored secrets were sealed for a member who has since deleted their account | Send the full SDL with every secret value to `PUT /v1/deployments/{dseq}/definition` |
 | 409 `inherited_secrets_unreadable` | The source deployment's secrets can no longer be decrypted | Permanent. Supply the values in `sealedSecrets`. |
 | 503 | The key service is briefly unreachable | Retry |
 

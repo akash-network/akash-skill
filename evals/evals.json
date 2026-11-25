@@ -1154,6 +1154,77 @@
           "case_insensitive": true
         }
       ]
+    },
+    {
+      "id": 33,
+      "name": "replace-definition-keep-secrets",
+      "prompt": "Our Akash Console deployment (dseq in $DSEQ, API key in $AKASH_API_KEY) runs three services, and some env values are secrets we set when we created it. We keep the SDL in git and want a CI job to push the whole edited file after every merge, without passing the secret values again on each run. Which Console API call should the job make, and what should the committed SDL look like where the secrets are?",
+      "assertions": [
+        {
+          "id": "uses_definition_route",
+          "type": "regex_present",
+          "pattern": "/v1/deployments/[^\\s\"'`]*/definition(?!/validate)",
+          "description": "Targets PUT /v1/deployments/{dseq}/definition"
+        },
+        {
+          "id": "uses_put_method",
+          "type": "regex_present",
+          "pattern": "(-[A-Za-z]*X\\s*PUT|--request\\s+PUT|method[\"']?\\s*[:=]\\s*[\"']PUT|PUT\\s+[\"'`]?[^\\s\"'`]*/definition)",
+          "description": "Sends it with PUT"
+        },
+        {
+          "id": "keeps_secret_references",
+          "type": "regex_present",
+          "pattern": "=ac-secret://",
+          "description": "Leaves the secrets as ac-secret:// references so the stored values are kept"
+        },
+        {
+          "id": "no_deprecated_full_put",
+          "type": "regex_absent",
+          "pattern": "-[A-Za-z]*X\\s*PUT\\s+[\"']?[^\\s\"']*/v1/deployments/(\\$\\{?DSEQ\\}?|\\{dseq\\})[\"']?(?![/\\w])",
+          "description": "Does NOT call the deprecated PUT /v1/deployments/{dseq}"
+        }
+      ]
+    },
+    {
+      "id": 34,
+      "name": "keep-deployment-funded",
+      "prompt": "I run a long-lived worker on Akash through the Console API (key in $AKASH_API_KEY, dseq 2481937). Its escrow looks low. How do I add funds to that deployment from a script so it never runs out?",
+      "assertions": [
+        {
+          "id": "no_deposit_route_call",
+          "type": "regex_absent",
+          "pattern": "(curl|fetch|requests\\.post|axios(\\.post)?|https?://)[^\\n]*deposit-deployment",
+          "description": "Does NOT call POST /v1/deposit-deployment"
+        },
+        {
+          "id": "no_deposit_field",
+          "type": "regex_absent",
+          "pattern": "[\"']?deposit[\"']?\\s*:\\s*[\\d\\$\"']",
+          "description": "Does NOT send a deposit field",
+          "case_insensitive": true
+        },
+        {
+          "id": "no_chain_deposit",
+          "type": "regex_absent",
+          "pattern": "(MsgDepositDeployment|tx deployment deposit|/v1/tx\\b)",
+          "description": "Does NOT fall back to signing a deposit transaction"
+        },
+        {
+          "id": "says_funding_automatic",
+          "type": "regex_present",
+          "pattern": "automatic",
+          "description": "Says Console funds deployments automatically",
+          "case_insensitive": true
+        },
+        {
+          "id": "credits_or_auto_recharge",
+          "type": "regex_present",
+          "pattern": "(auto[ -]?recharge|add(ing)? credits)",
+          "description": "Points to adding credits or Auto recharge in Console",
+          "case_insensitive": true
+        }
+      ]
     }
   ]
 }
