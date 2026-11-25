@@ -69,15 +69,15 @@ The specific codes a deployment script should handle:
 | 502 | `provider_unreachable` | `POST /v1/leases`: the provider did not answer. No lease was created. | Choose another bid |
 | 502 | `manifest_not_delivered` | `POST /v1/leases`: the lease exists but the provider did not take the manifest | Send the identical request again, or close the deployment |
 | 422 | `deployment_resources_changed` | An update tried to change compute resources, replica counts, groups or globally exposed ports | Create a new deployment instead |
-| 409 | `deployment_definition_changed` | A concurrent `PATCH` changed the deployment first | Re-read the deployment, then re-send |
+| 409 | `deployment_definition_changed` | A concurrent `PATCH` or definition replacement changed the deployment first | Re-read the deployment, then re-send |
 | 403 | `project_forbidden` | The request reaches outside its projects: a write on a deployment filed in a project the key can't change, an `x-project-id` it can't reach, or a provider JWT that doesn't name its deployments | Stay within the key's projects; see **@teams-and-projects.md** |
 | 400 | `project_required` | `POST /v1/deployments` found no project to file the deployment in | Pass `data.projectId` |
-| 403 | `project_budget_exceeded` | The deposit would take the project past its monthly budget | An owner or admin raises the budget; don't retry |
+| 403 | `project_budget_exceeded` | Funding the new deployment would take the project past its monthly budget | An owner or admin raises the budget; don't retry |
 | 403 | `organization_forbidden` | The key's creator is no longer a member of its team | Use a key of a current member |
 | 400 | `organization_mismatch` | `x-organization-id` names another team than the key's | Drop the header, or use that team's key |
 | 403 | `session_required` | Creating, leaving or deleting a team, or accepting an invitation, with an API key | Do it in the Console web app |
 
-`PATCH /v1/deployments/{dseq}` and the secrets flow have a few more; they are listed next to those endpoints in **@deployment-endpoints.md** and **@secrets.md**.
+`PATCH /v1/deployments/{dseq}`, the definition routes and the secrets flow have a few more; they are listed next to those endpoints in **@deployment-endpoints.md** and **@secrets.md**.
 
 ## Pagination and rate limits
 
@@ -93,12 +93,17 @@ The specific codes a deployment script should handle:
 | Find a gallery template to deploy by id | `GET /v1/templates-list`, `GET /v1/templates/{id}` (public) | @deployment-endpoints.md |
 | List or read deployments | `GET /v1/deployments`, `GET /v1/deployments/{dseq}` | @deployment-endpoints.md |
 | Change image, env, command, ports or name | `PATCH /v1/deployments/{dseq}` | @deployment-endpoints.md |
+| Replace the whole SDL, keeping stored secrets | `PUT /v1/deployments/{dseq}/definition` | @deployment-endpoints.md |
+| Check an SDL before creating or replacing | `POST /v1/deployments/validate`, `POST /v1/deployments/{dseq}/definition/validate` | @deployment-endpoints.md |
+| Send or read the SDL as JSON | `data.definition` in place of `data.sdl`; `consoleSettings.definition` | @deployment-endpoints.md |
+| Record the SDL of a deployment Console holds none for | `POST /v1/deployments/{dseq}/definition` | @deployment-endpoints.md |
 | Close a deployment | `DELETE /v1/deployments/{dseq}` | @deployment-endpoints.md |
 | List bids, accept bids | `GET /v1/bids?dseq=`, `POST /v1/leases` | @deployment-endpoints.md |
 | Runtime limit | `GET`, `PATCH /v2/deployment-settings/{dseq}` | @deployment-endpoints.md |
 | Provider details, regions, GPU availability | `GET /v1/providers/{address}`, `GET /v1/placement-options` | @deployment-endpoints.md |
 | Secrets that can't be read back | `secretEnv` on create and patch, or `GET /v1/sdl-secrets-context` + `sealedSecrets` | @secrets.md |
-| Balance and funding | `GET /v1/balances` | @account-and-funding.md |
+| A deployment's secret names and where each is used (never values) | `GET /v1/deployments/{dseq}/secrets` | @secrets.md |
+| Balance and funding (automatic: nothing to call) | `GET /v1/balances` | @account-and-funding.md |
 | API keys | `/v1/api-keys` | @authentication.md |
 | The key's team and projects | `GET /v1/organizations`, `GET /v1/projects` | @teams-and-projects.md |
 | Deploy into a project, list by project | `data.projectId` on create, `GET /v1/deployments?projectId=` | @teams-and-projects.md |
@@ -111,9 +116,9 @@ For a linear walkthrough from an API key to a running deployment: **@api-key-qui
 
 | Deprecated | Use instead |
 |---|---|
-| `PUT /v1/deployments/{dseq}` (resubmits the whole SDL) | `PATCH /v1/deployments/{dseq}` |
+| `PUT /v1/deployments/{dseq}` (resubmits the whole SDL and every secret value) | `PATCH /v1/deployments/{dseq}`, or `PUT /v1/deployments/{dseq}/definition` to send a whole SDL and keep the stored secrets |
 | `manifest` in the `POST /v1/leases` body | Leave it out. Console sends the manifest it recorded when the deployment was created. |
-| `POST /v1/deposit-deployment`, and `deposit` on create | Nothing. Console funds every deployment from the account's credits. |
+| `POST /v1/deposit-deployment`, and `deposit` on create (both being removed) | Nothing. Console funds every deployment from the account's credits; to keep deployments running, the user adds credits or turns on Auto recharge in the Console UI. Never call the deposit route. |
 | `POST /v1/certificates` (always answers 400) | Nothing. The API key replaces mTLS certificates. |
 
 ## UI-internal endpoints: not covered
@@ -133,7 +138,7 @@ The spec also exposes endpoints that exist to power the Console UI. They change 
 ## Related files
 
 - **@authentication.md** — API keys: format, creation, CRUD, CI/CD
-- **@deployment-endpoints.md** — Every deployment endpoint with bodies, responses and errors
+- **@deployment-endpoints.md** — Every deployment endpoint with bodies, responses and errors, including the definition routes (check, replace, record, list secrets)
 - **@secrets.md** — `secretEnv`, `ac-secret://` references and sealed secrets
 - **@api-key-quickstart.md** — From an API key to a running deployment
 - **@account-and-funding.md** — Account model, balance, automatic funding, 402s

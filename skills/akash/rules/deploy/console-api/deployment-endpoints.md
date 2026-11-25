@@ -5,6 +5,7 @@ Every endpoint below lives under `https://console-api.akash.network` and takes `
 ## Quick links
 
 - [Deployments](#deployments): create (from an SDL, or [without one](#create-a-deployment-without-an-sdl)), list, read, patch, close, move between projects
+- [Definitions](#definitions): [check one](#check-a-definition), [replace one whole](#replace-a-whole-definition), [record one](#record-a-definition), [list a deployment's secrets](#list-a-deployments-secrets)
 - [Leases](#leases)
 - [Bids](#bids)
 - [Runtime limits](#runtime-limits-deployment-settings-v2)
@@ -27,10 +28,11 @@ POST /v1/deployments
 
 | Field | Required | Description |
 |---|---|---|
-| `sdl` | one of `sdl`, `service`, `templateId` | The SDL as a YAML string, at most 512 KiB |
+| `sdl` | one of `sdl`, `definition`, `service`, `templateId` | The SDL as a YAML string, at most 512 KiB |
+| `definition` | one of | The same SDL as a JSON object (`version`, `services`, `profiles`, `deployment`, `endpoints`). See [Definitions as JSON](#definitions-as-json). |
 | `service` | one of | An image, resources, ports and env, from which Console writes the SDL. See [Create a deployment without an SDL](#create-a-deployment-without-an-sdl). |
-| `templateId` | one of | Without `sdl`: the gallery template to deploy, with `overrides` applied. With `sdl`: only records which template the SDL came from. |
-| `overrides` | no | Changes to the template's SDL, keyed by service name. Only with `templateId` and no `sdl`. |
+| `templateId` | one of | Without `sdl` or `definition`: the gallery template to deploy, with `overrides` applied. With either: only records which template the document came from. |
+| `overrides` | no | Changes to the template's SDL, keyed by service name. Only with `templateId` and no `sdl` or `definition`. |
 | `name` | no | 1 to 256 characters, shown wherever the deployment is listed. Defaults to the SDL's service names joined with `+`. |
 | `runtimeLimitHours` | no | 1 to 48. Console closes the deployment that many hours after its lease starts and returns the unspent credits. Omit for always-on funding. |
 | `secretEnv` | no | Names of the env variables whose values are secret, such as `["API_KEY"]`. Console encrypts those and stores every other env value readable; `[]` keeps all of them readable. Needs no encryption on your side. Without it, and without `sealedSecrets`, every env value is encrypted. See **@secrets.md**. |
@@ -38,7 +40,7 @@ POST /v1/deployments
 | `inheritSecretsFrom` | no | Dseq of a deployment you can change in the same account or team, open or closed, whose stored secrets this one starts from. See **@secrets.md**. |
 | `projectId` | no | The project to file the deployment in. Without it: the key's project for a key bound to one, otherwise the default project, and 400 `project_required` when the caller can't deploy there. See **@teams-and-projects.md**. |
 
-Don't send `deposit`. Console funds every deployment from the credits of the key's account or team and ignores the field.
+There is no deposit to send. Console funds every deployment from the credits of the key's account or team, and the deprecated `deposit` field is being removed: leave it out.
 
 **Example:**
 
@@ -68,7 +70,7 @@ Keep `dseq`. You don't need `manifest`: Console records the deployment's definit
 
 | Status | When |
 |---|---|
-| 400 | The SDL is invalid, or a secret reference has no value, or `secretEnv` names a variable no service sets, or `sealedSecrets` is malformed, expired or names a value no service references. `code: project_required`: no project could be chosen, so pass `projectId`. |
+| 400 | The SDL is invalid (`POST /v1/deployments/validate` lists every problem at once, see [Check a definition](#check-a-definition)), or a secret reference has no value, or `secretEnv` names a variable no service sets, or `sealedSecrets` is malformed, expired or names a value no service references. `code: project_required`: no project could be chosen, so pass `projectId`. |
 | 402 | Not enough credit. `code` is `insufficient_balance` or `balance_top_up_pending` (see **@overview.md**). Free-trial refusals, such as a GPU model the trial excludes, answer `payment_required`. |
 | 403 | `sealedSecrets` was sealed for another user or another SDL. Free-trial accounts also get 403 when the deployment exceeds the trial's resource limits, or `code: fair_use_policy_required` until the Fair Use Policy is accepted in the Console UI. `code: project_budget_exceeded`: the project's monthly budget is spent. A team `viewer` or `billing` member's key can't deploy at all. |
 | 404 | `inheritSecretsFrom` names no deployment you can change, or `projectId` names a project you can't deploy into |
@@ -79,7 +81,7 @@ Keep `dseq`. You don't need `manifest`: Console records the deployment's definit
 
 The same `POST /v1/deployments` takes simple inputs in place of `sdl`. Console writes the SDL and records it, so the deployment then behaves like any other: its SDL shows on the Update tab and in `consoleSettings.sdl`, `PATCH` changes it, and a redeploy starts from it. Bids, the lease, and everything after are the same calls.
 
-Send exactly one of `sdl`, `service`, or `templateId` without `sdl`.
+Send exactly one of `sdl`, `definition`, `service`, or `templateId` without a document.
 
 **From an image (`data.service`).** One service, which Console names `app`:
 
@@ -130,7 +132,7 @@ curl -sX POST https://console-api.akash.network/v1/deployments \
   }'
 ```
 
-`templateId` sent together with `sdl` keeps its older meaning: it only records which template the SDL came from, and `overrides` is refused.
+`templateId` sent together with `sdl` or `definition` keeps its older meaning: it only records which template the SDL came from, and `overrides` is refused.
 
 **Errors**, on top of the ones above:
 
@@ -218,7 +220,12 @@ GET /v1/deployments/{dseq}
     ],
     "escrow_account": { "state": { "state": "open", "funds": [{ "denom": "uact", "amount": "..." }] } },
     "name": "web-prod",
-    "consoleSettings": { "sdl": "version: \"2.0\"\n...", "manifestVersion": "..." }
+    "consoleSettings": {
+      "sdl": "version: \"2.0\"\n...",
+      "definition": { "version": "2.0", "services": { ... }, "profiles": { ... }, "deployment": { ... } },
+      "manifestVersion": "...",
+      "templateId": null
+    }
   }
 }
 ```
@@ -227,7 +234,7 @@ This is the canonical read for a running deployment:
 
 - **Where the service is reachable.** A global expose with `as: 80` gets an HTTP hostname: `status.services.<svc>.uris[0]`. Any other global port gets a random public port: `status.forwarded_ports.<svc>[]` gives `host` and `externalPort`. Leased IPs appear under `status.ips`.
 - **Health.** `status.services.<svc>.available` against `total`. `status` is `null` when Console couldn't reach the provider; poll again.
-- **The stored definition.** `consoleSettings.sdl` is the SDL Console recorded, re-serialized, with secret values replaced by `ac-secret://` references. `consoleSettings.manifestVersion` is what `PATCH` takes as `ifManifestVersion`. Both are `null` for a deployment Console holds no definition for.
+- **The stored definition.** `consoleSettings.sdl` is the SDL Console recorded, re-serialized, with secret values replaced by `ac-secret://` references. `consoleSettings.definition` is the same document as JSON, ready to edit and send back to `PUT /v1/deployments/{dseq}/definition`. `consoleSettings.manifestVersion` is what `PATCH` and that `PUT` take as `ifManifestVersion`. `consoleSettings` is `null` for a deployment Console holds no definition for.
 - **Reclamation.** A lease whose provider has flagged its capacity for reclamation carries `reclamation.deadline` (unix seconds). See `rules/sdl/reclamation.md`.
 - **GPUs.** `offeredGpus` is what the provider bid with, which is what an "any model" request resolved to. `detectedGpus` is what Console observed inside the containers, with the driver version.
 
@@ -239,7 +246,7 @@ A deployment outside the projects the key reaches answers 404, as if it didn't e
 PATCH /v1/deployments/{dseq}
 ```
 
-Changes the definition Console stored, then sends the deployment update and the new manifest. The lease and the provider stay; the provider restarts the touched services. Only what you name changes, and the SDL itself is never part of the request.
+Changes the definition Console stored, then sends the deployment update and the new manifest. The lease and the provider stay; the provider restarts the touched services. Only what you name changes, and the SDL itself is never part of the request. To send a whole edited document instead, use [`PUT /v1/deployments/{dseq}/definition`](#replace-a-whole-definition).
 
 **Body (`data`):**
 
@@ -283,21 +290,13 @@ The response is the deployment, plus the `manifestVersion` the patch recorded. E
 | 400 | | Names a service, port or volume the stored SDL doesn't declare, leaves a secret reference without a value, names a variable in `secretEnv` it doesn't write, or moves a port in a way that is refused |
 | 403 | | `sealedSecrets` was sealed for another user, or bound to an SDL other than the stored one |
 | 403 | `project_forbidden` | The deployment is filed in a project the key can't change |
-| 404 | | Console holds no definition for this deployment; record one first (below) |
-| 409 | `deployment_definition_changed` | Another patch landed first. Re-read, then re-send. A 409 without this code means the seal used a retired key. |
+| 404 | | Console holds no definition for this deployment; [record one](#record-a-definition) first |
+| 409 | `deployment_definition_changed` | Another change landed first. Re-read, then re-send. A 409 without this code means the seal used a retired key. |
 | 422 | `deployment_resources_changed` | The change needs a new deployment |
-| 500 | `stored_secrets_unreadable`, `stored_sdl_unreadable` | The stored state is permanently unreadable; a retry won't help |
+| 500 | `stored_secrets_unreadable`, `stored_sdl_unreadable` | The stored state is permanently unreadable; a retry won't help. Recover with the full SDL and every secret value on the deprecated [`PUT /v1/deployments/{dseq}`](#full-sdl-update). |
 | 503 | | The key service was briefly unreachable. Retry. |
 
 If the deployment update fails after the definition was recorded, re-send the identical request: it recomputes the same manifest version and finishes the update.
-
-### Record a definition
-
-```
-POST /v1/deployments/{dseq}/definition
-```
-
-For a deployment Console holds no definition for (`consoleSettings` is `null`), such as one created before Console recorded definitions. Send `{ "data": { "sdl": "...", "sealedSecrets": "..." } }`. The SDL must produce exactly the manifest the deployment already runs, so nothing is sent to the provider; afterwards the deployment takes patches. Answers 201 with `{ sdl, manifestVersion }`, 409 `deployment_definition_exists` if a definition exists (patch instead), or 422 `deployment_definition_mismatch` if the SDL differs from what runs.
 
 ### Close a deployment
 
@@ -353,6 +352,197 @@ Refiles the deployment in another project of the same account or team and answer
 | `GET /v1/weekly-cost` | key | `{ data: { weeklyCost } }`: USD per week across the running deployments of the key's account or team |
 | `GET /v1/deployment-funding-config` | public | The constants automatic funding runs on (see **@account-and-funding.md**) |
 | `GET /v1/deployment/{owner}/{dseq}` | public | A read-only view of any deployment: monthly cost, provider, events. For your own, prefer `GET /v1/deployments/{dseq}`. |
+
+## Definitions
+
+Console records each deployment's SDL, its definition. `PATCH` changes named fields of it; the routes below check, replace or record the whole document, and list the secrets it references.
+
+### Definitions as JSON
+
+Wherever a request takes `sdl` (create, check, replace, record), it also takes `definition`: the same document as a JSON object, with the fields an SDL has (`version`, `services`, `profiles`, `deployment` and, where used, `endpoints`). Send exactly one of the two; both or neither answers 400. `GET /v1/deployments/{dseq}` returns the stored one in `consoleSettings.definition`, so a script can edit it with `jq` and send it back without touching YAML.
+
+```json
+{
+  "data": {
+    "definition": {
+      "version": "2.0",
+      "services": {
+        "gateway": {
+          "image": "ghcr.io/acme/gateway:1.9.0",
+          "env": ["LOG_LEVEL=info", "DATABASE_URL=ac-secret://DATABASE_URL"],
+          "expose": [{ "port": 8080, "as": 80, "to": [{ "global": true }] }]
+        }
+      },
+      "profiles": {
+        "compute": { "gateway": { "resources": { "cpu": { "units": 1 }, "memory": { "size": "1Gi" }, "storage": [{ "size": "2Gi" }] } } },
+        "placement": { "dcloud": { "pricing": { "gateway": { "denom": "uact", "amount": 1000 } } } }
+      },
+      "deployment": { "gateway": { "dcloud": { "profile": "gateway", "count": 1 } } }
+    }
+  }
+}
+```
+
+- Env entries stay `NAME=value` strings, as in YAML.
+- At most 512 KiB once serialized as compact JSON, like `sdl`.
+- A `sealedSecrets` sent beside a `definition` is bound to its compact JSON: `sdlHash` is the hash of `JSON.stringify(definition)`, keys in the order sent (**@secrets.md**).
+
+### Check a definition
+
+```
+POST /v1/deployments/validate
+POST /v1/deployments/{dseq}/definition/validate
+```
+
+Runs the checks the real request would run on a document and its secrets, and reports every error at once. Nothing is created, recorded, sealed or sent. The first previews `POST /v1/deployments`; the second previews `PUT /v1/deployments/{dseq}/definition` against that deployment, so it also catches changes only a new deployment can take and secret references the deployment can't fill.
+
+**Body (`data`):** `sdl` or `definition`, plus the `sealedSecrets` and `secretEnv` the real request would carry. The create check also takes `inheritSecretsFrom`.
+
+```bash
+curl -sX POST https://console-api.akash.network/v1/deployments/validate \
+  -H "x-api-key: $AKASH_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "$(jq -nc --rawfile sdl deploy.yaml '{data: {sdl: $sdl}}')" \
+  | jq '.data'
+```
+
+**Response (200):**
+
+```json
+{
+  "data": {
+    "valid": false,
+    "errors": [
+      { "path": "/services/gateway/env/1", "keyword": "sdl-reference", "message": "..." },
+      { "path": "/services/worker", "keyword": "required", "message": "..." }
+    ],
+    "keptSecrets": []
+  }
+}
+```
+
+- **An invalid document still answers 200.** Read `valid` and `errors`, not the status.
+- `path` is a JSON pointer into the document (empty when the error concerns the whole document). `keyword` names the failed check, such as `required`, `sdl-reference`, `secretEnv`, `maxLength` or `deployment_resources_changed`. `message` is for humans.
+- `keptSecrets` lists the references whose value would come from what Console already stores (the deployment's own secrets, or those of `inheritSecretsFrom`) instead of from the request.
+- It checks the document and its secrets only. Credits, projects and bids aren't part of it, so a valid create can still answer 402 or get no bids.
+
+An error status means the check itself couldn't run:
+
+| Status | When |
+|---|---|
+| 400 | Neither or both of `sdl` and `definition`, or a malformed, tampered or expired `sealedSecrets` |
+| 403 | The seal was made for another user or another document. `project_forbidden` on the deployment check. |
+| 404 | The deployment check: Console holds no definition for that dseq. The create check: `inheritSecretsFrom` names no deployment you can change. |
+| 409 | The seal used a retired key (reseal), or `inherited_secrets_unreadable`. On the deployment check, `stored_secrets_unavailable` (see [Replace a whole definition](#replace-a-whole-definition)). |
+| 500 | The deployment's stored SDL or secrets can't be read; permanent |
+| 503 | The key service was briefly unreachable. Retry. |
+
+### Replace a whole definition
+
+```
+PUT /v1/deployments/{dseq}/definition
+```
+
+Replaces the stored SDL with the one sent, then sends the deployment update and the new manifest, as `PATCH` does. Use it when the change is easier to express as an edited document than as named fields, such as an SDL kept in a repository. Stored secrets carry over: leave `NAME=ac-secret://NAME` wherever a secret stands, and its stored value is kept without being sent again. The same things are fixed as for a patch: groups, compute resources, replica counts and globally exposed ports.
+
+**Body (`data`):**
+
+| Field | Description |
+|---|---|
+| `sdl` or `definition` | The whole document: `consoleSettings.sdl` or `consoleSettings.definition`, edited |
+| `secretEnv` | Names of the env variables whose values are secret. Applies to the values this request adds or changes. |
+| `sealedSecrets` | A JWE holding only the secrets this request sets, bound to the document in this request (**@secrets.md**). Names left out keep their stored values. |
+| `ifManifestVersion` | The `consoleSettings.manifestVersion` you read. 409 if the deployment moved on since. |
+| `name` | Renames the deployment; left out, the name stays |
+
+**What happens to each value:**
+
+| In the document sent | Stored afterwards |
+|---|---|
+| `ac-secret://NAME` with no value in `sealedSecrets` | The stored value, kept |
+| `ac-secret://NAME` with a value in `sealedSecrets` | The new value |
+| A plain value, unchanged from one stored readable | Still readable |
+| A plain value, added or changed, and the request carries neither `secretEnv` nor `sealedSecrets` | Encrypted |
+| A plain value, added or changed, not named in a `secretEnv` (`[]` names none) | Readable |
+| A plain value named in `secretEnv` | Encrypted, even if it was readable before |
+| A stored secret no reference names any longer | Dropped |
+
+Read, edit and send back:
+
+```bash
+API=https://console-api.akash.network
+CURRENT=$(curl -s "$API/v1/deployments/$DSEQ" -H "x-api-key: $AKASH_API_KEY")
+
+curl -sX PUT "$API/v1/deployments/$DSEQ/definition" \
+  -H "x-api-key: $AKASH_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "$(echo "$CURRENT" | jq -c '{data: {
+        definition: (.data.consoleSettings.definition
+          | .services.gateway.image = "ghcr.io/acme/gateway:1.10.0"
+          | .services.gateway.env += ["FEATURE_FLAGS=search"]),
+        ifManifestVersion: .data.consoleSettings.manifestVersion,
+        secretEnv: []
+      }}')"
+```
+
+The response is the deployment plus the `manifestVersion` it recorded. With `?async=true` it answers 202 `{ "data": { "activityId", "manifestVersion" } }` once the definition is saved and applies it in the background; poll `GET /v1/activities/{activityId}`. A refusal answers on the request either way and saves nothing. Re-sending an identical request is safe: it recomputes the same version and finishes the update.
+
+To see the outcome first, send the same `sdl` or `definition`, `secretEnv` and `sealedSecrets` to `POST /v1/deployments/{dseq}/definition/validate`: its `keptSecrets` lists the stored values that would be kept.
+
+**Errors:**
+
+| Status | `code` | When |
+|---|---|---|
+| 400 | | Invalid SDL; a reference with neither a value in `sealedSecrets` nor a stored one; a sealed name no service references; a `secretEnv` name no service sets; a malformed seal; both or neither of `sdl` and `definition` |
+| 403 | | The seal was made for another user or another document. A seal bound to the stored SDL instead of the one sent is refused too. |
+| 403 | `project_forbidden` | The deployment is filed in a project the key can't change |
+| 404 | | Console holds no definition for this deployment; [record one](#record-a-definition) first |
+| 409 | `deployment_definition_changed` | The deployment changed since `ifManifestVersion`, or during the request. Re-read, then re-send. A 409 without a code means the seal used a retired key: reseal. |
+| 409 | `stored_secrets_unavailable` | In a team, the stored secrets were sealed for a member who has since deleted their account. This route and `PATCH` open the stored secrets first, so re-sending here fails again: send the full SDL with every secret value to the deprecated [`PUT /v1/deployments/{dseq}`](#full-sdl-update). |
+| 422 | `deployment_resources_changed` | The change needs a new deployment; nothing was recorded |
+| 500 | `stored_secrets_unreadable`, `stored_sdl_unreadable` | The stored state is permanently unreadable; a retry won't help. Recover with the full SDL and every secret value on the deprecated [`PUT /v1/deployments/{dseq}`](#full-sdl-update). |
+| 503 | | The key service was briefly unreachable. Retry. |
+
+### Record a definition
+
+```
+POST /v1/deployments/{dseq}/definition
+```
+
+For a deployment Console holds no definition for (`consoleSettings` is `null`), such as one created before Console recorded definitions or outside Console. Send `{ "data": { "sdl": "..." } }` or `{ "data": { "definition": { ... } } }`, with `sealedSecrets` for its `ac-secret://` references. The document must produce exactly the manifest the deployment already runs, so nothing is sent to the provider, and a closed deployment can be recorded too. Afterwards the deployment takes patches and replacements like any other.
+
+- There is no `secretEnv` here. Without `sealedSecrets`, every env value is stored encrypted, as on a create that says nothing about secrets; with one, the plain values are stored readable.
+- Answers 201 with `{ "data": { "sdl", "manifestVersion" } }`.
+- 409 `deployment_definition_exists`: Console already holds a definition, which this route never overwrites. Patch or replace it instead.
+- 422 `deployment_definition_mismatch`: the document differs from what runs; nothing was recorded. Record what runs, then replace it.
+- 404: no deployment of yours has this dseq. 503: retry.
+
+### List a deployment's secrets
+
+```
+GET /v1/deployments/{dseq}/secrets
+```
+
+```bash
+curl -s "https://console-api.akash.network/v1/deployments/$DSEQ/secrets" \
+  -H "x-api-key: $AKASH_API_KEY" | jq '.data.secrets'
+```
+
+```json
+{
+  "data": {
+    "secrets": [
+      { "name": "REGISTRY_PASSWORD", "usedBy": [{ "service": "gateway", "credential": "password" }] },
+      { "name": "SIGNING_KEY", "usedBy": [{ "service": "gateway", "env": "SIGNING_KEY" }, { "service": "worker", "env": "JWT_SIGNING_KEY" }] },
+      { "name": "s0_e2", "usedBy": [{ "service": "gateway", "env": "DATABASE_URL" }] }
+    ]
+  }
+}
+```
+
+Each secret the stored SDL references, once, sorted by name, with every env variable (`env`) or registry credential half (`credential`: `username` or `password`) it fills. **Values are never returned**; the list is read from the stored SDL and decrypts nothing. Names like `s0_e2` are ones Console chose when it encrypted a plain value for you (through `secretEnv`, or by default). Use the names to rotate a value with `sealedSecrets` on `PATCH`, or to know which references a replacement keeps.
+
+404 means Console holds no definition for the deployment, or no deployment you can read has this dseq; the two are deliberately indistinguishable. 500 `stored_sdl_unreadable` is permanent.
 
 ## Leases
 
@@ -518,7 +708,7 @@ From an SDL file, the matcher in `rules/bid-matching/` is simpler: it reads the 
 PUT /v1/deployments/{dseq}
 ```
 
-Deprecated in favor of `PATCH` and scheduled for removal. It resubmits the whole SDL, so every secret value has to be resupplied, and it refuses resource changes with the same 422 `deployment_resources_changed`. Don't generate new code for it.
+Deprecated and scheduled for removal. It resubmits the whole SDL and every secret value with it, and refuses resource changes with the same 422 `deployment_resources_changed`. Don't generate new code for it: use `PATCH` to change named fields, or [`PUT /v1/deployments/{dseq}/definition`](#replace-a-whole-definition) to send a whole SDL while keeping the stored secrets. The one exception: it never reads the stored SDL or secrets, so it is for now the only way out of `stored_secrets_unavailable`, `stored_secrets_unreadable` or `stored_sdl_unreadable`, by sending the full SDL with every secret value.
 
 ### Deposit
 
@@ -526,7 +716,7 @@ Deprecated in favor of `PATCH` and scheduled for removal. It resubmits the whole
 POST /v1/deposit-deployment
 ```
 
-Deprecated and scheduled for removal. Console tops every deployment up automatically while the account has credits, so there is nothing for it to do. If an account runs low, the fix is adding credits in the Console UI. See [How Funding Works](https://akash.network/docs/getting-started/how-funding-works/).
+Deprecated and being removed. Don't call it, and don't send `deposit` on create: Console funds every deployment from the account's credits and tops it up automatically while credits last. To keep deployments running, keep credits available: the user adds credits in the Console UI under **Billing**, or turns on **Auto recharge** there so the card is charged before credits run out (**@account-and-funding.md**).
 
 ## Endpoints that do not exist
 
@@ -538,7 +728,7 @@ Older docs, and models trained on them, invent these. None exist:
 | `POST /deployment/{dseq}/deposit`, `POST /wallet/deposit` | Nothing: funding is automatic; credits are added in the Console UI |
 | `POST /lease` (single), `GET` or `DELETE /lease/{dseq}/{gseq}/{oseq}` | `POST /v1/leases` (batch); read leases from `GET /v1/deployments/{dseq}`; close the deployment |
 | `GET /providers/{address}/status` | `GET /v1/providers/{address}` |
-| `POST /sdl/validate`, `POST /v1/sdl/validate` | Validate client-side; `POST /v1/deployments` answers 400 for an invalid SDL |
+| `POST /sdl/validate`, `POST /v1/sdl/validate` | `POST /v1/deployments/validate` ([Check a definition](#check-a-definition)) |
 | `POST /sdl/price` | No pricing endpoint. Prices come from bids (`GET /v1/bids?dseq=`). |
 | `POST /wallet/create` | Accounts are created in the Console UI |
 | `GET /wallet/balance` | `GET /v1/balances` |

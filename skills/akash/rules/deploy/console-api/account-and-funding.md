@@ -68,7 +68,9 @@ Console funds every deployment from the account's credits; there is no deposit t
 - Top-ups leave about `balanceHeadroomUsd` of the available balance untouched, so a new deployment can still be created.
 - When the credits run out, running deployments live on what their escrow holds, up to about `targetRunwayHours`, then close. Adding credits is the fix; it is a UI action.
 
-The one programmatic knob is a deployment's **runtime limit**, which closes it after a set number of hours: `runtimeLimitHours` on create, or `PATCH /v2/deployment-settings/{dseq}` (**@deployment-endpoints.md**). Don't call `POST /v1/deposit-deployment`: it is deprecated and does nothing automatic funding doesn't already do.
+To keep deployments running, keep credits available: add credits in the Console UI under **Billing**, or turn on **Auto recharge** there so the card is charged before credits run out. Nothing needs to be called per deployment.
+
+The one programmatic knob is a deployment's **runtime limit**, which closes it after a set number of hours: `runtimeLimitHours` on create, or `PATCH /v2/deployment-settings/{dseq}` (**@deployment-endpoints.md**). Don't call `POST /v1/deposit-deployment` and don't send `deposit` on create: both are deprecated and being removed, and automatic funding already does their job.
 
 ## When a create is refused for money
 

@@ -109,7 +109,7 @@ GET   /v1/deployment-locations/{dseq}
 
 ## Project budgets
 
-Owners and admins can give a project a monthly budget in USD (calendar months, UTC) with `POST /v1/project-budgets` (`projectId`, `monthlyAmountUsd`, `alertThresholdPercent`, `stopTopUps`). A create whose first deposit would take the project past it answers **403 `project_budget_exceeded`**, and `data.projectIds` names the project. With `stopTopUps`, the automatic top-ups of the project's running deployments stop at the budget too, so they run on their escrow until it is spent. Retrying doesn't help: an owner or admin raises the budget (`PATCH /v1/project-budgets/{id}`), or the next month starts. `GET /v1/project-budgets` shows `currentPeriod.committedUsd`.
+Owners and admins can give a project a monthly budget in USD (calendar months, UTC) with `POST /v1/project-budgets` (`projectId`, `monthlyAmountUsd`, `alertThresholdPercent`, `stopTopUps`). A create whose initial funding would take the project past it answers **403 `project_budget_exceeded`**, and `data.projectIds` names the project. With `stopTopUps`, the automatic top-ups of the project's running deployments stop at the budget too, so they run on their escrow until it is spent. Retrying doesn't help: an owner or admin raises the budget (`PATCH /v1/project-budgets/{id}`), or the next month starts. `GET /v1/project-budgets` shows `currentPeriod.committedUsd`.
 
 ## Team billing
 
@@ -158,7 +158,7 @@ Creating a team, accepting an invitation, leaving a team, deleting a team and de
 | 403 | `organization_forbidden` | The caller isn't a member of the team: the header names a team the user doesn't belong to, or the key's creator left or was removed | Use a key of a current member |
 | 403 | `project_forbidden` | The request reaches outside its projects: `x-project-id` names a project the caller can't reach (or another project than the key's), a write targets a deployment filed in a project the caller can't change, or a provider JWT doesn't name its deployments one by one | Stay within the key's projects, name the deployments in the JWT, or use a key that reaches the other project |
 | 400 | `project_required` | A create found no project to file the deployment in | Pass `data.projectId` |
-| 403 | `project_budget_exceeded` | The deposit would take the project past its monthly budget; `data.projectIds` names it | An owner or admin raises the budget. Don't retry. |
+| 403 | `project_budget_exceeded` | Funding the new deployment would take the project past its monthly budget; `data.projectIds` names it | An owner or admin raises the budget. Don't retry. |
 | 403 | `project_limit_reached` | `POST /v1/projects` found the team at its project limit, given in `data.limit`: 10, counting the default project | Use an existing project, or have an owner or admin delete one it no longer uses (one with no open deployment) |
 | 403 | `organization_limit_reached` | Creating a team found the user at their limit of teams they created that still exist, given in `data.limit`: 3 | Delete a team you created and no longer use, or join an existing team by invitation |
 | 403 | `session_required` | A session-only action was sent with an API key | Do it in the Console web app |

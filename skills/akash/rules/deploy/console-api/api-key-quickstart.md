@@ -58,7 +58,7 @@ deployment:
       count: 1
 ```
 
-`denom: uact` is the deployment-payment denom. SDL syntax is in `../../sdl/`.
+`denom: uact` is the deployment-payment denom. SDL syntax is in `../../sdl/`. To check the file against the API before creating anything, send it to `POST /v1/deployments/validate` and read `data.valid` and `data.errors` (**@deployment-endpoints.md**, "Check a definition").
 
 No SDL at hand? Step 2 also takes an image with its resources and ports (`data.service`) or a gallery template (`data.templateId`), and Console writes the SDL. See "Create a deployment without an SDL" in **@deployment-endpoints.md**.
 
@@ -157,7 +157,7 @@ curl -sX PATCH "$API/v1/deployments/$DSEQ" \
   -d '{"data": {"services": {"web": {"image": "nginx:1.27.2"}}}}'
 ```
 
-CPU, memory, storage, GPUs and replica counts can't change in place: that needs a new deployment (**@deployment-endpoints.md**, "Patch a deployment").
+To apply a whole edited SDL instead, send it to `PUT /v1/deployments/{dseq}/definition`; `ac-secret://` references left in it keep their stored values. CPU, memory, storage, GPUs and replica counts can't change in place with either: that needs a new deployment (**@deployment-endpoints.md**, "Patch a deployment").
 
 Close it when you're done; unspent escrow returns to the account:
 
@@ -188,7 +188,8 @@ If a step ever needs one of these, the workflow has drifted onto the CLI or SDK 
 | `400 organization_mismatch` | `x-organization-id` names another team than the key's | Drop the header; use a key created in that team |
 | No bids | Resources or price match no provider | `rules/bid-matching/` |
 | `502 provider_unreachable` on lease | The provider is down | Accept another bid |
-| `PUT` used to update | Deprecated full-SDL update | `PATCH` with only the fields that change |
+| `PUT /v1/deployments/{dseq}` used to update | Deprecated full-SDL update | `PATCH` with only the fields that change, or `PUT /v1/deployments/{dseq}/definition` for a whole SDL |
+| A deposit sent, or `POST /v1/deposit-deployment` called | Both are deprecated and being removed | Send nothing: Console funds deployments from credits |
 | `422 deployment_resources_changed` | Tried to resize in place | New deployment, then close the old one |
 | URL is `null` | Read `forwarded_ports` for an `as: 80` service | Read `status.services.<svc>.uris` |
 | Logs call times out | Sent to `console-api.akash.network` | Logs come from the provider (step 6) |
