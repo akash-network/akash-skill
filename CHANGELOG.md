@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.9.0](https://github.com/akash-network/akash-skill/compare/v3.8.0...v3.9.0) (2026-11-25)
+
+
+### Features
+
+* **akash/console-api:** document secretEnv, creating a deployment without SDL, and replica traffic ([#45](https://github.com/akash-network/akash-skill/issues/45)) ([fcc06ea](https://github.com/akash-network/akash-skill/commit/fcc06ea388bb84006f922c7726c015e18477047f))
+* **akash/console-api:** document the definition and secrets routes, and drop the deposit route ([#47](https://github.com/akash-network/akash-skill/issues/47)) ([3c6145f](https://github.com/akash-network/akash-skill/commit/3c6145f5f2e41225c619a93f4d18b08b0387926a))
+
 ## [3.8.0](https://github.com/akash-network/akash-skill/compare/v3.7.0...v3.8.0) (2026-10-27)
 
 
