@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.9.1](https://github.com/akash-network/akash-skill/compare/v3.9.0...v3.9.1) (2026-11-27)
+
+
+### Bug Fixes
+
+* **akash/console-api:** recover from a departed member's secrets with the definition replace ([#48](https://github.com/akash-network/akash-skill/issues/48)) ([45f9076](https://github.com/akash-network/akash-skill/commit/45f907677d1b610f69da603dcc36a2c69edfb832))
+
 ## [3.9.0](https://github.com/akash-network/akash-skill/compare/v3.8.0...v3.9.0) (2026-11-25)
 
 
